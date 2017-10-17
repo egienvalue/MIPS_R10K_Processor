@@ -7,6 +7,33 @@
 //                                                                     //
 /////////////////////////////////////////////////////////////////////////
 
+// Define for top
+
+
+// hengfei
+
+
+
+
+
+// jun
+
+
+
+
+
+// Chuan
+
+
+
+// Lu
+`define			RS_OPCODE_W 4
+
+
+
+// Shijing
+
+
 `ifndef __SYS_DEFS_VH__
 `define __SYS_DEFS_VH__
 
