@@ -36,8 +36,8 @@
 `define		MEM_TAG_W				4
 
 // jun
-
-
+`define			ROB_W 32
+`define			HT_W 5 //HT_W = log2(ROB_W)
 
 
 
