@@ -51,7 +51,8 @@
 
 
 // Shijing
-
+`define IFB_SIZE 64
+`define TAG_SIZE 6
 
 `ifndef __SYS_DEFS_VH__
 `define __SYS_DEFS_VH__
