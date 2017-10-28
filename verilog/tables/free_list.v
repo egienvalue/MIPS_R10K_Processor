@@ -15,15 +15,21 @@
 // 	intial creation: 10/17/2017
 // 	***************************************************************************
 
+`define DEBUG
 module free_list(
 		input			clk,
 		input			rst,					//|From where|
 		input			dispatch_en_i,			//[Decoder]		If true, output head entry and head++
 		input			retire_en_i,			//[ROB]			If true, write new retired preg to tail, and tail++
-		input			retire_preg_i,			//[ROB]			New retired preg.
+		input	[5:0]	retire_preg_i,			//[ROB]			New retired preg.
 		input			recover_en_i,			//[ROB]			Enabling early branch single cycle recovery
 		input	[4:0]	recover_head_i,			//[ROB]			Recover head to some point
 
+		`ifdef DEBUG
+		output	[5:0]	cnt,
+		output	[4:0]	hd,
+		output  [4:0]	tl,
+		`endif
 												//|To where|
 		output			free_preg_vld_o,		//[ROB, Map Table, RS]	Is output valid?
 		output	[5:0]	free_preg_o,			//[ROB, Map Table, Rs]	Output new free preg.
@@ -31,12 +37,17 @@ module free_list(
 		);
 		
 		logic	[31:0][5:0]	FL;
-		logic	[4:0] count;
-		logic	head,tail;
+		logic	[5:0] count;
+		logic	[4:0] head;
+		logic	[4:0] tail;
 		logic	full,empty;
 
+		assign cnt = count;
+		assign hd = head;
+		assign tl = tail;
+
 		assign empty = (count == 0);
-		assign full = (count >= 5'b11111);
+		assign full = (count >= 32);
 
 		assign free_preg_vld_o	=	~dispatch_en_i	? 0 : 
 									~empty			? 1 : 
@@ -52,11 +63,11 @@ module free_list(
 		always_ff @(posedge clk) begin
 			if (rst) begin
 				for (int i=0;i<32;i++) begin
-					FL[i] <= `SD 0;
+					FL[i] <= `SD 32+i;
 				end
 				tail <= `SD 0;
 			end else if (retire_en_i && ~(empty && dispatch_en_i) && ~full) begin
-				tail	 <=	(tail + 1 >= 5'b11111) ? tail + 1 - 5'b11111 : tail + 1;
+				tail	 <=	`SD (tail + 1 >= 32) ? (tail - 31) : (tail + 1);
 				FL[tail] <= `SD retire_preg_i;
 			end else begin
 				tail <= `SD tail;
@@ -68,7 +79,7 @@ module free_list(
 			if (rst) begin
 				head <= `SD 0;
 			end else if (dispatch_en_i && ~empty) begin
-				head <= `SD (head + 1 >= 5'b11111) ? head + 1 - 5'b11111 : head + 1;
+				head <= `SD (head + 1 >= 32) ? head + 1 - 32 : head + 1;
 			end else if (recover_en_i) begin
 				head <= `SD recover_head_i;
 			end else begin
@@ -79,7 +90,7 @@ module free_list(
 		//write count
 		always_ff @(posedge clk) begin
 			if (rst) begin
-				count <= `SD 0;
+				count <= `SD 32;
 			end else if (dispatch_en_i && ~retire_en_i) begin
 				count <= `SD count - 1;
 			end else if (~dispatch_en_i && retire_en_i) begin
