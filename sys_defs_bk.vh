@@ -52,7 +52,6 @@
 
 // Shijing
 
-
 `ifndef __SYS_DEFS_VH__
 `define __SYS_DEFS_VH__
 
