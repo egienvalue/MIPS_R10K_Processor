@@ -35,10 +35,12 @@
 
 `define		MEM_TAG_W				4
 
+`define		PFETCH_NUM				4
+
 // jun
-
-
-
+`define			ROB_W 32
+`define			HT_W 5 //HT_W = log2(ROB_W)
+`define			BR_TAG_W 5
 
 
 // Chuan
@@ -51,6 +53,8 @@
 
 
 // Shijing
+`define IFB_SIZE 64
+`define TAG_SIZE 6
 
 `ifndef __SYS_DEFS_VH__
 `define __SYS_DEFS_VH__
@@ -78,6 +82,10 @@
 // probably not a good idea to change this second one
 `define VIRTUAL_CLOCK_PERIOD   30.0 // Clock period from dc_shell
 `define VERILOG_CLOCK_PERIOD   10.0 // Clock period from test bench
+
+`ifndef CLOCK_PERIOD
+`define CLOCK_PERIOD		   10.0
+`endif
 
 `define MEM_LATENCY_IN_CYCLES (100.0/`CLOCK_PERIOD+0.49999)
 // the 0.49999 is to force ceiling(100/period).  The default behavior for
