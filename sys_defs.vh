@@ -42,7 +42,23 @@
 `define			ROB_IDX_W		($clog2(`ROB_W))
 `define			HT_W 5 //HT_W = log2(ROB_W)
 `define			BR_TAG_W 5
-
+typedef	struct	{
+		logic	[`HT_W:0]			head_o=0;
+		logic	[`HT_W:0]			tail_o=0;
+		logic	[`ROB_W-1:0][5:0]	old_dest_tag_o=0; 
+		logic	[`ROB_W-1:0][5:0]	dest_tag_o=0;
+		logic	[`ROB_W-1:0]		done_o=0;
+		logic	[`ROB_W-1:0][4:0]	logic_dest_o=0;
+		logic	[`ROB_W-1:0][63:0]	PC_o=0;
+		logic	[`ROB_W-1:0]		br_flag_o=0;
+		logic	[`ROB_W-1:0]		br_taken_o=0;
+		logic	[`ROB_W-1:0]		br_pretaken_o=0;
+		logic	[`ROB_W-1:0]		br_target_o=0;
+		logic	[`ROB_W-1:0][`BR_TAG_W-1:0]	br_tag_o=0;
+		logic	[`ROB_W-1:0]		wr_mem_o=0;
+		logic	[`ROB_W-1:0]		rd_mem_o=0;
+		logic	[4:0]				fl_cur_head_o=0;
+	} debug_t;
 
 // Chuan
 `define			PRF_NUM			64
