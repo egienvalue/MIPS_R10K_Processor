@@ -61,7 +61,7 @@ logic	[4:0]				rob2fl_recover_head_o;
 logic	[`BR_TAG_W-1:0]	rob2rs_recover_br_mask_o;
 
 `ifdef DEBUG_OUT
-debug_t debug_o;
+//debug_t debug_o;
 debug_t debug_tb_o;
 
 	// golden outputs
@@ -92,10 +92,10 @@ assign rob2fl_recover_head_tb_o		= ~br_recovery_rdy_tb_o ? 0 : debug_tb_o.fl_cur
 assign rob2rs_recover_br_mask_tb_o	= ~br_recovery_rdy_tb_o ? 0 : debug_tb_o.br_mask_o[fu2rob_idx_i];	
 
 
-/*
+
 logic	[`HT_W:0]			head;
 logic	[`HT_W:0]			tail;
-logic	[`ROB_W-1:0][5:0]	Told, T;
+logic	[`ROB_W-1:0][5:0]	old_dest_tag, dest_tag;
 logic	[`ROB_W-1:0]		done;
 logic	[`ROB_W-1:0][4:0]	logic_dest;
 logic	[`ROB_W-1:0][63:0]	PC;
@@ -103,9 +103,10 @@ logic	[`ROB_W-1:0]		br_flag;
 logic	[`ROB_W-1:0]		br_taken;
 logic	[`ROB_W-1:0]		br_pretaken;
 logic	[`ROB_W-1:0]		br_target;
+logic	[`ROB_W-1:0][`BR_TAG_W-1:0]	br_mask;
 logic	[`ROB_W-1:0]		wr_mem;
 logic	[`ROB_W-1:0]		rd_mem;
-*/
+logic	[4:0]				fl_cur_head;
 `endif
 
 //------------------------------------------------------------------------------
@@ -147,12 +148,12 @@ rob rob_test1(
 		//data of ROB
 		//----------------------------------------------------------------------
 		`ifdef DEBUG_OUT
-		,.debug_o
-		/*
+		//,.debug_o
+		
 		,.head_o(head),
 		.tail_o(tail),
-		.old_dest_tag_o(Told), 
-		.dest_tag_o(T),
+		.old_dest_tag_o(old_dest_tag), 
+		.dest_tag_o(dest_tag),
 		.done_o(done),
 		.logic_dest_o(logic_dest),
 		.PC_o(PC),
@@ -160,9 +161,11 @@ rob rob_test1(
 		.br_taken_o(br_taken),
 		.br_pretaken_o(br_pretaken),
 		.br_target_o(br_target),
+		.br_mask_o(br_mask),
 		.wr_mem_o(wr_mem),
-		.rd_mem_o(rd_mem)
-		*/
+		.rd_mem_o(rd_mem),
+		.fl_cur_head_o(fl_cur_head)
+		
 		`endif
 		);
 
@@ -292,29 +295,28 @@ task print_rob;
 				 i,T[i], Told[i], logic_dest[i], done[i], br_flag[i], br_pretaken[i], br_taken[i]);
 		else
 			$display("@@|  %2d| T:%d | Told:%d | A_dest:%d | Done:%d | br?:%d | br_pr:%d | br_taken:%d |",
-				 i,T[i], Told[i], logic_dest[i], done[i], br_flag[i], br_pretaken[i], br_taken[i]);
-	
+				 i,T[i], Told[i], logic_dest[i], done[i], br_flag[i], br_pretaken[i], br_taken[i]);	
 endtask
 */
 
 task check;
-	if(debug_o.head_o			 == debug_tb_o.head_o			 &&
-	   debug_o.tail_o			 == debug_tb_o.tail_o			 &&
-	   debug_o.old_dest_tag_o	 == debug_tb_o.old_dest_tag_o	 &&
-	   debug_o.dest_tag_o		 == debug_tb_o.dest_tag_o		 &&
-	   debug_o.done_o			 == debug_tb_o.done_o			 &&
-	   debug_o.logic_dest_o		 == debug_tb_o.logic_dest_o		 &&
-	   debug_o.PC_o				 == debug_tb_o.PC_o				 &&
-	   debug_o.br_flag_o		 == debug_tb_o.br_flag_o		 &&
-	   debug_o.br_taken_o		 == debug_tb_o.br_taken_o		 &&
-	   debug_o.br_pretaken_o	 == debug_tb_o.br_pretaken_o	 &&
-	   debug_o.br_target_o		 == debug_tb_o.br_target_o		 &&
-	   debug_o.br_mask_o			 == debug_tb_o.br_mask_o			 &&
-	   debug_o.wr_mem_o			 == debug_tb_o.wr_mem_o			 &&
-	   debug_o.rd_mem_o			 == debug_tb_o.rd_mem_o			 
+	if(head			 == debug_tb_o.head_o			 &&
+	   tail			 == debug_tb_o.tail_o			 &&
+	   old_dest_tag	 == debug_tb_o.old_dest_tag_o	 &&
+	   dest_tag		 == debug_tb_o.dest_tag_o		 &&
+	   done			 == debug_tb_o.done_o			 &&
+	   logic_dest		 == debug_tb_o.logic_dest_o		 &&
+	   PC				 == debug_tb_o.PC_o				 &&
+	   br_flag		 == debug_tb_o.br_flag_o		 &&
+	   br_taken		 == debug_tb_o.br_taken_o		 &&
+	   br_pretaken	 == debug_tb_o.br_pretaken_o	 &&
+	   br_target		 == debug_tb_o.br_target_o		 &&
+	   br_mask			 == debug_tb_o.br_mask_o			 &&
+	   wr_mem			 == debug_tb_o.wr_mem_o			 &&
+	   rd_mem			 == debug_tb_o.rd_mem_o			 
 		) begin
 	end else begin
-		$display ("FAILED_REG@@@ time:%f",$time);
+		$display ("@@@Failed Reg time:%f",$time);
 		$finish;
 	end
 
@@ -332,7 +334,7 @@ task check_output;
 	rob2fl_recover_head_o		== rob2fl_recover_head_tb_o		&&
 	rob2rs_recover_br_mask_o	== rob2rs_recover_br_mask_tb_o	) begin
 	end else begin
-		$display ("FAILED_OUTPUT@@@ time:%f",$time);
+		$display ("@@@Failed Output time:%f",$time);
 		$finish;
 	end
 
@@ -408,7 +410,7 @@ initial begin
 	//Retire Test: including empty case
 	//--------------------------------------------------------------------------
 	for(i=0;i<40;i++) begin
-		if(debug_o.head_o!=debug_o.tail_o) begin
+		if(head!=tail) begin
 			fu_done_i = 1;
 			fu_set(i,0);
 		end
@@ -469,7 +471,7 @@ initial begin
 			dispatch(42+i,i,i,i*4,0,i*8,0,0);
 		end
 			fu_done_i = 1;
-			fu_set(debug_o.head_o[`HT_W-1:0], 0);
+			fu_set(head[`HT_W-1:0], 0);
 		@(posedge clk);
 		if (~rob_full_tb_o) begin	
 			debug_tb_dispatch(42+i,i,i,i*4,0,i*8,0,0);
@@ -491,7 +493,8 @@ initial begin
 	//print_rob;
 
 	//--------------------------------------------------------------------------
-	//Mispredicted recovery
+	//Mispredicted recovery(not fully tested, waiting for branch recovery module
+	//to be added)
 	//--------------------------------------------------------------------------
 
 	@(negedge clk);
@@ -504,8 +507,7 @@ initial begin
 		if (~rob_full_tb_o) begin	
 			debug_tb_dispatch(32+i,i,i,i*4,(i==5),i*8,0,0);
 		end 
-		@(posedge clk);
-		#4
+		@(negedge clk);
 		dispatch_en = 0;
 		check;
 		check_output;

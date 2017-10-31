@@ -14,7 +14,7 @@ read_file -f sverilog [list "sys_defs.vh" "../../verilog/rob/rob_ent.v"]
 set design_name rob
 set clock_name clk
 set reset_name rst
-set CLK_PERIOD 2.5
+set CLK_PERIOD 5
 
 
 
