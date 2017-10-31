@@ -23,12 +23,13 @@ module	rs1 (
 		input		[`FU_SEL_W-1:0]		rs1_fu_sel_i,
 		input		[31:0]			rs1_IR_i,
 		input		[`ROB_IDX_W-1:0]	rs1_rob_idx_i,
-		input		[`BR_TAG_W-1:0]		rs1_br_tag_i,
+		input		[`BR_MASK_W-1:0]	rs1_br_mask_i,
 		input					rs1_load_i,
 		input					rs1_iss_en_i,
 		// branch recovery
+		input					rs1_br_pred_correct_i,
 		input					rs1_br_recovery_i,
-		input		[`BR_TAG_W-1:0]		rs1_br_tag_fix_i,
+		input		[`BR_MASK_W-1:0]	rs1_br_tag_fix_i,
 		
 		output					rs1_rdy_o,
 		output		[`PRF_IDX_W-1:0]	rs1_opa_tag_o,
@@ -36,6 +37,8 @@ module	rs1 (
 		output		[`PRF_IDX_W-1:0]	rs1_dest_tag_o,
 		output		[`FU_SEL_W-1:0]		rs1_fu_sel_o,
 		output					rs1_IR_o,
+		output		[`ROB_IDX_W-1:0]	rs1_rob_idx_o,
+		output		[`BR_MASK_W-1:0]	rs1_br_mask_o,
 		output					rs1_avail_o	
 	);
 	
@@ -47,7 +50,7 @@ module	rs1 (
 	logic		[`FU_SEL_W-1:0]			fu_sel_r;
 	logic		[31:0]				IR_r;
 	logic		[`ROB_IDX_W-1:0]		rob_idx_r;
-	logic		[`BR_TAG_W-1:0]			br_tag_r;
+	logic		[`BR_MASK_W-1:0]		br_mask_r;
 	logic						avail_r;
 
 	logic						opa_rdy_r_nxt;
@@ -56,7 +59,7 @@ module	rs1 (
 	logic		[`FU_SEL_W-1:0]			fu_sel_r_nxt;
 	logic		[31:0]				IR_r_nxt;
 	logic		[`ROB_IDX_W-1:0]		rob_idx_r_nxt;
-	logic		[`BR_TAG_W-1:0]			br_tag_r_nxt;
+	logic		[`BR_MASK_W-1:0]		br_mask_r_nxt;
 	logic						avail_r_nxt;
 
 	logic						br_prmiss_fix;
@@ -73,13 +76,21 @@ module	rs1 (
 
 	assign rs1_rdy_o	= avail_r ? 1'b0 :
 				  ((opa_rdy_r | opa_rdy_r_nxt) & (opb_rdy_r | opb_rdy_r_nxt)) ? 1'b1 : 1'b0;
+
+	assign rs1_br_mask_o	= rs1_br_pred_correct_i ? (br_mask_r & ~rs1_br_tag_fix_i) : br_mask_r;
+
+	assign br_mask_r_nxt	= (rs1_iss_en_i | br_prmiss_fix) ? 0 :
+				  rs1_load_i ? rs1_br_mask_i :
+				  rs1_br_pred_correct_i ? (br_mask_r & ~rs1_br_tag_fix_i) : br_mask_r;
 				  
-	assign br_prmiss_fix	= rs1_br_recovery_i && (rs1_br_tag_fix_i & br_tag_r != 0);
+	assign br_prmiss_fix		= rs1_br_recovery_i && (rs1_br_tag_fix_i & br_mask_r != 0);
 
 	assign rs1_opa_tag_o 	= opa_tag_r;
 	assign rs1_opb_tag_o 	= opb_tag_r;
 	assign rs1_dest_tag_o	= dest_tag_r;
 	assign rs1_fu_sel_o	= fu_sel_r;
+	assign rs1_IR_o		= IR_r;
+	assign rs1_rob_idx_o	= rob_idx_r;
 	assign rs1_avail_o 	= avail_r;
 	
 	always_comb begin
@@ -91,7 +102,6 @@ module	rs1 (
 			avail_r_nxt	= 1'b1;
 			IR_r_nxt	= 32'b0;
 			rob_idx_r_nxt	= 0;
-			br_tag_r_nxt	= 0;
 		end else if (rs1_load_i) begin
 			opa_tag_r_nxt	= rs1_opa_tag_i;
 			opb_tag_r_nxt	= rs1_opb_tag_i;
@@ -100,7 +110,6 @@ module	rs1 (
 			avail_r_nxt	= 1'b0;
 			IR_r_nxt	= rs1_IR_i;
 			rob_idx_r_nxt	= rs1_rob_idx_i;
-			br_tag_r_nxt	= rs1_br_tag_i;
 		end else begin
 			opa_tag_r_nxt	= opa_tag_r;
 			opb_tag_r_nxt	= opb_tag_r;
@@ -109,7 +118,6 @@ module	rs1 (
 			avail_r_nxt	= avail_r;
 			IR_r_nxt	= IR_r;
 			rob_idx_r_nxt	= rob_idx_r;
-			br_tag_r_nxt	= br_tag_r;
 		end
 	end
 
@@ -125,7 +133,7 @@ module	rs1 (
 			avail_r    <= `SD 1'b1;
 			IR_r	   <= `SD 32'b0;
 			rob_idx_r  <= `SD 0;
-			br_tag_r   <= `SD 0;
+			br_mask_r  <= `SD 0;
 		end else begin
 			opa_tag_r  <= `SD opa_tag_r_nxt;
 			opb_tag_r  <= `SD opb_tag_r_nxt;
@@ -136,7 +144,7 @@ module	rs1 (
 			avail_r    <= `SD avail_r_nxt;
 			IR_r       <= `SD IR_r_nxt;
 			rob_idx_r  <= `SD rob_idx_r_nxt;
-			br_tag_r   <= `SD br_tag_r_nxt;
+			br_mask_r  <= `SD br_mask_r_nxt;
 		end
 	end
 

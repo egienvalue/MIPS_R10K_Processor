@@ -29,7 +29,6 @@ module rs (
 		input					id_inst_vld_i,		
 		input		[`FU_SEL_W-1:0]		id_fu_sel_i,
 		input		[31:0]			id_IR_i,
-		input		[`BR_TAG_W-1:0]		id_br_tag_i,
 
 		input		[`ROB_IDX_W-1:0]	rob_idx_i,
 	
@@ -38,8 +37,10 @@ module rs (
 
 		input					stall_dp_i,
 
+		input		[`BR_MASK_W-1:0]	bmg_br_mask_i,
+		input					rob_br_pred_correct_i,
 		input					rob_br_recovery_i,
-		input		[`BR_TAG_W-1:0]		btst_br_tag_fix_i,
+		input		[`BR_MASK_W-1:0]	tob_br_tag_fix_i,
 
 		// ------------- Output -----------------
 		output	logic				rs_iss_vld_o,
@@ -47,6 +48,9 @@ module rs (
 		output	logic	[`PRF_IDX_W-1:0]	rs_iss_opb_tag_o,
 		output	logic	[`PRF_IDX_W-1:0]	rs_iss_dest_tag_o,
 		output	logic	[`FU_SEL_W-1:0]		rs_iss_fu_sel_o,
+		output	logic	[31:0]			rs_iss_IR_o,
+		output	logic	[`ROB_IDX_W-1:0]	rs_iss_rob_idx_o,
+		output	logic	[`BR_MASK_W-1:0]	rs_iss_br_mask_o,
 
 		output	logic				rs_full_o
 	);
@@ -63,7 +67,7 @@ module rs (
 	logic	[`RS_ENT_NUM-1:0] [`FU_SEL_W-1:0]	fu_sel_vec;
 	logic	[`RS_ENT_NUM-1:0] [31:0]		IR_vec;
 	logic	[`RS_ENT_NUM-1:0] [`ROB_IDX_W-1:0]	rob_idx_vec;
-	logic	[`RS_ENT_NUM-1:0] [`BR_TAG_W-1:0]	br_tag_vec;
+	logic	[`RS_ENT_NUM-1:0] [`BR_MASK_W-1:0]	br_mask_vec;
 
 	logic	[`EX_CYCLES_MAX-1:0]			exunit_schedule_r;
 	logic	[`EX_CYCLES_MAX-1:0]			exunit_schedule_r_nxt;
@@ -72,11 +76,14 @@ module rs (
 	logic	[`RS_ENT_NUM-1:0]			rdy_vec_scheduled;
 	logic	[`RS_IDX_W-1:0]				iss_idx;
 
-	assign	rs_iss_vld_o		= |rdy_vec_scheduled;
+	assign	rs_iss_vld_o		= |iss_vec;
 	assign	rs_iss_opa_tag_o	= opa_tag_vec[iss_idx];
 	assign	rs_iss_opb_tag_o	= opb_tag_vec[iss_idx];
 	assign	rs_iss_dest_tag_o	= dest_tag_vec[iss_idx];
 	assign	rs_iss_fu_sel_o		= fu_sel_vec[iss_idx];
+	assign	rs_iss_IR_o		= IR_vec[iss_idx];
+	assign	rs_iss_rob_idx_o	= rob_idx_vec[iss_idx];
+	assign	rs_iss_br_mask_o	= br_mask_vec[iss_idx];
 	assign	rs_full_o		= ~(|avail_vec);
 
 	// Instantiate reservation station entries
@@ -97,17 +104,21 @@ module rs (
 				.rs1_fu_sel_i		(id_fu_sel_i),
 				.rs1_IR_i		(id_IR_i),
 				.rs1_rob_idx_i		(rob_idx_i),
-				.rs1_br_tag_i		(id_br_tag_i),
+				.rs1_br_mask_i		(bmg_br_mask_i),
 				.rs1_load_i		(load_vec[i]),
 				.rs1_iss_en_i		(iss_vec[i]),
+				.rs1_br_pred_correct_i	(rob_br_pred_correct_i),
 				.rs1_br_recovery_i	(rob_br_recovery_i),
-				.rs1_br_tag_fix_i	(btst_br_tag_fix_i),
+				.rs1_br_tag_fix_i	(rob_br_tag_fix_i),
 
 				.rs1_rdy_o		(rdy_vec[i]),
 				.rs1_opa_tag_o		(opa_tag_vec[i]),
 				.rs1_opb_tag_o		(opb_tag_vec[i]),
 				.rs1_dest_tag_o		(dest_tag_vec[i]),
 				.rs1_fu_sel_o		(fu_sel_vec[i]),
+				.rs1_IR_o		(IR_vec[i]),
+				.rs1_rob_idx_o		(rob_idx_vec[i]),
+				.rs1_br_mask_o		(br_mask_vec[i]),
 				.rs1_avail_o		(avail_vec[i])
 			);
 		end
@@ -155,7 +166,7 @@ module rs (
 	)
 	iss_selector (
 		.req		(rdy_vec_scheduled),
-		.en		(1'b1),
+		.en		(~rob_br_recovery_i),
 
 		.gnt		(iss_vec),
 		.req_up		()
