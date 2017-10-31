@@ -11,7 +11,7 @@ module rps4 (
 		input					en_i,
 		input		[3:0]		req_i,
 		input		[1:0]		ptr_i,
-		input		[3:0]		gnt_o
+		output		[3:0]		gnt_o
 	);
 
 	// Three-assign coding style for a simple priority selector
@@ -29,7 +29,7 @@ module rps4 (
 
 	wire					no_req_masked;
 
-	wire					gnt_selected;
+	wire		[3:0]		gnt_selected;
 
 	// mask_vector
 	always_comb begin
@@ -42,7 +42,7 @@ module rps4 (
 	end
 
 	// simple priority selector for masked portion
-	assign req_masked 					= req & mask_vector;
+	assign req_masked 					= req_i & mask_vector;
 	assign mask_higher_pri_req_w[3:1]	= mask_higher_pri_req_w[2:0] | req_masked[2:0];
 	assign mask_higher_pri_req_w[0]		= 1'b0;
 	assign gnt_masked					= req_masked & ~mask_higher_pri_req_w;

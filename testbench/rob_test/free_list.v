@@ -15,7 +15,7 @@
 // 	intial creation: 10/17/2017
 // 	***************************************************************************
 
-`define DEBUG
+//`define DEBUG
 module free_list(
 		input			clk,
 		input			rst,					//|From where|

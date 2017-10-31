@@ -31,24 +31,61 @@
 `define		ICACHE_D				(`ICACHE_SIZE_IN_BITS/(`ICACHE_LINE_IN_BITS*`ICACHE_WAY_NUM))
 `define		ICACHE_IDX_W			($clog2(`ICACHE_D))
 `define		ICACHE_TAG_W			(`IMEM_ADDR_W-`ICACHE_IDX_W-$clog2(`ICACHE_LINE_IN_BYTES))
-`define		ICACHE_BLK_OFFSET_W		($clog2(ICACHE_LINE_IN_BITS/8))
+`define		ICACHE_BLK_OFFSET_W		($clog2(`ICACHE_LINE_IN_BITS/8))
 
 `define		MEM_TAG_W				4
 
+`define		PFETCH_NUM				4
+
 // jun
 `define			ROB_W 32
+`define			ROB_IDX_W		($clog2(`ROB_W))
 `define			HT_W 5 //HT_W = log2(ROB_W)
-
-
+`define			BR_TAG_W 5
+typedef	struct	{
+		logic	[`HT_W:0]			head_o=0;
+		logic	[`HT_W:0]			tail_o=0;
+		logic	[`ROB_W-1:0][5:0]	old_dest_tag_o=0; 
+		logic	[`ROB_W-1:0][5:0]	dest_tag_o=0;
+		logic	[`ROB_W-1:0]		done_o=0;
+		logic	[`ROB_W-1:0][4:0]	logic_dest_o=0;
+		logic	[`ROB_W-1:0][63:0]	PC_o=0;
+		logic	[`ROB_W-1:0]		br_flag_o=0;
+		logic	[`ROB_W-1:0]		br_taken_o=0;
+		logic	[`ROB_W-1:0]		br_pretaken_o=0;
+		logic	[`ROB_W-1:0]		br_target_o=0;
+		logic	[`ROB_W-1:0][`BR_TAG_W-1:0]	br_tag_o=0;
+		logic	[`ROB_W-1:0]		wr_mem_o=0;
+		logic	[`ROB_W-1:0]		rd_mem_o=0;
+		logic	[4:0]				fl_cur_head_o=0;
+	} debug_t;
 
 // Chuan
+`define			PRF_NUM			64
+`define			PRF_IDX_W		($clog2(`PRF_NUM))
 
 
 
 // Lu
-`define			RS_OPCODE_W 4
+`define			RS_ENT_NUM		32
+`define			RS_IDX_W		($clog2(`RS_ENT_NUM))
 
+`define			FU_SEL_W		3
+`define			FU_SEL_NONE		3'b000
+`define			FU_SEL_ALU		3'b001
+`define			FU_SEL_MULT		3'b010
+`define			FU_SEL_UNCOND_BRANCH	3'b011
+`define			FU_SEL_COND_BRANCH	3'b100
+`define			FU_SEL_LOAD		3'b101
+`define			FU_SEL_STORE		3'b110
 
+`define			EX_CYCLES_MAX		4
+`define			EX_CYCLES_ALU		1
+`define			EX_CYCLES_BRANCH	1
+`define			EX_CYCLES_LDST		2
+`define			EX_CYCLES_MULT		4
+
+`define			BR_TAG_W		5
 
 // Shijing
 `define IFB_SIZE 64
@@ -80,6 +117,10 @@
 // probably not a good idea to change this second one
 `define VIRTUAL_CLOCK_PERIOD   30.0 // Clock period from dc_shell
 `define VERILOG_CLOCK_PERIOD   10.0 // Clock period from test bench
+
+`ifndef CLOCK_PERIOD
+`define CLOCK_PERIOD		   10.0
+`endif
 
 `define MEM_LATENCY_IN_CYCLES (100.0/`CLOCK_PERIOD+0.49999)
 // the 0.49999 is to force ceiling(100/period).  The default behavior for
