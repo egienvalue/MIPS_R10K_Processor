@@ -213,15 +213,15 @@ endmodule // decoder
 
 module id_stage(
              
-				  input         clock,                // system clock
-				  input         reset,                // system reset
+				  input         clk,                // system clock
+				  input         rst,                // system reset
 				  input  [31:0] if_id_IR_i,             // incoming instruction
 				  input         if_id_valid_inst_i,
 
 				  output logic  [4:0]			id_ra_idx_o,      // reg A value
 				  output logic  [4:0]			id_rb_idx_o,      // reg B value
 				  output logic  [4:0]			id_dest_idx_o,    // destination (writeback) register index (zero-reg if no writeback)
-				  output logic	[FU_SEL_W-1:0]		id_fu_sel_o,      // functional unit selection
+				  output logic	[`FU_SEL_W-1:0]		id_fu_sel_o,      // functional unit selection
 				  output logic	[31:0]			id_IR_o,	  // instruction
 				  output logic				id_rd_mem_o,
 				  output logic				id_wr_mem_o,
