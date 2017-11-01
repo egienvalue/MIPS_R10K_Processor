@@ -5,25 +5,8 @@
 // Version History: add early recovery 
 // 	intial creation: 10/17/2017
 // 	***************************************************************************
-/*
-typedef	struct	{
-		logic	[`HT_W:0]			head_o;
-		logic	[`HT_W:0]			tail_o;
-		logic	[`ROB_W-1:0][5:0]	old_dest_tag_o; 
-		logic	[`ROB_W-1:0][5:0]	dest_tag_o;
-		logic	[`ROB_W-1:0]		done_o;
-		logic	[`ROB_W-1:0][4:0]	logic_dest_o;
-		logic	[`ROB_W-1:0][63:0]	PC_o;
-		logic	[`ROB_W-1:0]		br_flag_o;
-		logic	[`ROB_W-1:0]		br_taken_o;
-		logic	[`ROB_W-1:0]		br_pretaken_o;
-		logic	[`ROB_W-1:0]		br_target_o;
-		logic	[`ROB_W-1:0][`BR_TAG_W-1:0]	br_mask_o;
-		logic	[`ROB_W-1:0]		wr_mem_o;
-		logic	[`ROB_W-1:0]		rd_mem_o;
-		logic	[4:0]				fl_cur_head_o;
-	} debug_t;
-*/
+`define DEBUG_OUT
+
 module	rob (
 		input					clk,
 		input					rst,
@@ -71,7 +54,7 @@ module	rob (
 		//---------------------------------------------------------------------
 		
 		`ifdef	DEBUG_OUT
-		/*
+		
 		,output logic	[`HT_W:0]			head_o,
 		output logic	[`HT_W:0]			tail_o,
 		output logic	[`ROB_W-1:0][5:0]	old_dest_tag_o, 
@@ -87,8 +70,8 @@ module	rob (
 		output logic	[`ROB_W-1:0]		wr_mem_o,
 		output logic	[`ROB_W-1:0]		rd_mem_o,
 		output logic	[4:0]				fl_cur_head_o
-		*/
-	   	,output debug_t debug_o
+		
+	   	//,output debug_t debug_o
 		`endif
 
 
@@ -199,21 +182,21 @@ module	rob (
 	`ifdef DEBUG_OUT
 	
 	always_comb begin
-		debug_o.head_o			= head_r;
-		debug_o.tail_o			= tail_r;
-		debug_o.old_dest_tag_o  = old_dest_tag_r;
-		debug_o.dest_tag_o		= dest_tag_r;
-		debug_o.done_o			= done_r;
-		debug_o.logic_dest_o	= logic_dest_r;
-		debug_o.PC_o			= PC_r;
-		debug_o.br_flag_o		= br_flag_r;
-		debug_o.br_taken_o		= br_taken_r;
-		debug_o.br_pretaken_o	= br_pretaken_r;
-		debug_o.br_target_o		= br_target_r;
-		debug_o.br_mask_o		= br_mask_r;
-		debug_o.wr_mem_o		= wr_mem_r;
-		debug_o.rd_mem_o		= rd_mem_r;
-		debug_o.fl_cur_head_o   = fl_cur_head_r;
+		head_o			= head_r;
+		tail_o			= tail_r;
+		old_dest_tag_o  = old_dest_tag_r;
+		dest_tag_o		= dest_tag_r;
+		done_o			= done_r;
+		logic_dest_o	= logic_dest_r;
+		PC_o			= PC_r;
+		br_flag_o		= br_flag_r;
+		br_taken_o		= br_taken_r;
+		br_pretaken_o	= br_pretaken_r;
+		br_target_o		= br_target_r;
+		br_mask_o		= br_mask_r;
+		wr_mem_o		= wr_mem_r;
+		rd_mem_o		= rd_mem_r;
+		fl_cur_head_o   = fl_cur_head_r;
 
 	end
 	
