@@ -67,9 +67,10 @@ typedef	struct	{
 
 
 // Lu
-`define			RS_ENT_NUM		32
+`define			RS_ENT_NUM		8
 `define			RS_IDX_W		($clog2(`RS_ENT_NUM))
 
+`define			FU_NUM			6
 `define			FU_SEL_W		3
 `define			FU_SEL_NONE		3'b000
 `define			FU_SEL_ALU		3'b001
@@ -82,10 +83,11 @@ typedef	struct	{
 `define			EX_CYCLES_MAX		4
 `define			EX_CYCLES_ALU		1
 `define			EX_CYCLES_BRANCH	1
-`define			EX_CYCLES_LDST		2
+`define			EX_CYCLES_LOAD		2
+`define			EX_CYCLES_STORE		2
 `define			EX_CYCLES_MULT		4
 
-`define			BR_TAG_W		5
+`define			BR_MASK_W		5
 
 // Shijing
 `define IFB_SIZE 64
