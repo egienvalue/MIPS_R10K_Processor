@@ -60,8 +60,8 @@ module ps2(req, en, gnt, req_up);
   output    [1:0] gnt;
   output          req_up;
   
-  assign gnt[1] = en & req[1];
-  assign gnt[0] = en & req[0] & !req[1];
+  assign gnt[1] = en & req[1] & !req[0];
+  assign gnt[0] = en & req[0];
   
   assign req_up = req[1] | req[0];
 

@@ -9,6 +9,8 @@
 // ***************************************************************************
 //
 
+`define		DEBUG
+
 module	rs1 (
 		input				clk,
 		input				rst,
@@ -36,10 +38,15 @@ module	rs1 (
 		output		[`PRF_IDX_W-1:0]	rs1_opb_tag_o,
 		output		[`PRF_IDX_W-1:0]	rs1_dest_tag_o,
 		output		[`FU_SEL_W-1:0]		rs1_fu_sel_o,
-		output					rs1_IR_o,
+		output		[31:0]			rs1_IR_o,
 		output		[`ROB_IDX_W-1:0]	rs1_rob_idx_o,
 		output		[`BR_MASK_W-1:0]	rs1_br_mask_o,
-		output					rs1_avail_o	
+		output					rs1_avail_o
+
+		`ifdef DEBUG
+		,output					rs1_opa_rdy_o,
+		output					rs1_opb_rdy_o
+		`endif
 	);
 	
 	logic		[`PRF_IDX_W-1:0]		opa_tag_r;
@@ -53,6 +60,8 @@ module	rs1 (
 	logic		[`BR_MASK_W-1:0]		br_mask_r;
 	logic						avail_r;
 
+	logic		[`PRF_IDX_W-1:0]		opa_tag_r_nxt;
+	logic		[`PRF_IDX_W-1:0]		opb_tag_r_nxt;
 	logic						opa_rdy_r_nxt;
 	logic 						opb_rdy_r_nxt;
 	logic		[`PRF_IDX_W-1:0]		dest_tag_r_nxt;
@@ -75,7 +84,10 @@ module	rs1 (
 				  rs1_load_i ? rs1_opb_rdy_i : opb_rdy_r;
 
 	assign rs1_rdy_o	= avail_r ? 1'b0 :
-				  ((opa_rdy_r | opa_rdy_r_nxt) & (opb_rdy_r | opb_rdy_r_nxt)) ? 1'b1 : 1'b0;
+				  (opa_rdy_r && opb_rdy_r) ? 1'b1 :
+				  (~opa_rdy_r && opb_rdy_r && rs1_cdb_vld_i && (opa_tag_r == rs1_cdb_tag_i)) ? 1'b1 :
+				  (~opb_rdy_r && opa_rdy_r && rs1_cdb_vld_i && (opb_tag_r == rs1_cdb_tag_i)) ? 1'b1 :
+				  (rs1_cdb_vld_i && (opa_tag_r == rs1_cdb_tag_i) && (opb_tag_r == rs1_cdb_tag_i)) ? 1'b1 : 1'b0;
 
 	assign rs1_br_mask_o	= rs1_br_pred_correct_i ? (br_mask_r & ~rs1_br_tag_fix_i) : br_mask_r;
 
@@ -83,7 +95,7 @@ module	rs1 (
 				  rs1_load_i ? rs1_br_mask_i :
 				  rs1_br_pred_correct_i ? (br_mask_r & ~rs1_br_tag_fix_i) : br_mask_r;
 				  
-	assign br_prmiss_fix		= rs1_br_recovery_i && (rs1_br_tag_fix_i & br_mask_r != 0);
+	assign br_prmiss_fix	= rs1_br_recovery_i && ((rs1_br_tag_fix_i & br_mask_r) != 0);
 
 	assign rs1_opa_tag_o 	= opa_tag_r;
 	assign rs1_opb_tag_o 	= opb_tag_r;
@@ -92,6 +104,10 @@ module	rs1 (
 	assign rs1_IR_o		= IR_r;
 	assign rs1_rob_idx_o	= rob_idx_r;
 	assign rs1_avail_o 	= avail_r;
+	`ifdef DEBUG
+	assign rs1_opa_rdy_o	= opa_rdy_r;
+	assign rs1_opb_rdy_o	= opb_rdy_r;
+	`endif
 	
 	always_comb begin
 		if (rs1_iss_en_i | br_prmiss_fix) begin

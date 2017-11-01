@@ -15,6 +15,7 @@
 `define		SCHEDULE_VEC_LOAD	1 << (`EX_CYCLES_MAX - `EX_CYCLES_LOAD)
 `define		SCHEDULE_VEC_STORE	1 << (`EX_CYCLES_MAX - `EX_CYCLES_STORE)
 `define		SCHEDULE_VEC_MULT	1 << (`EX_CYCLES_MAX - `EX_CYCLES_MULT)
+`define		DEBUG
 
 module rs (
 		input			clk,
@@ -40,7 +41,7 @@ module rs (
 		input		[`BR_MASK_W-1:0]	bmg_br_mask_i,
 		input					rob_br_pred_correct_i,
 		input					rob_br_recovery_i,
-		input		[`BR_MASK_W-1:0]	tob_br_tag_fix_i,
+		input		[`BR_MASK_W-1:0]	rob_br_tag_fix_i,
 
 		// ------------- Output -----------------
 		output	logic				rs_iss_vld_o,
@@ -68,6 +69,10 @@ module rs (
 	logic	[`RS_ENT_NUM-1:0] [31:0]		IR_vec;
 	logic	[`RS_ENT_NUM-1:0] [`ROB_IDX_W-1:0]	rob_idx_vec;
 	logic	[`RS_ENT_NUM-1:0] [`BR_MASK_W-1:0]	br_mask_vec;
+	`ifdef DEBUG
+	logic	[`RS_ENT_NUM-1:0]			opa_rdy_vec;
+	logic	[`RS_ENT_NUM-1:0]			opb_rdy_vec;
+	`endif
 
 	logic	[`EX_CYCLES_MAX-1:0]			exunit_schedule_r;
 	logic	[`EX_CYCLES_MAX-1:0]			exunit_schedule_r_nxt;
@@ -89,7 +94,7 @@ module rs (
 	// Instantiate reservation station entries
 	genvar i;
 	generate
-		for (i = 0; i < `RS_ENT_NUM; i = i + 1) begin
+		for (i = 0; i < `RS_ENT_NUM; i = i + 1) begin : rs_ent_gen
 			rs1 rs_ent (
 				.clk			(clk),
 				.rst			(rst),
@@ -120,8 +125,12 @@ module rs (
 				.rs1_rob_idx_o		(rob_idx_vec[i]),
 				.rs1_br_mask_o		(br_mask_vec[i]),
 				.rs1_avail_o		(avail_vec[i])
+				`ifdef DEBUG
+				,.rs1_opa_rdy_o		(opa_rdy_vec[i]),
+				.rs1_opb_rdy_o		(opb_rdy_vec[i])
+				`endif
 			);
-		end
+		end //rs_ent_gen
 	endgenerate
 
 	// Dispatch
@@ -144,16 +153,17 @@ module rs (
 	always_comb begin
 		for (j = 0; j < `RS_ENT_NUM; j = j + 1) begin
 			case (fu_sel_vec[j])
+				`FU_SEL_NONE:		rs_ent_schedule_vec[j] = 0;
 				`FU_SEL_ALU:		rs_ent_schedule_vec[j] = `SCHEDULE_VEC_ALU;
 				`FU_SEL_UNCOND_BRANCH, `FU_SEL_COND_BRANCH:	
 							rs_ent_schedule_vec[j] = `SCHEDULE_VEC_BRANCH;
 				`FU_SEL_LOAD:		rs_ent_schedule_vec[j] = `SCHEDULE_VEC_LOAD;
-				`FU_SEL_STORE:		rs_ent_shcedule_vec[j] = `SCHEDULE_VEC_STORE;
+				`FU_SEL_STORE:		rs_ent_schedule_vec[j] = `SCHEDULE_VEC_STORE;
 				`FU_SEL_MULT:		rs_ent_schedule_vec[j] = `SCHEDULE_VEC_MULT;
 				default:		rs_ent_schedule_vec[j] = {`EX_CYCLES_MAX{1'b1}};
 			endcase
 
-			allow_schedule_vec[j] = (rs_ent_schedule_vec[j][`EX_CYCLES_MAX-1:1] & exunit_schedule_r[`EX_CYCLES_MAX-2:0] == 0) ? 1'b1 : 1'b0;
+			allow_schedule_vec[j] = ((rs_ent_schedule_vec[j][`EX_CYCLES_MAX-1:1] & exunit_schedule_r[`EX_CYCLES_MAX-2:0]) == 0) ? 1'b1 : 1'b0;
 		end
 	end
 
@@ -176,7 +186,7 @@ module rs (
 		.OUT_WIDTH	(`RS_IDX_W)
 	)
 	iss_encoder (
-		.gnt		(rdy_vec_scheduled),
+		.gnt		(iss_vec),
 		.enc		(iss_idx)
 	);
 
