@@ -72,7 +72,7 @@ module if_stage(
 	// the next sequential PC (PC+4) if no branch
 	// (halting is handled with the enable PC_enable;
 	assign next_PC = return_i ? ras_target_i :
-					 br_flush_en_i ? br_predict_target_PC_i :
+					 br_flush_en_i ? br_flush_target_PC_i :
 					 (branch_i && br_dirp_i) ? br_predict_target_PC_i : PC_plus_4;
 
 

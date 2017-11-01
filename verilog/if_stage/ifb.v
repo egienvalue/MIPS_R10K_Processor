@@ -68,7 +68,7 @@ module ifb(
 			PC_array	<= `SD 0;
 			insn_array	<= `SD 0;
 
-		end else begin
+		end else if(ifb_en_i) begin
 			ifb_head <= `SD ifb_head_nxt;
 			ifb_tail <= `SD ifb_tail_nxt;
 			h_round  <= `SD h_round_nxt;
