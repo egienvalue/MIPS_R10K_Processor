@@ -22,7 +22,7 @@ all:    simv
 # Modify starting here
 #####
 
-TESTBENCH = sys_defs.vh rob_test.v
+TESTBENCH = ../../sys_defs.vh rob_test.v
 SIMFILES = ../../verilog/rob/rob_ent.v
 SYNFILES = rob.vg
 LIB = /afs/umich.edu/class/eecs470/lib/verilog/lec25dscc25.v

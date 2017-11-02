@@ -1,15 +1,15 @@
 # Begin_DVE_Session_Save_Info
 # DVE restart session
-# Saved on Mon Oct 30 18:26:09 2017
+# Saved on Thu Nov 2 12:09:47 2017
 # Designs open: 1
 #   Sim: /home/juluo/Documents/eecs470-f17-group5/testbench/rob_test/dve
 # Toplevel windows open: 2
 # 	TopLevel.1
 # 	TopLevel.2
-#   Source.1: test_rob
-#   Wave.1: 4 signals
+#   Source.1: _vcs_unit__1723708205
+#   Wave.1: 7 signals
 #   Group count = 1
-#   Group Group1 signal count = 4
+#   Group Group1 signal count = 7
 # End_DVE_Session_Save_Info
 
 # DVE version: K-2015.09_Full64
@@ -59,7 +59,7 @@ gui_sync_global -id ${TopLevel.2} -option true
 
 # MDI window settings
 set Wave.1 Wave.1
-gui_update_layout -id ${Wave.1} {{show_state maximized} {dock_state undocked} {dock_on_new_line false} {child_wave_left 650} {child_wave_right 1586} {child_wave_colname 323} {child_wave_colvalue 323} {child_wave_col1 0} {child_wave_col2 1}}
+gui_update_layout -id ${Wave.1} {{show_state maximized} {dock_state undocked} {dock_on_new_line false} {child_wave_left 647} {child_wave_right 1578} {child_wave_colname 321} {child_wave_colvalue 322} {child_wave_col1 0} {child_wave_col2 1}}
 
 # End MDI window settings
 
@@ -76,7 +76,6 @@ gui_set_time_units 1s
 
 
 # Global: Breakpoints
-stop -file {/home/juluo/Documents/eecs470-f17-group5/testbench/rob_test/rob_test.v}  -line {507}   
 
 # Global: Bus
 
@@ -89,11 +88,11 @@ stop -file {/home/juluo/Documents/eecs470-f17-group5/testbench/rob_test/rob_test
 # Global: Signal Groups
 
 
-set _session_group_1 Group1
-gui_sg_create "$_session_group_1"
-set Group1 "$_session_group_1"
+set _session_group_2 Group1
+gui_sg_create "$_session_group_2"
+set Group1 "$_session_group_2"
 
-gui_sg_addsignal -group "$_session_group_1" { test_rob.clk test_rob.rst test_rob.debug_o test_rob.debug_tb_o }
+gui_sg_addsignal -group "$_session_group_2" { test_rob.clk test_rob.rst test_rob.rob_full_o test_rob.debug_tb_o test_rob.rob_full_tb_o test_rob.logic_dest test_rob.decode2rob_logic_dest_i }
 
 # Global: Highlighting
 
@@ -131,7 +130,7 @@ gui_list_set_filter -id ${Data.1} -list { {Buffer 1} {Input 1} {Others 1} {Linka
 gui_list_set_filter -id ${Data.1} -text {*}
 gui_list_show_data -id ${Data.1} {test_rob}
 gui_show_window -window ${Data.1}
-catch { gui_list_select -id ${Data.1} {test_rob.clk test_rob.rst test_rob.debug_o test_rob.debug_tb_o }}
+catch { gui_list_select -id ${Data.1} {test_rob.br_recovery_rdy_tb_o }}
 gui_view_scroll -id ${Data.1} -vertical -set 0
 gui_view_scroll -id ${Data.1} -horizontal -set 0
 gui_view_scroll -id ${Hier.1} -vertical -set 0
@@ -140,8 +139,8 @@ gui_view_scroll -id ${Hier.1} -horizontal -set 0
 # Source 'Source.1'
 gui_src_value_annotate -id ${Source.1} -switch false
 gui_set_env TOGGLE::VALUEANNOTATE 0
-gui_open_source -id ${Source.1}  -replace -active test_rob /home/juluo/Documents/eecs470-f17-group5/testbench/rob_test/rob_test.v
-gui_view_scroll -id ${Source.1} -vertical -set 7360
+gui_open_source -id ${Source.1}  -replace -active _vcs_unit__1723708205 /home/juluo/Documents/eecs470-f17-group5/testbench/rob_test/../../sys_defs.vh
+gui_view_scroll -id ${Source.1} -vertical -set 0
 gui_src_set_reusable -id ${Source.1}
 
 # View 'Wave.1'
@@ -152,10 +151,11 @@ set origWaveHeight [gui_get_pref_value -category Wave -key waveRowHeight]
 gui_list_set_height -id Wave -height 25
 set origGroupCreationState [gui_list_create_group_when_add -wave]
 gui_list_create_group_when_add -wave -disable
-gui_wv_zoom_timerange -id ${Wave.1} 1988 2510
+gui_wv_zoom_timerange -id ${Wave.1} 0 519
 gui_list_add_group -id ${Wave.1} -after {New Group} {Group1}
-gui_list_expand -id ${Wave.1} test_rob.debug_o
 gui_list_expand -id ${Wave.1} test_rob.debug_tb_o
+gui_list_expand -id ${Wave.1} test_rob.logic_dest
+gui_list_select -id ${Wave.1} {{test_rob.logic_dest[2]} }
 gui_seek_criteria -id ${Wave.1} {Any Edge}
 
 
@@ -173,17 +173,18 @@ gui_list_set_filter -id ${Wave.1} -list { {Buffer 1} {Input 1} {Others 1} {Linka
 gui_list_set_filter -id ${Wave.1} -text {*}
 gui_list_set_insertion_bar  -id ${Wave.1} -group Group1  -position in
 
-gui_view_scroll -id ${Wave.1} -vertical -set 0
+gui_view_scroll -id ${Wave.1} -vertical -set 484
 gui_show_grid -id ${Wave.1} -enable false
 # Restore toplevel window zorder
 # The toplevel window could be closed if it has no view/pane
-if {[gui_exist_window -window ${TopLevel.2}]} {
-	gui_set_active_window -window ${TopLevel.2}
-	gui_set_active_window -window ${Wave.1}
-}
 if {[gui_exist_window -window ${TopLevel.1}]} {
 	gui_set_active_window -window ${TopLevel.1}
 	gui_set_active_window -window ${Source.1}
+	gui_set_active_window -window ${DLPane.1}
+}
+if {[gui_exist_window -window ${TopLevel.2}]} {
+	gui_set_active_window -window ${TopLevel.2}
+	gui_set_active_window -window ${Wave.1}
 }
 #</Session>
 

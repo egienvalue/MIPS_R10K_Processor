@@ -27,18 +27,17 @@ module brcond(// Inputs
 	end
 endmodule // brcond
 
-module alu1 (
+module br_alu (
 
 		input				clk,rst,
 		input				start_i,
-		input		[63:0]  npc,
-		input		[4:0]   opa_i,//reg A value
-		input		[4:0]   opb_i,//reg B value
-		input		[63:0]  insn,
+		input		[63:0]  npc_i,
+		input		[63:0]  opa_i,//reg A value
+		input		[31:0]  inst_i,
 
 		output	logic			done_o,
 		output	logic	[63:0]	br_target_o,
-		output	logic			br_result_o
+		output	logic			br_result_o,
 	
 		);
 		logic	[63:0]	br_disp;
@@ -48,12 +47,12 @@ module alu1 (
 		logic			br_result_nxt;
 		logic			brcond_result;
 
-		assign br_disp = { {41{insn[20]}}, insn[20:0], 2'b00 };
+		assign br_disp = { {41{inst_i[20]}}, inst_i[20:0], 2'b00 };
 		assign br_result_nxt = (~cond_br) ? 1 : brcond_result;
 
 
 	always_comb begin
-		case({inst[31:29], 3'b0})
+		case({inst_i[31:29], 3'b0})
 			6'h18:// JMP, JSR, RET, and JSR_CO
 				begin
 					br_target_nxt = {rb_idx[4:2],2'b00};
@@ -62,8 +61,8 @@ module alu1 (
 				end
 			6'h30, 6'h38:
 				begin
-					br_target_nxt = npc + br_disp;
-					case (inst[31:26])
+					br_target_nxt = npc_i + br_disp;
+					case (inst_i[31:26])
 						`BR_INST, `BSR_INST: 
 							begin
 								cond_br  = 0;
@@ -81,7 +80,7 @@ module alu1 (
 			
 	brcond brcond (// Inputs
 		.opa(opa_i),       // always check regA value
-		.func(insn[28:26]), // inst bits to determine check
+		.func(inst_i[28:26]), // inst bits to determine check
 		// Output
 		.cond(brcond_result)
 		);
