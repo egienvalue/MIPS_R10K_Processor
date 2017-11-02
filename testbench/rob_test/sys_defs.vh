@@ -31,7 +31,7 @@
 `define		ICACHE_D				(`ICACHE_SIZE_IN_BITS/(`ICACHE_LINE_IN_BITS*`ICACHE_WAY_NUM))
 `define		ICACHE_IDX_W			($clog2(`ICACHE_D))
 `define		ICACHE_TAG_W			(`IMEM_ADDR_W-`ICACHE_IDX_W-$clog2(`ICACHE_LINE_IN_BYTES))
-`define		ICACHE_BLK_OFFSET_W		($clog2(ICACHE_LINE_IN_BITS/8))
+`define		ICACHE_BLK_OFFSET_W		($clog2(`ICACHE_LINE_IN_BITS/8))
 
 `define		MEM_TAG_W				4
 
@@ -39,18 +39,39 @@
 
 // jun
 `define			ROB_W 32
+`define			ROB_IDX_W		($clog2(`ROB_W))
 `define			HT_W 5 //HT_W = log2(ROB_W)
 `define			BR_TAG_W 5
 
 
 // Chuan
+`define			PRF_NUM			64
+`define			PRF_IDX_W		($clog2(`PRF_NUM))
 
 
 
 // Lu
-`define			RS_OPCODE_W 4
+`define			RS_ENT_NUM		8
+`define			RS_IDX_W		($clog2(`RS_ENT_NUM))
 
+`define			FU_NUM			6
+`define			FU_SEL_W		3
+`define			FU_SEL_NONE		3'b000
+`define			FU_SEL_ALU		3'b001
+`define			FU_SEL_MULT		3'b010
+`define			FU_SEL_UNCOND_BRANCH	3'b011
+`define			FU_SEL_COND_BRANCH	3'b100
+`define			FU_SEL_LOAD		3'b101
+`define			FU_SEL_STORE		3'b110
 
+`define			EX_CYCLES_MAX		4
+`define			EX_CYCLES_ALU		1
+`define			EX_CYCLES_BRANCH	1
+`define			EX_CYCLES_LOAD		2
+`define			EX_CYCLES_STORE		2
+`define			EX_CYCLES_MULT		4
+
+`define			BR_MASK_W		5
 
 // Shijing
 `define IFB_SIZE 64

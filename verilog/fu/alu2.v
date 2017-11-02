@@ -6,50 +6,109 @@
 // 	intial creation: 10/26/2017
 // 	***************************************************************************
 //
-module alu2 (
-		input		[63:0]	opa,
-		input		[63:0]	opb,
-		input		[63:0]	func,
+module int_alu (
 
-		output		[63:0]	result,
-		output				done
+		input				clk,
+		input				rst,
+		
+		input				start_i,
+		input		[63:0]	opa_i,
+		input		[63:0]	opb_i,
+		input		[31:0]	inst_i,
+		input		[`PRF_IDX_W:0]	dest_tag_i,
+		input		[`HT_W-1:0]	rob_idx_i,
+
+		output		[63:0]	result_o,
+		output		[`PRF_IDX_W:0]	dest_tag_o,
+		output		[`HT_W-1:0]	rob_idx_o;
+		output				done_o
 	
 		);	
 
-		function signed_lt;
-			input [63:0] a, b;
+logic	[63:0]	result_r;
+logic	[63:0]	result_r_nxt;
+logic	[`PRF_IDX_W:0]	dest_tag_r,dest_tag_r_nxt;
+logic	[`HT_W-1:0`]	rob_idx_r,rob_idx_r_nxt;
+logic	[63:0]	opb,opa;
 
-			if (a[63] == b[63]) 
-				signed_lt = (a < b); // signs match: signed compare same as unsigned
-			else
-				signed_lt = a[63];   // signs differ: a is smaller if neg, larger if pos
-		endfunction
 
-		always_comb
-			begin
-			case (func)
-				`ALU_ADDQ:   result = opa + opb;
-				`ALU_SUBQ:   result = opa - opb;
-				`ALU_AND:    result = opa & opb;
-				`ALU_BIC:    result = opa & ~opb;
-				`ALU_BIS:    result = opa | opb;
-				`ALU_ORNOT:  result = opa | ~opb;
-				`ALU_XOR:    result = opa ^ opb;
-				`ALU_EQV:    result = opa ^ ~opb;
-				`ALU_SRL:    result = opa >> opb[5:0];
-				`ALU_SLL:    result = opa << opb[5:0];
-				`ALU_SRA:    result = (opa >> opb[5:0]) | ({64{opa[63]}} << (64 -
-									 opb[5:0])); // arithmetic from logical shift
-				//`ALU_MULQ:   result = opa * opb;
-				`ALU_CMPULT: result = { 63'd0, (opa < opb) };
-				`ALU_CMPEQ:  result = { 63'd0, (opa == opb) };
-				`ALU_CMPULE: result = { 63'd0, (opa <= opb) };
-				`ALU_CMPLT:  result = { 63'd0, signed_lt(opa, opb) };
-				`ALU_CMPLE:  result = { 63'd0, (signed_lt(opa, opb) || (opa == opb)) };
-				default:     result = 64'hdeadbeefbaadbeef;	// here only to force
-															// a combinational solution
-															// a casex would be better
-			endcase
-		end
+wire [63:0] alu_imm  = { 56'b0, inst_i[20:13]};
 
+assign opb				= inst_i[12] ? alu_imm : opb_i;
+assign opa				= opa_i;
+assign result_o			= result_r;
+assign dest_tag_o		= dest_tag_r;
+assign rob_idx_o		= rob_idx_r;
+assign dest_tag_r_nxt	= dest_tag_i;
+assign rob_idx_r_nxt	= rob_idx_i;
+
+function signed_lt;
+	input [63:0] a, b;
+
+	if (a[63] == b[63]) 
+		signed_lt = (a < b); // signs match: signed compare same as unsigned
+	else
+		signed_lt = a[63];   // signs differ: a is smaller if neg, larger if pos
+endfunction
+
+always_comb begin
+	case (inst_i[11:5])
+		`CMPULT_INST:	result_r_nxt = { 63'd0, (opa < opb) };
+		`ADDQ_INST:		result_r_nxt = opa + opb;
+		`SUBQ_INST:		result_r_nxt = opa - opb;
+		`CMPEQ_INST:	result_r_nxt = { 63'd0, (opa == opb) };
+		`CMPULE_INST:	result_r_nxt = { 63'd0, (opa <= opb) };
+		`CMPLT_INST:	result_r_nxt = { 63'd0, signed_lt(opa, opb) };
+		`CMPLE_INST:	result_r_nxt = { 63'd0, (signed_lt(opa, opb) || (opa == opb)) };
+		`AND_INST:		result_r_nxt = opa & opb;
+		`BIC_INST:		result_r_nxt = opa & ~opb;
+		`BIS_INST:		result_r_nxt = opa | opb;
+		`ORNOT_INST:	result_r_nxt = opa | ~opb;
+		`XOR_INST:		result_r_nxt = opa ^ opb;
+		`EQV_INST:		result_r_nxt = opa ^ ~opb;
+		`SRL_INST:		result_r_nxt = opa >> opb[5:0];
+		`SLL_INST:		result_r_nxt = opa << opb[5:0];
+		`SRA_INST:		result_r_nxt = (opa >> opb[5:0]) | ({64{opa[63]}} << (64 -
+							 opb[5:0]));
+		default:     result_r_nxt = 64'hdeadbeefbaadbeef;	
+	endcase
+end
+
+always_ff @(posedge clk) begin
+	if (rst) begin
+		done_o		<= `SD 1'b0;		input clk;
+		input rst;
+		
+		input rob2fu_PC_i;
+		input rs2fu_rob_num_i;
+		input rs2fu_ra_value_i;
+		input rs2fu_rb_value_i;
+		input rs2fu_dest_tag_i;
+		input rs2fu_IR_i;
+		input rs2fu_en_i;
+		input rs2fu_sel_i;
+
+		output fu2preg_wr_en_o;
+		output fu2preg_wr_idx_o;
+		output fu2preg_wr_value_o;
+		output fu2rob_done_o;
+		output fu2rob_idx_o;
+		output fu2rob_br_taken_o;
+		output fu2rob_br_target_o;
+		output fu_dest_tag_broad_o;
+		);
+		result_r	<= `SD 0;
+		dest_tag_r	<= `SD 0;
+		rob_idx_r	<= `SD 0;
+	end else (start_i) begin
+		done_o		<= `SD int_alu_start_i;	
+		result_r	<= `SD result_r_nxt;
+		dest_tag_r	<= `SD dest_tag_r_nxt;
+		rob_idx_r	<= `SD rob_idx_r_nxt;	
+	end
+end
+
+
+
+end
 endmodule 
