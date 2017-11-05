@@ -4,7 +4,9 @@
 // Author: Jun, Shijing
 // Version History: add early recovery 
 // 	intial creation: 10/17/2017
-// 	***************************************************************************
+// ****************************************************************************
+// Some logic regarding early branch recovery and LSQ has not been added
+//
 `define DEBUG_OUT
 
 module	rob (
@@ -14,40 +16,40 @@ module	rob (
 		//----------------------------------------------------------------------
 		//Dispatch Signal Input
 		//----------------------------------------------------------------------
-		input		[5:0]		fl2rob_tag_i,//tag sent from freelist
-		input		[4:0]		fl2rob_cur_head_i,//freelist head
-		input		[5:0]		map2rob_tag_i,//tag sent from maptable
-		input		[4:0]		decode2rob_logic_dest_i,//logic dest sent from decode
-		input		[63:0]		decode2rob_PC_i,//instruction's PC sent from decode
-		input					decode2rob_br_flag_i,//flag show whether the instruction is a branch
-		input					decode2rob_br_pretaken_i,//branch predictor result sent from decode
-		input					decode2rob_br_target_i,//branch target sent from decode 
-		input					decode2rob_rd_mem_i,//flag shows whether this instruction read memory
-		input					decode2rob_wr_mem_i,//flag shows whether this instruction write memory
-		input					rob_dispatch_en_i,//signal from dispatch to allocate entry in rob
-		input	[`BR_TAG_W-1:0]	decode2rob_br_mask_i,
+		input		[`PRF_IDX_W-1:0]		fl2rob_tag_i,//tag sent from freelist
+		input		[`PRF_IDX_W-2:0]		fl2rob_cur_head_i,//freelist head
+		input		[`PRF_IDX_W-1:0]		map2rob_tag_i,//tag sent from maptable
+		input		[`PRF_IDX_W-2:0]		decode2rob_logic_dest_i,//logic dest sent from decode
+		input		[63:0]					decode2rob_PC_i,//instruction's PC sent from decode
+		input								decode2rob_br_flag_i,//flag show whether the instruction is a branch
+		input								decode2rob_br_pretaken_i,//branch predictor result sent from decode
+		input								decode2rob_br_target_i,//branch target sent from decode 
+		input								decode2rob_rd_mem_i,//flag shows whether this instruction read memory
+		input								decode2rob_wr_mem_i,//flag shows whether this instruction write memory
+		input								rob_dispatch_en_i,//signal from dispatch to allocate entry in rob
+		input		[`BR_MASK_W-1:0]		decode2rob_br_mask_i,
 
 		//----------------------------------------------------------------------
 		//Functional Unit Signal Input
 		//----------------------------------------------------------------------
-		input		[5:0]		fu2rob_idx_i,//tag sent from functional unit to know which entry's done register needed to be set 
-		input					fu2rob_done_signal_i,//done signal from functional unit 
-		input					fu2rob_br_taken_i,//branck taken result sent from functional unit
+		input		[`ROB_IDX_W:0]			fu2rob_idx_i,//tag sent from functional unit to know which entry's done register needed to be set 
+		input								fu2rob_done_signal_i,//done signal from functional unit 
+		input								fu2rob_br_taken_i,//branck taken result sent from functional unit
 
 
-		output		[`HT_W-1:0]	rob2rs_tail_idx_o,//tail # sent to rs to record which entry the instruction is 
-		output		[5:0]		rob2fl_tag_o,//tag from ROB to freelist for returning the old tag to freelist 
-		output		[5:0]		rob2arch_map_tag_o,//tag from ROB to Arch map
-		output		[4:0]		rob2arch_map_logic_dest_o,//logic dest from ROB to Arch map
-		output					rob_full_o,//signal show if the ROB is full
-		output					rob_head_retire_rdy_o,//the head of ROb is ready to retire
+		output		[`HT_W-1:0]				rob2rs_tail_idx_o,//tail # sent to rs to record which entry the instruction is 
+		output		[`PRF_IDX_W-1:0]		rob2fl_tag_o,//tag from ROB to freelist for returning the old tag to freelist 
+		output		[`PRF_IDX_W-1:0]		rob2arch_map_tag_o,//tag from ROB to Arch map
+		output		[`PRF_IDX_W-2:0]		rob2arch_map_logic_dest_o,//logic dest from ROB to Arch map
+		output								rob_full_o,//signal show if the ROB is full
+		output								rob_head_retire_rdy_o,//the head of ROb is ready to retire
 
 		//----------------------------------------------------------------------
 		//Early Recovery Signal Ouput
 		//----------------------------------------------------------------------
-		output					br_recovery_rdy_o,//ready to start early branch recovery
-		output		[4:0]			rob2fl_recover_head_o,
-		output	[`BR_TAG_W-1:0]	rob2rs_recover_br_mask_o
+		output								br_recovery_rdy_o,//ready to start early branch recovery
+		output		[`PRF_IDX_W-2:0]		rob2fl_recover_head_o,
+		output		[`BR_MASK_W-1:0]		rob2rs_recover_br_mask_o
 	
 		//----------------------------------------------------------------------
 		//ROB data output for debug
@@ -57,16 +59,16 @@ module	rob (
 		
 		,output logic	[`HT_W:0]			head_o,
 		output logic	[`HT_W:0]			tail_o,
-		output logic	[`ROB_W-1:0][5:0]	old_dest_tag_o, 
-		output logic	[`ROB_W-1:0][5:0]	dest_tag_o,
+		output logic	[`ROB_W-1:0][`PRF_IDX_W-1:0]	old_dest_tag_o, 
+		output logic	[`ROB_W-1:0][`PRF_IDX_W-1:0]	dest_tag_o,
 		output logic	[`ROB_W-1:0]		done_o,
-		output logic	[`ROB_W-1:0][4:0]	logic_dest_o,
+		output logic	[`ROB_W-1:0][`PRF_IDX_W-2:0]	logic_dest_o,
 		output logic	[`ROB_W-1:0][63:0]	PC_o,
 		output logic	[`ROB_W-1:0]		br_flag_o,
 		output logic	[`ROB_W-1:0]		br_taken_o,
 		output logic	[`ROB_W-1:0]		br_pretaken_o,
 		output logic	[`ROB_W-1:0]		br_target_o,
-		output logic	[`ROB_W-1:0][`BR_TAG_W-1:0]	br_mask_o,
+		output logic	[`ROB_W-1:0][`BR_MASK_W-1:0]	br_mask_o,
 		output logic	[`ROB_W-1:0]		wr_mem_o,
 		output logic	[`ROB_W-1:0]		rd_mem_o,
 		output logic	[4:0]				fl_cur_head_o
@@ -80,27 +82,27 @@ module	rob (
 	//--------------------------------------------------------------------------
 	//Register storing the data of ROB
 	//--------------------------------------------------------------------------
-	logic	[`HT_W:0]			head_r;
-	logic	[`HT_W:0]			tail_r;
-	logic	[`ROB_W-1:0][5:0]	old_dest_tag_r, dest_tag_r;
-	logic	[`ROB_W-1:0]		done_r;
-	logic	[`ROB_W-1:0][4:0]	logic_dest_r;
-	logic	[`ROB_W-1:0][63:0]	PC_r;
-	logic	[`ROB_W-1:0]		br_flag_r;
-	logic	[`ROB_W-1:0]		br_taken_r;
-	logic	[`ROB_W-1:0]		br_pretaken_r;
-	logic	[`ROB_W-1:0]		br_target_r;
-	logic	[`ROB_W-1:0]		wr_mem_r;
-	logic	[`ROB_W-1:0]		rd_mem_r;
-	logic	[`ROB_W-1:0][4:0]	fl_cur_head_r;
-	logic	[`ROB_W-1:0][`BR_TAG_W-1:0]	br_mask_r;
+	logic	[`HT_W:0]						head_r;
+	logic	[`HT_W:0]						tail_r;
+	logic	[`ROB_W-1:0][`PRF_IDX_W-1:0]	old_dest_tag_r, dest_tag_r;
+	logic	[`ROB_W-1:0]					done_r;
+	logic	[`ROB_W-1:0][`PRF_IDX_W-2:0]	logic_dest_r;
+	logic	[`ROB_W-1:0][63:0]				PC_r;
+	logic	[`ROB_W-1:0]					br_flag_r;
+	logic	[`ROB_W-1:0]					br_taken_r;
+	logic	[`ROB_W-1:0]					br_pretaken_r;
+	logic	[`ROB_W-1:0]					br_target_r;
+	logic	[`ROB_W-1:0]					wr_mem_r;
+	logic	[`ROB_W-1:0]					rd_mem_r;
+	logic	[`ROB_W-1:0][`PRF_IDX_W-2:0]	fl_cur_head_r;
+	logic	[`ROB_W-1:0][`BR_MASK_W-1:0]		br_mask_r;
 
 	//--------------------------------------------------------------------------
 	//Register for updating the head and tail
 	//--------------------------------------------------------------------------
 	
-	logic	[4:0]				t_fl_cur_head_r_nxt;
-	logic	[4:0]				h_fl_cur_head_r_nxt;	
+	logic	[`PRF_IDX_W-2:0]				t_fl_cur_head_r_nxt;
+	logic	[`PRF_IDX_W-2:0]				h_fl_cur_head_r_nxt;	
 
 	logic						t_br_mask_r_nxt;
 	logic						t_br_target_r_nxt;
@@ -114,15 +116,15 @@ module	rob (
 
 	logic	[`HT_W:0]			head_r_nxt;
 	logic	[`HT_W:0]			tail_r_nxt;
-	logic	[5:0]				h_old_dest_tag_r_nxt, h_dest_tag_r_nxt;
+	logic	[`PRF_IDX_W-1:0]				h_old_dest_tag_r_nxt, h_dest_tag_r_nxt;
 	logic						h_done_r_nxt;
-	logic	[4:0]				h_logic_dest_r_nxt;
+	logic	[`PRF_IDX_W-2:0]				h_logic_dest_r_nxt;
 	logic	[63:0]				h_PC_r_nxt;
 	logic						h_rd_mem_r_nxt;
 	logic						h_wr_mem_r_nxt;
 
-	logic	[5:0]				t_old_dest_tag_r_nxt, t_dest_tag_r_nxt;
-	logic	[4:0]				t_logic_dest_r_nxt;
+	logic	[`PRF_IDX_W-1:0]				t_old_dest_tag_r_nxt, t_dest_tag_r_nxt;
+	logic	[`PRF_IDX_W-2:0]				t_logic_dest_r_nxt;
 	logic	[63:0]				t_PC_r_nxt;
 	logic						t_rd_mem_r_nxt;
 	logic						t_wr_mem_r_nxt;
@@ -154,9 +156,9 @@ module	rob (
 	assign t_dest_tag_r_nxt 			= dispatch_en ? fl2rob_tag_i : dest_tag_r[tail_r[`HT_W-1:0]];
 	assign t_logic_dest_r_nxt 			= dispatch_en ? decode2rob_logic_dest_i : logic_dest_r[tail_r[`HT_W-1:0]];
 	assign t_PC_r_nxt					= dispatch_en ? decode2rob_PC_i : PC_r[tail_r[`HT_W-1:0]];
-	assign t_br_pretaken_r_nxt			= dispatch_en ? decode2rob_br_pretaken_i : br_pretaken_r[tail_r[`HT_W-1:0]];
-	assign t_br_flag_r_nxt				= dispatch_en ? decode2rob_br_flag_i : br_flag_r[tail_r[`HT_W-1:0]];
-	assign t_br_target_r_nxt			= dispatch_en ? decode2rob_br_target_i : br_target_r[tail_r[`HT_W-1:0]];
+	assign t_br_pretaken_r_nxt			= dispatch_br ? decode2rob_br_pretaken_i : br_pretaken_r[tail_r[`HT_W-1:0]];
+	assign t_br_flag_r_nxt				= dispatch_br ? decode2rob_br_flag_i : br_flag_r[tail_r[`HT_W-1:0]];
+	assign t_br_target_r_nxt			= dispatch_br ? decode2rob_br_target_i : br_target_r[tail_r[`HT_W-1:0]];
 	assign t_br_mask_r_nxt				= dispatch_br ? decode2rob_br_mask_i : br_mask_r[tail_r[`HT_W-1:0]];
 	assign t_fl_cur_head_r_nxt			= dispatch_br ? fl2rob_cur_head_i : fl_cur_head_r[tail_r[`HT_W-1:0]]; 
 	assign t_rd_mem_r_nxt				= dispatch_en ? decode2rob_rd_mem_i : rd_mem_r[tail_r[`HT_W-1:0]];
@@ -255,7 +257,7 @@ module	rob (
 			br_taken_r[head_r[`HT_W-1:0]]		<= `SD h_br_taken_r_nxt;
 			br_pretaken_r[head_r[`HT_W-1:0]]	<= `SD h_br_pretaken_r_nxt;
 			br_target_r[head_r[`HT_W-1:0]]		<= `SD h_br_target_r_nxt;
-			br_mask_r[head_r[`HT_W-1:0]]			<= `SD h_br_mask_r_nxt;
+			br_mask_r[head_r[`HT_W-1:0]]		<= `SD h_br_mask_r_nxt;
 			wr_mem_r[head_r[`HT_W-1:0]]			<= `SD h_wr_mem_r_nxt;
 			rd_mem_r[head_r[`HT_W-1:0]]			<= `SD h_rd_mem_r_nxt;
 			
@@ -268,7 +270,7 @@ module	rob (
 			br_pretaken_r[tail_r[`HT_W-1:0]]	<= `SD t_br_pretaken_r_nxt;
 			br_flag_r[tail_r[`HT_W-1:0]]		<= `SD t_br_flag_r_nxt;
 			br_target_r[tail_r[`HT_W-1:0]]		<= `SD t_br_target_r_nxt;
-			br_mask_r[tail_r[`HT_W-1:0]]			<= `SD t_br_mask_r_nxt;
+			br_mask_r[tail_r[`HT_W-1:0]]		<= `SD t_br_mask_r_nxt;
 			rd_mem_r[tail_r[`HT_W-1:0]]			<= `SD t_rd_mem_r_nxt;
 			wr_mem_r[tail_r[`HT_W-1:0]]			<= `SD t_wr_mem_r_nxt;
 			fl_cur_head_r[tail_r[`HT_W-1:0]]	<= `SD t_fl_cur_head_r_nxt;
