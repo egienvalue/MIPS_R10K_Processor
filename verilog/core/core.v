@@ -60,6 +60,34 @@ module core (
 	//---------------------------------------------------------------
 	// signals for map table and free list
 	//---------------------------------------------------------------
+	// Maptable
+	logic	[4:0]				opa_areg_idx_i,			//[Decoder]		A logic register index to read the physical register name and ready bit of oprand A from map table.	
+	logic	[4:0]				opb_areg_idx_i,		    //[Decoder]		A logic register index to read the physical register name and ready bit of oprand B from map table.
+	logic	[4:0]				dest_areg_idx_i,		//[Decoder]		A logic register index to read the old dest physical reg, and to write a new dest physical reg.
+	logic	[5:0]				new_free_preg_i,		//[Free-List]	New physical register name from Free List.
+	logic						dispatch_en_i,			//[Decoder]		Enabling all inputs above. 
+	logic	[5:0]				cdb_set_rdy_bit_preg_i, //[CDB]			A physical reg from CDB to set ready bit of corresponding logic reg in map table.
+	logic						cdb_set_rdy_bit_en_i,	//[CDB]			Enabling setting ready bit. 
+	logic	[`BR_STATE_W-1:0]	branch_state_i,		    //[ROB]			Branch prediction wrong or correct?
+	logic	[31:0][6:0]			rc_mt_all_data_i,		//[Br_stack]	Recovery data for map table.	Highest bit [6] is RDY.
+	logic	[5:0]				opa_preg_o,			    //[RS]			Oprand A physical reg output.
+	logic	[5:0]				opb_preg_o,			    //[RS]			Oprand B physical reg output.
+	logic		 				opa_preg_rdy_bit_o,	    //[RS]			Oprand A physical reg ready bit output. 
+	logic		 				opb_preg_rdy_bit_o,	    //[RS]			Oprand B physical reg ready bit output.
+	logic	[5:0]				dest_old_preg_o,		//[ROB]			Old dest physical reg output. 
+	logic	[31:0][6:0]			bak_data_o				//[Br_stack]	Back up data to branch stack.
+	//Signal
+	logic						dispatch_en_i,			//[Decoder]		If true, output head entry and head++
+	logic						retire_en_i,			//[ROB]			If true, write new retired preg to tail, and tail++
+	logic	[5:0]				retire_preg_i,			//[ROB]			New retired preg.
+	logic	[`BR_STATE_W-1:0]	branch_state_i,			//[ROB]			Branch prediction wrong or correct?
+	logic	[4:0]				rc_head_i,				//[Br_stack]			Recover head to some point
+	logic						free_preg_vld_o,		//[ROB, Map Table, RS]	Is output valid?
+	logic	[5:0]				free_preg_o,			//[ROB, Map Table, Rs]	Output new free preg.
+	logic	[4:0]				free_preg_cur_head_o	//[ROB]			Current head pointer.
+
+
+
 
 
 	//---------------------------------------------------------------
@@ -70,7 +98,17 @@ module core (
 	//---------------------------------------------------------------
 	// signals for early branch recovery (br stack)
 	//---------------------------------------------------------------
-	
+
+	logic						is_branch_i,			//[Dispatch]	A new branch is dispatched, mask should be updated.
+	logic	[`BR_STATE_W-1:0]	branch_state_i,			//[ROB]			Branch prediction wrong or correct?		
+	logic	[`BR_MASK_W-1:0]	branch_dep_mask_i,		//[ROB]			The mask of currently resolved branch.
+	logic	[31:0][6:0]			bak_mp_next_data_i,		//[Map Table]	Back up data from map table.
+	logic	[4:0]				bak_fl_head_i,			//[Free List]	Back up head of free list.
+	logic	[`BR_MASK_W-1:0]	branch_mask_o,			//[ROB]			Send current mask value to ROB to save in an ROB entry.
+	logic	[`BR_MASK_W-1:0]	branch_bit_o,			//[RS]			Output corresponding branch bit immediately after knowing wrong or correct. 
+	logic	[31:0][6:0]			rc_mt_all_data_o,		//[Map Table]	Recovery data for map table.
+	logic	[4:0]				rc_fl_head_o,			//[Free List]	Recovery head value for free list.
+	logic						full_o					//[ROB]			Tell ROB that stack is full and no further branch dispatch is allowed. 
 
 	//---------------------------------------------------------------
 	// signals for LSQ
@@ -132,7 +170,61 @@ module core (
 	//===============================================================
 	// map table and free list instantiation
 	//===============================================================
-	
+
+	map_table	map_table0 (
+			.clk,
+			.rst,						//|From where|									
+			.opa_areg_idx_i,			//[Decoder]		A logic register index to read the physical register name and ready bit of oprand A from map table.
+			.opb_areg_idx_i,			//[Decoder]		A logic register index to read the physical register name and ready bit of oprand B from map table.
+			.dest_areg_idx_i,			//[Decoder]		A logic register index to read the old dest physical reg, and to write a new dest physical reg.
+			.new_free_preg_i,			//[Free-List]	New physical register name from Free List.
+			.dispatch_en_i,				//[Decoder]		Enabling all inputs above. 
+			.cdb_set_rdy_bit_preg_i,	//[CDB]			A physical reg from CDB to set ready bit of corresponding logic reg in map table.
+			.cdb_set_rdy_bit_en_i,		//[CDB]			Enabling setting ready bit. 
+			.branch_state_i,			//[ROB]			Branch prediction wrong or correct?
+			.rc_mt_all_data_i,			//[Br_stack]	Recovery data for map table.	Highest bit [6] is RDY.
+			.opa_preg_o,				//[RS]			Oprand A physical reg output.
+			.opb_preg_o,				//[RS]			Oprand B physical reg output.
+			.opa_preg_rdy_bit_o,		//[RS]			Oprand A physical reg ready bit output. 
+			.opb_preg_rdy_bit_o,		//[RS]			Oprand B physical reg ready bit output.
+			.dest_old_preg_o,			//[ROB]			Old dest physical reg output. 
+			.bak_data_o					//[Br_stack]	Back up data to branch stack.
+		);
+
+	free_list free_list0(
+			.clk,
+			.rst,						//|From where|
+			.dispatch_en_i,				//[Decoder]		If true, output head entry and head++
+			.retire_en_i,				//[ROB]			If true, write new retired preg to tail, and tail++
+			.retire_preg_i,				//[ROB]			New retired preg.
+			.branch_state_i,			//[ROB]			Branch prediction wrong or correct?
+			.rc_head_i,					//[Br_stack]			Recover head to some point
+			.free_preg_vld_o,			//[ROB, Map Table, RS]	Is output valid?
+			.free_preg_o,				//[ROB, Map Table, Rs]	Output new free preg.
+			.free_preg_cur_head_o		//[ROB]			Current head pointer.
+		);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 	//===============================================================
 	// fu instantiation
@@ -142,7 +234,25 @@ module core (
 	//===============================================================
 	// early branch recovery instantiation
 	//===============================================================
+	branch_stack branch_stack0(
+			.clk, 
+			.rst,
+			.is_branch_i,			//[Dispatch]	A new branch is dispatched, mask should be updated.
+			.branch_state_i,		//[ROB]			Branch prediction wrong or correct?		
+			.branch_dep_mask_i,		//[ROB]			The mask of currently resolved branch.
+			.bak_mp_next_data_i,	//[Map Table]	Back up data from map table.
+			.bak_fl_head_i,			//[Free List]	Back up head of free list.
+			.branch_mask_o,			//[ROB]			Send current mask value to ROB to save in an ROB entry.
+			.branch_bit_o,			//[RS]			Output corresponding branch bit immediately after knowing wrong or correct. 
+			.rc_mt_all_data_o,		//[Map Table]	Recovery data for map table.
+			.rc_fl_head_o,			//[Free List]	Recovery head value for free list.
+			.full_o					//[ROB]			Tell ROB that stack is full and no further branch dispatch is allowed. 
+		);
 	
+
+
+
+
 
 	//===============================================================
 	// LSQ instantiation

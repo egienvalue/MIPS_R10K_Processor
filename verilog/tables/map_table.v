@@ -33,8 +33,8 @@ module map_table(
 		input						dispatch_en_i,				//[Decoder]		Enabling all inputs above. 
 		input	[5:0]				cdb_set_rdy_bit_preg_i,		//[CDB]			A physical reg from CDB to set ready bit of corresponding logic reg in map table.
 		input						cdb_set_rdy_bit_en_i,		//[CDB]			Enabling setting ready bit. 
-		input	[`BR_STATE_W-1:0]	branch_state_i,			//[ROB]			Branch prediction wrong or correct?
-		input	[31:0][6:0]			rc_mt_all_data_i,		//[Br_stack]	Recovery data for map table.	Highest bit [6] is RDY.
+		input	[`BR_STATE_W-1:0]	branch_state_i,				//[ROB]			Branch prediction wrong or correct?
+		input	[31:0][6:0]			rc_mt_all_data_i,			//[Br_stack]	Recovery data for map table.	Highest bit [6] is RDY.
 		
 		
 		`ifdef DEBUG
@@ -53,10 +53,10 @@ module map_table(
 
 		);
 
-		logic	[31:0][5:0]			MAP;			//MAP[0] is the original MAP. MAP[1] is the first copy and so on.
-		logic	[31:0]				RDY;			//RDY[0] is the original RDY. RDY[1] is the first copy and so on.
-		logic	[31:0][5:0]			next_MAP;		//Next MAP values
-		logic	[31:0]				next_RDY;		//Next RDY values
+		logic	[31:0][5:0]			MAP;						//MAP[0] is the original MAP. MAP[1] is the first copy and so on.
+		logic	[31:0]				RDY;						//RDY[0] is the original RDY. RDY[1] is the first copy and so on.
+		logic	[31:0][5:0]			next_MAP;					//Next MAP values
+		logic	[31:0]				next_RDY;					//Next RDY values
 		logic	[4:0]				cdb_match_index;
 		logic						cdb_match_found;
 	
