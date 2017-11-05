@@ -21,8 +21,8 @@
 // defines for Icache												   //
 //*********************************************************************//
 `define		IMEM_ADDR_W				64
-`define		ICACHE_SIZE_IN_BYTES	1024
-`define		ICACHE_SIZE_IN_BITS		1024*8
+`define		ICACHE_SIZE_IN_BYTES	256
+`define		ICACHE_SIZE_IN_BITS		256*8
 `define		ICACHE_LINE_IN_BITS		64
 `define		ICACHE_DATA_IN_BITS		64
 `define		ICACHE_WAY_NUM			1
@@ -38,11 +38,14 @@
 `define		PFETCH_NUM				4
 
 // jun
-`define			ROB_W 32
+`define			ROB_W			32
 `define			ROB_IDX_W		($clog2(`ROB_W))
-`define			HT_W 5 //HT_W = log2(ROB_W)
-`define			BR_TAG_W 5
-
+`define			HT_W 			($clog2(`ROB_W))
+`define			EX_UNIT_W		5
+`define			BR_PR_WRONG		2'b01
+`define			BR_PR_RIGHT		2'b10
+`define			BR_NONE			2'b00
+`define			BR_STATE_W		2
 
 // Chuan
 `define			PRF_NUM			64
