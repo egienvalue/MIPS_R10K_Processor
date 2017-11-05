@@ -45,12 +45,59 @@ module core (
 	//---------------------------------------------------------------
 	// signals for dispatch
 	//---------------------------------------------------------------
+	logic	[31:0]			if_id_IR;
+	logic				if_id_valid_inst;
+	logic	[4:0]			id_ra_idx;
+	logic	[4:0]			id_rb_idx;
+	logic	[4:0]			id_dest_idx;
+	logic	[`FU_SEL_W-1:0]		id_fu_sel;
+	logic	[31:0]			id_IR;
+	logic				id_rd_mem;
+	logic				id_wr_mem;
+	logic				id_cond_branch;
+	logic				id_uncond_branch;
+	logic				id_valid_inst;
 
+	// currently unused
+	logic				id_ldl_mem;
+	logic				id_stc_mem;
+	logic				id_halt;
+	logic				id_cpuid;
+	logic				id_illegal;
+
+	// branch mask generator signals
+	logic				if_id_br_pred_taken;
+	logic	[`BR_MASK_W-1:0]	bmg_br_mask;
+	logic				bmg_br_mask_stall;
 
 	//---------------------------------------------------------------
 	// signals for rs
 	//---------------------------------------------------------------
-
+	logic	[`PRF_IDX_W-1:0]	rat_dest_tag;
+	logic	[`PRF_IDX_W-1:0]	rat_opa_tag;
+	logic	[`PRF_IDX_W-1:0]	rat_opb_tag;
+	logic				rat_opa_rdy;
+	logic				rat_opb_rdy;
+	logic				id_inst_vld;
+	logic	[`FU_SEL_W-1:0]		id_fu_sel;
+	logic	[31:0]			id_IR;
+	logic	[`ROB_IDX_W-1:0]	rob_idx;
+	logic	[`RPF_IDX_W-1:0]	cdb_tag;
+	logic				cdb_vld;
+	logic				stall_dp;
+	logic	[`BR_MASK_W-1:0]	bmg_br_mask;
+	logic				rob_br_pred_correct;
+	logic				rob_br_recovery;
+	logic	[`BR_MASK_W-1:0]	rob_br_tag_fix;
+	logic				rs_iss_vld;
+	logic	[`PRF_IDX_W-1:0]	rs_iss_opa_tag;
+	logic	[`PRF_IDX_W-1:0]	rs_iss_opb_tag;
+	logic	[`PRF_IDX_W-1:0]	rs_iss_dest_tag;
+	logic	[`FU_SEL_W-1:0]		rs_iss_fu_sel;
+	logic	[31:0]			rs_iss_IR;
+	logic	[`ROB_IDX_W-1:0]	rs_iss_rob_idx;
+	logic	[`BR_MASK_W-1:0]	rs_iss_br_mask;
+	logic				rs_full;
 
 	//---------------------------------------------------------------
 	// signals for rob
@@ -160,12 +207,80 @@ module core (
 	//===============================================================
 	// dispatch instantiation
 	//===============================================================
-	
+	id_stage id_stage(
+			.clk			(clk),
+			.rst			(rst),
+
+			.if_id_IR_i		(if_id_IR),
+			.if_id_valid_inst_i	(if_id_valid_inst),
+
+			.id_ra_idx_o		(id_ra_idx),
+			.id_rb_idx_o		(id_rb_idx),
+			.id_dest_idx_o		(id_dest_idx),
+			.id_fu_sel_o		(id_fu_sel),
+			.id_IR_o		(id_IR),
+			.id_rd_mem_o		(id_rd_mem),
+			.id_wr_mem_o		(id_wr_mem),
+			.id_cond_branch_o	(id_cond_branch),
+			.id_uncond_branch_o	(id_uncond_branch),
+			.id_ldl_mem_o		(id_ldl_mem),
+			.id_stc_mem_o		(id_stc_mem),
+			.id_halt_o		(id_halt),
+			.id_cpuid_o		(id_cpuid),
+			.id_illegal_o		(id_illegal),
+			.id_valid_inst_o	(id_valid_inst)
+	);
+
+	bmg bmg(
+			.clk			(clk),
+			.rst			(rst),
+
+			.id_cond_branch_i	(id_cond_branch),
+			.id_uncond_branch_i	(id_uncond_branch),
+			.if_id_br_pred_taken_i	(if_id_br_pred_taken),
+			.rob_br_pred_correct_i	(rob_br_pred_correct),
+			.rob_br_recovery_i	(rob_br_recovery),
+			.rob_br_mask_i		(rob_br_mask),
+			.rob_br_tag_i		(rob_br_tag),
+
+			.bmg_br_mask_o		(bmg_br_mask),
+			.bmg_br_mask_stall_o	(bmg_br_mask_stall)
+	);
 
 	//===============================================================
 	// rs instantiation
 	//===============================================================
-	
+	rs rs(
+			.clk			(clk),
+			.rst			(rst),
+
+			.rat_dest_tag_i		(rat_dest_tag),
+			.rat_opa_tag_i		(rat_opa_tag),
+			.rat_opb_tag_i		(rat_opb_tag),
+			.rat_opa_rdy_i		(rat_opa_rdy),
+			.rat_opb_rdy_i		(rat_opb_rdy),
+			.id_inst_vld_i		(id_inst_vld),
+			.id_fu_sel_i		(id_fu_sel),
+			.id_IR_i		(id_IR),
+			.rob_idx_i		(rob_idx),
+			.cdb_tag_i		(cdb_tag),
+			.cdb_vld_i		(cdb_vld),
+			.stall_dp_i		(stall_dp),
+			.bmg_br_mask_i		(bmg_br_mask),
+			.rob_br_pred_correct_i	(rob_br_pred_correct),
+			.rob_br_recovery_i	(rob_br_recovery),
+			.rob_br_tag_fix_i	(rob_br_tag_fix),
+
+			.rs_iss_vld_o		(rs_iss_vld),
+			.rs_iss_opa_tag_o	(rs_iss_opa_tag),
+			.rs_iss_opb_tag_o	(rs_iss_opb_tag),
+			.rs_iss_dest_tag_o	(rs_iss_dest_tag),
+			.rs_iss_fu_sel_o	(rs_iss_fu_sel),
+			.rs_iss_IR_o		(rs_iss_IR),
+			.rs_iss_rob_idx_o	(rs_iss_rob_idx),
+			.rs_iss_br_mask_o	(rs_iss_br_mask),
+			.rs_full_o		(rs_full)
+	);
 
 	//===============================================================
 	// map table and free list instantiation
