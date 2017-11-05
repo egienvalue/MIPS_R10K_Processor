@@ -8,7 +8,7 @@
 //                                                                     //
 //                                                                     //
 /////////////////////////////////////////////////////////////////////////
-`define SD #1
+
 `timescale 1ns/100ps
 
 module if_stage(
@@ -87,7 +87,7 @@ module if_stage(
 
 
 	// This register holds the PC value
-	// synopsys sync_set_rst "rst"
+	// synopsys sync_set_reset "rst"
 	always_ff @(posedge clk)
 	begin
 		if(rst)

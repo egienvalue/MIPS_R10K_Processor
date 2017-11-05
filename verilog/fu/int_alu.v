@@ -20,7 +20,7 @@ module int_alu (
 
 		output	logic	[63:0]			result_o,
 		output	logic	[`PRF_IDX_W-1:0]dest_tag_o,
-		output	logic	[`ROB_IDX_W-1:0]rob_idx_o;
+		output	logic	[`ROB_IDX_W-1:0]rob_idx_o,
 		output	logic					done_o
 	
 		);	
@@ -34,7 +34,7 @@ wire [63:0] alu_imm  = { 56'b0, inst_i[20:13]};
 
 assign opb				= inst_i[12] ? alu_imm : opb_i;
 assign opa				= opa_i;
-assign result_o			= result_r;
+
 
 function signed_lt;
 	input [63:0] a, b;
@@ -74,7 +74,7 @@ always_ff @(posedge clk) begin
 		result_o	<= `SD 0;
 		dest_tag_o	<= `SD 0;
 		rob_idx_o	<= `SD 0;
-	end else (start_i) begin
+	end else begin
 		done_o		<= `SD start_i;	
 		result_o	<= `SD result_o_nxt;
 		dest_tag_o	<= `SD dest_tag_i;
@@ -83,6 +83,4 @@ always_ff @(posedge clk) begin
 end
 
 
-
-end
 endmodule 
