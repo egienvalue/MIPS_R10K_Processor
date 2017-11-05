@@ -29,12 +29,12 @@ module branch_stack(
 		input						is_branch_i,		//[Dispatch]	A new branch is dispatched, mask should be updated.
 		input	[`BR_STATE_W-1:0]	branch_state_i,		//[ROB]			Branch prediction wrong or correct?		
 		input	[`BR_MASK_W-1:0]	branch_dep_mask_i,	//[ROB]			The mask of currently resolved branch.
-		input	[31:0][5:0]			bak_mp_next_data_i,	//[Map Table]	Back up data from map table.
+		input	[31:0][6:0]			bak_mp_next_data_i,	//[Map Table]	Back up data from map table.
 		input	[4:0]				bak_fl_head_i,		//[Free List]	Back up head of free list.
 														//To where
 		output	[`BR_MASK_W-1:0]	branch_mask_o,		//[ROB]			Send current mask value to ROB to save in an ROB entry.
 		output	[`BR_MASK_W-1:0]	branch_bit_o,		//[RS]			Output corresponding branch bit immediately after knowing wrong or correct. 
-		output	[31:0][5:0]			rc_mt_all_data_o,	//[Map Table]	Recovery data for map table.
+		output	[31:0][6:0]			rc_mt_all_data_o,	//[Map Table]	Recovery data for map table.
 		output	[4:0]				rc_fl_head_o,		//[Free List]	Recovery head value for free list.
 		output						full_o				//[ROB]			Tell ROB that stack is full and no further branch dispatch is allowed. 
 		);
@@ -55,7 +55,7 @@ module branch_stack(
 		endtask
 
 		logic	[`BR_MASK_W-1:0]			mask;						// Mask
-		logic	[`BR_MASK_W-1:0][31:0][5:0]	map_table_stack;			// Branch Stack
+		logic	[`BR_MASK_W-1:0][31:0][6:0]	map_table_stack;			// Branch Stack
 		logic	[`BR_MASK_W-1:0][4:0]		fl_head_stack;
 		logic	[`BR_MASK_W-1:0]			next_mask;					// Next mask
 		logic	[3:0]						branch_bit_idx,	temp_bit_idx;           // Branch bit index number
