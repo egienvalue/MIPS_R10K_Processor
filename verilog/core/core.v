@@ -221,19 +221,19 @@ module core (
 			.proc2Imem_addr,		// Address sent to Instruction memory
 			.if_NPC_o,			// PC of instruction after fetched (PC+4).
 			.if_IR_o,			// fetched instruction out
-			.if_vali	d_inst_o	    // when low, instruction is garbage
-           );       	
-                    	
-                    	
-	//==============	=================================================
-	// branch predic	tor instantiation
-	//==============	=================================================
-	                    
-                    	
-	//==============	=================================================
-	// dispatch inst	antiation
-	//==============	=================================================
-	id_stage id_stag	e(
+			.if_valid_inst_o	    // when low, instruction is garbage
+           );       
+                    
+                    
+	//===============================================================
+	// branch predictor instantiation
+	//===============================================================
+	                
+                    
+	//===============================================================
+	// dispatch instantiation
+	//===============================================================
+	id_stage id_stage(
 			.clk				(clk),
 			.rst				(rst),
                     	
