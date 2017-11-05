@@ -5,9 +5,7 @@
 // Version History:
 // 	intial creation: 10/26/2017
 // 	***************************************************************************
-`define IFB_SIZE 64
-`define TAG_SIZE 6
-`define SD #1
+
 module ifb(
 		input	clk,
 		input	rst,
