@@ -29,6 +29,7 @@ module mult(
   wire [63:0] mplier;
   assign mplier = inst_i[12] ? mult_imm : opb_i;
   assign rob_idx_o = rob_idx_r;
+  assign dest_tag_o = dest_tag_r;
 
 	mult_stage #(.BITS_OF_STAGE(64/NUM_OF_STAGE)) mstage[NUM_OF_STAGE-1:0]  (
 		.clock(clk),

@@ -1,5 +1,5 @@
 // ****************************************************************************
-// Filename: alu1.v
+// Filename: br_alu.v
 // Discription: alu for branch condition calculation
 // Author: Shijing
 // Version History:
@@ -34,22 +34,26 @@ module br_alu (
 		input		[63:0]  npc_i,
 		input		[63:0]  opa_i,//reg A value
 		input		[31:0]  inst_i,
+		input		[`ROB_IDX_W-1:0]	rob_idx_i,
 
 		output	logic			done_o,
 		output	logic	[63:0]	br_target_o,
 		output	logic			br_result_o,
+		output	logic	[`ROB_IDX_W-1:0]	rob_idx_o
 	
 		);
 		logic	[63:0]	br_disp;
 		logic			done_nxt;
 		logic			cond_br;
 		logic	[63:0]	br_target_nxt;
-		logic			br_result_nxt;
+		logic	[63:0]	br_result_nxt;
 		logic			brcond_result;
+		//logic	[`ROB_IDX_W-1:0]	rob_idx_r;
+		logic	[`ROB_IDX_W-1:0]	rob_idx_nxt;
 
 		assign br_disp = { {41{inst_i[20]}}, inst_i[20:0], 2'b00 };
 		assign br_result_nxt = (~cond_br) ? 1 : brcond_result;
-
+		assign rob_idx_nxt = rob_idx_i;	
 
 	always_comb begin
 		case({inst_i[31:29], 3'b0})
@@ -90,11 +94,13 @@ module br_alu (
 			done_o 		<= `SD 0;
 			br_result_o <= `SD 0;
 			br_target_o <= `SD 0;
+			rob_idx_o	<= `SD 0;
 		end
 		else
 			done_o 		<= `SD done_nxt;
 			br_result_o <= `SD br_result_nxt;
 			br_target_o <= `SD br_target_nxt;
+			rob_idx_o	<= `SD rob_idx_nxt;
 		end
 	end
 
