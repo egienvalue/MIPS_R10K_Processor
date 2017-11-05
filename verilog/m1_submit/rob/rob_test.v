@@ -2,19 +2,19 @@
 typedef	struct	{
 		logic	[`HT_W:0]			head_o;
 		logic	[`HT_W:0]			tail_o;
-		logic	[`ROB_W-1:0][5:0]	old_dest_tag_o; 
-		logic	[`ROB_W-1:0][5:0]	dest_tag_o;
+		logic	[`ROB_W-1:0][`PRF_IDX_W-1:0]	old_dest_tag_o; 
+		logic	[`ROB_W-1:0][`PRF_IDX_W-1:0]	dest_tag_o;
 		logic	[`ROB_W-1:0]		done_o;
-		logic	[`ROB_W-1:0][4:0]	logic_dest_o;
+		logic	[`ROB_W-1:0][`PRF_IDX_W-2:0]	logic_dest_o;
 		logic	[`ROB_W-1:0][63:0]	PC_o;
 		logic	[`ROB_W-1:0]		br_flag_o;
 		logic	[`ROB_W-1:0]		br_taken_o;
 		logic	[`ROB_W-1:0]		br_pretaken_o;
 		logic	[`ROB_W-1:0]		br_target_o;
-		logic	[`ROB_W-1:0][`BR_TAG_W-1:0]	br_mask_o;
+		logic	[`ROB_W-1:0][`BR_MASK_W-1:0]	br_mask_o;
 		logic	[`ROB_W-1:0]		wr_mem_o;
 		logic	[`ROB_W-1:0]		rd_mem_o;
-		logic	[4:0]				fl_cur_head_o;
+		logic	[`PRF_IDX_W-2:0]				fl_cur_head_o;
 	} debug_t;
 
 module test_rob;
@@ -28,10 +28,10 @@ logic				rst;
 //------------------------------------------------------------------------------
 //Inputs
 //------------------------------------------------------------------------------
-logic	[5:0]		fl2rob_tag_i;//tag sent from freelist
-logic	[4:0]		fl2rob_cur_head_i;
-logic	[5:0]		map2rob_tag_i;//tag sent from maptable
-logic	[4:0]		decode2rob_logic_dest_i;//logic dest sent from decode
+logic	[`PRF_IDX_W-1:0]		fl2rob_tag_i;//tag sent from freelist
+logic	[`PRF_IDX_W-2:0]		fl2rob_cur_head_i;
+logic	[`PRF_IDX_W-1:0]		map2rob_tag_i;//tag sent from maptable
+logic	[`PRF_IDX_W-2:0]		decode2rob_logic_dest_i;//logic dest sent from decode
 logic	[63:0]		decode2rob_PC_i;//instruction's PC sent from decode
 logic				decode2rob_br_flag_i;
 logic				decode2rob_br_pretaken_i;
@@ -39,9 +39,9 @@ logic				decode2rob_br_target_i;
 logic				decode2rob_rd_mem_i;
 logic				decode2rob_wr_mem_i;
 logic				dispatch_en;//signal from dispatch to allocate entry in rob;
-logic	[`BR_TAG_W-1:0] decode2rob_br_mask_i;
+logic	[`BR_MASK_W-1:0] decode2rob_br_mask_i;
 
-logic	[5:0]		fu2rob_idx_i;//tag sent from functional unit to know which entry's done register needed to be set 
+logic	[`PRF_IDX_W-1:0]		fu2rob_idx_i;//tag sent from functional unit to know which entry's done register needed to be set 
 logic				fu_done_i;//done signal from functional unit 
 logic				fu2rob_br_taken_i;
 
@@ -51,14 +51,14 @@ logic				br_recovery_en_i;
 //------------------------------------------------------------------------------
 
 logic	[`HT_W-1:0] rob2rs_tail_idx_o;//tail # sent to rs to record which entry the instruction is 
-logic	[5:0]		rob2fl_tag_o;//tag from ROB to freelist for returning the old tag to freelist 
-logic	[5:0]		rob2arch_map_tag_o;//tag from ROB to Arch map
-logic	[4:0]		rob2arch_map_logic_dest_o;//logic dest from ROB to Arch map
+logic	[`PRF_IDX_W-1:0]		rob2fl_tag_o;//tag from ROB to freelist for returning the old tag to freelist 
+logic	[`PRF_IDX_W-1:0]		rob2arch_map_tag_o;//tag from ROB to Arch map
+logic	[`PRF_IDX_W-2:0]		rob2arch_map_logic_dest_o;//logic dest from ROB to Arch map
 logic				rob_full_o;
 logic				rob_head_retire_rdy_o;
 logic				br_recovery_rdy_o;
-logic	[4:0]				rob2fl_recover_head_o;
-logic	[`BR_TAG_W-1:0]	rob2rs_recover_br_mask_o;
+logic	[`PRF_IDX_W-2:0]				rob2fl_recover_head_o;
+logic	[`BR_MASK_W-1:0]	rob2rs_recover_br_mask_o;
 
 `ifdef DEBUG_OUT
 //debug_t debug_o;
@@ -66,14 +66,14 @@ debug_t debug_tb_o;
 
 	// golden outputs
 logic		[`HT_W-1:0]	rob2rs_tail_idx_tb_o;//tail # sent to rs to record which entry the instruction is 
-logic		[5:0]		rob2fl_tag_tb_o;//tag from ROB to freelist for returning the old tag to freelist 
-logic		[5:0]		rob2arch_map_tag_tb_o;//tag from ROB to Arch map
-logic		[4:0]		rob2arch_map_logic_dest_tb_o;//logic dest from ROB to Arch map
+logic		[`PRF_IDX_W-1:0]		rob2fl_tag_tb_o;//tag from ROB to freelist for returning the old tag to freelist 
+logic		[`PRF_IDX_W-1:0]		rob2arch_map_tag_tb_o;//tag from ROB to Arch map
+logic		[`PRF_IDX_W-2:0]		rob2arch_map_logic_dest_tb_o;//logic dest from ROB to Arch map
 logic					rob_full_tb_o;//signal show if the ROB is full
 logic					rob_head_retire_rdy_tb_o;//the head of ROb is ready to retire
 logic					br_recovery_rdy_tb_o;//ready to start early branch recovery
-logic	[4:0]				rob2fl_recover_head_tb_o;
-logic	[`BR_TAG_W-1:0]	rob2rs_recover_br_mask_tb_o;
+logic	[`PRF_IDX_W-2:0]				rob2fl_recover_head_tb_o;
+logic	[`BR_MASK_W-1:0]	rob2rs_recover_br_mask_tb_o;
 logic					mispredict;
 logic					retire_tb_en;
 
@@ -95,18 +95,18 @@ assign rob2rs_recover_br_mask_tb_o	= ~br_recovery_rdy_tb_o ? 0 : debug_tb_o.br_m
 
 logic	[`HT_W:0]			head;
 logic	[`HT_W:0]			tail;
-logic	[`ROB_W-1:0][5:0]	old_dest_tag, dest_tag;
+logic	[`ROB_W-1:0][`PRF_IDX_W-1:0]	old_dest_tag, dest_tag;
 logic	[`ROB_W-1:0]		done;
-logic	[`ROB_W-1:0][4:0]	logic_dest;
+logic	[`ROB_W-1:0][`PRF_IDX_W-2:0]	logic_dest;
 logic	[`ROB_W-1:0][63:0]	PC;
 logic	[`ROB_W-1:0]		br_flag;
 logic	[`ROB_W-1:0]		br_taken;
 logic	[`ROB_W-1:0]		br_pretaken;
 logic	[`ROB_W-1:0]		br_target;
-logic	[`ROB_W-1:0][`BR_TAG_W-1:0]	br_mask;
+logic	[`ROB_W-1:0][`BR_MASK_W-1:0]	br_mask;
 logic	[`ROB_W-1:0]		wr_mem;
 logic	[`ROB_W-1:0]		rd_mem;
-logic	[4:0]				fl_cur_head;
+logic	[`PRF_IDX_W-2:0]				fl_cur_head;
 `endif
 
 //------------------------------------------------------------------------------
@@ -193,7 +193,7 @@ task set_input;
 
 endtask
 task fu_set;
-	input	[5:0]	preg_idx;
+	input	[`PRF_IDX_W-1:0]	preg_idx;
 	input			br_taken;	
 	fu2rob_idx_i = preg_idx;
 	fu2rob_br_taken_i = br_taken;
@@ -201,8 +201,8 @@ task fu_set;
 endtask 
 
 task dispatch;
-	input	[5:0]	T, Told;
-	input	[4:0]	logic_dest; 
+	input	[`PRF_IDX_W-1:0]	T, Told;
+	input	[`PRF_IDX_W-2:0]	logic_dest; 
 	input	[63:0]	PC;
 	input			br_flag;
 	input	[63:0]	br_target;
@@ -227,9 +227,9 @@ task dispatch;
 endtask
 
 task debug_tb_dispatch;
-	input	[5:0]	T; 
-	input   [5:0]	Told;
-	input	[4:0]	logic_dest; 
+	input	[`PRF_IDX_W-1:0]	T; 
+	input   [`PRF_IDX_W-1:0]	Told;
+	input	[`PRF_IDX_W-2:0]	logic_dest; 
 	input	[63:0]	PC;
 	input			br_flag;
 	input	[63:0]	br_target;
@@ -272,12 +272,12 @@ task debug_tb_retire;
 endtask
 
 task debug_tb_setdone;
-	input	[5:0]	preg_idx;
+	input	[`PRF_IDX_W-1:0]	preg_idx;
 	debug_tb_o.done_o[preg_idx] = 1;
 endtask
 
 task debug_tb_br_miss;
-	input	[5:0]	preg_idx;	
+	input	[`PRF_IDX_W-1:0]	preg_idx;	
 	input			br_taken;
 	debug_tb_o.br_taken_o[preg_idx] = debug_tb_o.br_flag_o[preg_idx] ? br_taken : 0;
 	debug_tb_o.tail_o = preg_idx;
@@ -355,24 +355,12 @@ task debug_tb_reset;
 	debug_tb_o.br_mask_o			=0;
 	debug_tb_o.wr_mem_o			=0;
 	debug_tb_o.rd_mem_o			=0;
+	debug_tb_o.fl_cur_head_o	=0;
 
 endtask
 
 initial begin
-	debug_tb_o.head_o			=0;	
-	debug_tb_o.tail_o			=0;
-	debug_tb_o.old_dest_tag_o	=0;
-	debug_tb_o.dest_tag_o		=0;
-	debug_tb_o.done_o			=0;
-	debug_tb_o.logic_dest_o		=0;
-	debug_tb_o.PC_o				=0;
-	debug_tb_o.br_flag_o		=0;
-	debug_tb_o.br_taken_o		=0;
-	debug_tb_o.br_pretaken_o	=0;
-	debug_tb_o.br_target_o		=0;
-	debug_tb_o.br_mask_o			=0;
-	debug_tb_o.wr_mem_o			=0;
-	debug_tb_o.rd_mem_o			=0;
+	debug_tb_reset;
 	dispatch_en=0;
 	mispredict=0;
 	fu_done_i=0;
@@ -391,10 +379,10 @@ initial begin
 		if(~rob_full_o) begin
 			@(negedge clk);
 			dispatch_en = 1;
-			dispatch(32+i,i,i,i*4,0,i*8,0,0);
+			dispatch(32+i,i,i,i*4,i==8,i*8,0,0);
 		end
 		if (~rob_full_tb_o) begin	
-			debug_tb_dispatch(32+i,i,i,i*4,0,i*8,0,0);
+			debug_tb_dispatch(32+i,i,i,i*4,i==8,i*8,0,0);
 		end 
 		@(posedge clk);
 		#4

@@ -21,8 +21,8 @@
 // defines for Icache												   //
 //*********************************************************************//
 `define		IMEM_ADDR_W				64
-`define		ICACHE_SIZE_IN_BYTES	1024
-`define		ICACHE_SIZE_IN_BITS		1024*8
+`define		ICACHE_SIZE_IN_BYTES	256
+`define		ICACHE_SIZE_IN_BITS		256*8
 `define		ICACHE_LINE_IN_BITS		64
 `define		ICACHE_DATA_IN_BITS		64
 `define		ICACHE_WAY_NUM			1
