@@ -137,7 +137,27 @@ module core (
 	//===============================================================
 	// fu instantiation
 	//===============================================================
+	fu_main(
+		.clk,
+		.rst,
 		
+		.rob2fu_PC_i,
+		.rs2fu_rob_idx_i,
+		.rs2fu_ra_value_i,
+		.rs2fu_rb_value_i,
+		.rs2fu_dest_tag_i,
+		.rs2fu_IR_i,
+		.rs2fu_sel_i,
+
+		.fu2preg_wr_en_o,
+		.fu2preg_wr_idx_o,
+		.fu2preg_wr_value_o,
+		.fu2rob_done_o,
+		.fu2rob_idx_o,
+		.fu2rob_br_taken_o,
+		.fu2rob_br_target_o,
+		.fu_cdb_broad_o
+	);
 
 	//===============================================================
 	// early branch recovery instantiation
