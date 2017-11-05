@@ -17,31 +17,33 @@
 
 `define DEBUG
 module free_list(
-		input			clk,
-		input			rst,					//|From where|
-		input			dispatch_en_i,			//[Decoder]		If true, output head entry and head++
-		input			retire_en_i,			//[ROB]			If true, write new retired preg to tail, and tail++
-		input	[5:0]	retire_preg_i,			//[ROB]			New retired preg.
-		input			recover_en_i,			//[ROB]			Enabling early branch single cycle recovery
-		input	[4:0]	recover_head_i,			//[ROB]			Recover head to some point
+		input						clk,
+		input						rst,					//|From where|
+		input						dispatch_en_i,			//[Decoder]		If true, output head entry and head++
+		input						retire_en_i,			//[ROB]			If true, write new retired preg to tail, and tail++
+		input	[5:0]				retire_preg_i,			//[ROB]			New retired preg.
+		input	[`BR_STATE_W-1:0]	branch_state_i,			//[ROB]			Branch prediction wrong or correct?
+		input	[4:0]				rc_head_i,			//[Br_stack]			Recover head to some point
 
 		`ifdef DEBUG
-		output	[5:0]	cnt,
-		output	[4:0]	hd,
-		output  [4:0]	tl,
+		output	[5:0]				cnt,
+		output	[4:0]				hd,
+		output  [4:0]				tl,
 		`endif
 												//|To where|
-		output			free_preg_vld_o,		//[ROB, Map Table, RS]	Is output valid?
-		output	[5:0]	free_preg_o,			//[ROB, Map Table, Rs]	Output new free preg.
-		output	[4:0]	free_preg_cur_head_o	//[ROB]			Current head pointer.
+		output						free_preg_vld_o,		//[ROB, Map Table, RS]	Is output valid?
+		output	[5:0]				free_preg_o,			//[ROB, Map Table, Rs]	Output new free preg.
+		output	[4:0]				free_preg_cur_head_o	//[ROB]			Current head pointer.
 		);
 		
-		logic	[31:0][5:0]	FL;
-		logic	[5:0] count;
-		logic	[4:0] head;
-		logic	[4:0] tail;
-		logic	full,empty;
+		logic	[31:0][5:0]			FL;
+		logic	[5:0]				count;
+		logic	[4:0]				head;
+		logic	[4:0]				tail;
+		logic						full,empty;
+		logic						recover_en;
 
+		assign recover_en = (branch_state_i == `BR_PR_WRONG);
 		assign cnt = count;
 		assign hd = head;
 		assign tl = tail;
@@ -80,8 +82,8 @@ module free_list(
 				head <= `SD 0;
 			end else if (dispatch_en_i && ~empty) begin
 				head <= `SD (head + 1 >= 32) ? head + 1 - 32 : head + 1;
-			end else if (recover_en_i) begin
-				head <= `SD recover_head_i;
+			end else if (recover_en) begin
+				head <= `SD rc_head_i;
 			end else begin
 				head <= `SD head;
 			end
