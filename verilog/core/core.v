@@ -35,7 +35,21 @@ module core (
 	//---------------------------------------------------------------
 	// signals for if_stage
 	//---------------------------------------------------------------
-	
+	logic			clk,                      // system clk
+	logic			rst,                      // system rst
+								        // makes pipeline behave as single-cycle
+	logic			bp2if_predict_i,
+	logic	[63:0]	br_predict_target_PC_i,
+	logic	[63:0]	br_flush_target_PC_i,
+	logic	[63:0]	Imem2proc_data,		        // Data coming back from instruction-memory
+	logic			Imem_valid,
+	logic			br_flush_en_i,
+	logic			id_request_i,
+
+	logic	[63:0]	proc2Imem_addr,		// Address sent to Instruction memory
+	logic	[63:0]	if_NPC_o,			// PC of instruction after fetched (PC+4).
+	logic	[31:0]	if_IR_o,			// fetched instruction out
+	logic			if_valid_inst_o	
 	
 	//---------------------------------------------------------------
 	// signals for branch predictor
@@ -140,7 +154,22 @@ module core (
 	//---------------------------------------------------------------
 	// signals for fu
 	//---------------------------------------------------------------
+	logic	[63:0]				rob2fu_PC_i,
+	logic	[`ROB_IDX_W-1:0]	rs2fu_rob_idx_i,
+	logic	[63:0]				rs2fu_ra_value_i,
+	logic	[63:0]				rs2fu_rb_value_i,
+	logic	[`PRF_IDX_W-1:0]	rs2fu_dest_tag_i,
+	logic	[31:0]				rs2fu_IR_i,
+	logic	[`FU_SEL_W-1:0]		rs2fu_sel_i,
 
+	logic						fu2preg_wr_en_o,
+	logic 	[`PRF_IDX_W-1:0]	fu2preg_wr_idx_o,
+	logic 	[63:0]				fu2preg_wr_value_o,
+	logic						fu2rob_done_o,
+	logic	[`ROB_IDX_W-1:0]	fu2rob_idx_o,
+	logic						fu2rob_br_taken_o,
+	logic	[63:0]				fu2rob_br_target_o,
+	logic 	[`PRF_IDX_W-1:0]	fu_cdb_broad_o
 
 	//---------------------------------------------------------------
 	// signals for early branch recovery (br stack)
@@ -176,41 +205,38 @@ module core (
 	//===============================================================
 	// if_stage instantiation
 	//===============================================================
-	if_stage(
-				  .clk,                      // system clk
-				  .rst,                      // system rst
-				  					        // makes pipeline behave as single-cycle
-				  .branch_i,
-				  .br_dirp_i,
-				  .return_i,
-				  .ras_target_i,
-				  .br_predict_target_PC_i,
-				  .br_flush_target_PC_i,
-				  .Imem2proc_data,		        // Data coming back from instruction-memory
-				  .Imem_valid,
-				  .br_flush_en_i,
-				  .id_request_i,
-
-				  .proc2Imem_addr,		// Address sent to Instruction memory
-				  .if_NPC_out,			// PC of instruction after fetched (PC+4).
-				  .if_IR_out,			// fetched instruction out
-				  .if_valid_inst_out	    // when low, instruction is garbage
-				  //output logic		  if2id_empty_o
-           );
-
-
-	//===============================================================
-	// branch predictor instantiation
-	//===============================================================
-	
-
-	//===============================================================
-	// dispatch instantiation
-	//===============================================================
-	id_stage id_stage(
-			.clk			(clk),
-			.rst			(rst),
-
+	if_stage if_stage0(
+			.clk,                      // system clk
+			.rst,                      // system rst
+								        // makes pipeline behave as single-cycle
+			.branch_i,
+			.br_dirp_i,
+			.bp2if_predict_i,
+			.br_predict_target_PC_i,
+			.br_flush_target_PC_i,
+			.Imem2proc_data,		        // Data coming back from instruction-memory
+			.Imem_valid,
+			.br_flush_en_i,
+			.id_request_i,
+			.proc2Imem_addr,		// Address sent to Instruction memory
+			.if_NPC_o,			// PC of instruction after fetched (PC+4).
+			.if_IR_o,			// fetched instruction out
+			.if_vali	d_inst_o	    // when low, instruction is garbage
+           );       	
+                    	
+                    	
+	//==============	=================================================
+	// branch predic	tor instantiation
+	//==============	=================================================
+	                    
+                    	
+	//==============	=================================================
+	// dispatch inst	antiation
+	//==============	=================================================
+	id_stage id_stag	e(
+			.clk				(clk),
+			.rst				(rst),
+                    	
 			.if_id_IR_i		(if_id_IR),
 			.if_id_valid_inst_i	(if_id_valid_inst),
 
@@ -344,10 +370,9 @@ module core (
 	//===============================================================
 	// fu instantiation
 	//===============================================================
-	fu_main(
+	fu_main fu_main0(
 		.clk,
 		.rst,
-		
 		.rob2fu_PC_i,
 		.rs2fu_rob_idx_i,
 		.rs2fu_ra_value_i,
