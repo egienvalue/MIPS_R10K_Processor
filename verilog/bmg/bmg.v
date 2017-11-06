@@ -22,7 +22,6 @@ module bmg (
 		input		[`BR_MASK_W-1:0]	rob_br_tag_i,
 
 		output	logic	[`BR_MASK_W-1:0]	bmg_br_mask_o,
-		output	logic	[`BR_MASK_W-1:0]	bmg2rob_br_mask_o,
 		output	logic				bmg_br_mask_stall_o
 	);
 
@@ -62,10 +61,8 @@ module bmg (
 
 			       rob_br_pred_correct_i ? br_mask_r ^ rob_br_tag_i : br_mask_r;
 
-	assign bmg_br_mask_o = br_mask_r_nxt;
-
 	// rob should save the branch mask before being changed by the current speculative branch
-	assign bmg2rob_br_mask_o = (br_is_speculation && (~br_mask_r == 0) && rob_br_pred_correct_i) ? (br_mask_r ^ rob_br_tag_i) : br_mask_r;
+	assign bmg_br_mask_o = (br_is_speculation && (~br_mask_r == 0) && rob_br_pred_correct_i) ? (br_mask_r ^ rob_br_tag_i) : br_mask_r;
 				   // special situation where there is a new speculative branch and correct prediction in the same cycle while
 				   // branch depth has reached maximum, in which case the retired branch tag is directly forwarded to the 
 				   // current branch. Otherwise registered mask goes to output.

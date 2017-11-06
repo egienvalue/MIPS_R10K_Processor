@@ -2,22 +2,22 @@ module fu_main(
 		input clk;
 		input rst;
 		
-		input		[63:0]				rob2fu_PC_i;
-		input 		[`ROB_IDX_W-1:0]	rs2fu_rob_idx_i;
-		input 		[63:0]				rs2fu_ra_value_i;
-		input		[63:0]				rs2fu_rb_value_i;
-		input		[`PRF_IDX_W-1:0]	rs2fu_dest_tag_i;
-		input		[31:0]				rs2fu_IR_i;
-		input		[`FU_SEL_W-1:0]		rs2fu_sel_i;
+		input		[63:0]				rob2fu_PC_i,
+		input 		[`ROB_IDX_W-1:0]	rs2fu_rob_idx_i,
+		input 		[63:0]				rs2fu_ra_value_i,
+		input		[63:0]				rs2fu_rb_value_i,
+		input		[`PRF_IDX_W-1:0]	rs2fu_dest_tag_i,
+		input		[31:0]				rs2fu_IR_i,
+		input		[`FU_SEL_W-1:0]		rs2fu_sel_i,
 
-		output							fu2preg_wr_en_o;
-		output 		[`PRF_IDX_W-1:0]	fu2preg_wr_idx_o;
-		output 		[63:0]				fu2preg_wr_value_o;
-		output							fu2rob_done_o;
-		output		[`ROB_IDX_W-1:0]	fu2rob_idx_o;
-		output							fu2rob_br_taken_o;
-		output		[63:0]				fu2rob_br_target_o;
-		output 		[`PRF_IDX_W-1:0]	fu_cdb_broad_o;
+		output							fu2preg_wr_en_o,
+		output 		[`PRF_IDX_W-1:0]	fu2preg_wr_idx_o,
+		output 		[63:0]				fu2preg_wr_value_o,
+		output							fu2rob_done_o,
+		output		[`ROB_IDX_W-1:0]	fu2rob_idx_o,
+		output							fu2rob_br_taken_o,
+		output		[63:0]				fu2rob_br_target_o,
+		output 		[`PRF_IDX_W-1:0]	fu_cdb_broad_o
 	);
 
 	logic		[`PRF_IDX_W-1:0]	cdb_tag_r,cdb_tag_r_nxt;
