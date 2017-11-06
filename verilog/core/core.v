@@ -258,7 +258,7 @@ module core (
 	assign if2Icache_addr_i		= proc2Imem_addr;
 	assign if2Icache_flush_i	= br_recovery_rdy_o; // from rob
 	
-	Icache (
+	Icache Icache0 (
 		.clk					(clk),
 		.rst					(rst),
 		
@@ -315,7 +315,7 @@ module core (
 	//===============================================================
 	// dispatch instantiation
 	//===============================================================
-	assign dispatch_en 			= ; // no structural hazard
+	assign dispatch_en 			= ; // !!! no structural hazard
 	assign if_id_IR_i			= if_IR_o;
 	assign if_id_valid_inst_i	= if_valid_inst_o;
 	
@@ -510,8 +510,8 @@ module core (
 	assign rs2fu_rob_idx_i		= rs_iss_rob_idx_o;
 	assign rs2fu_ra_value_i		= rda_data_o; // !! from preg_file
 	assign rs2fu_rb_value_i		= rdb_data_o; // !!
-	assign rs2fu_dest_tag_i		= rs_iss_dest_tag_o; // !!! why we need here?
-	assign rs2fu_IR_i			= rs_iss_IR_o; // !!! why we need here?
+	assign rs2fu_dest_tag_i		= rs_iss_dest_tag_o; //  why we need here?
+	assign rs2fu_IR_i			= rs_iss_IR_o; //  why we need here?
 	assign rs2fu_sel_i			= rs_iss_fu_sel_o;
 
 	fu_main fu_main0(
@@ -526,7 +526,7 @@ module core (
 		.rs2fu_IR_i			(rs2fu_IR_i),
 		.rs2fu_sel_i		(rs2fu_sel_i),
 
-		.fu2preg_wr_en_o	(fu2preg_wr_en_o),
+		.fu2preg_wr_en_o	(fu2preg_wr_en_o), //!!! same as cdb_vld??
 		.fu2preg_wr_idx_o	(fu2preg_wr_idx_o),
 		.fu2preg_wr_value_o	(fu2preg_wr_value_o),
 		.fu2rob_done_o		(fu2rob_done_o),
@@ -539,12 +539,12 @@ module core (
 	//===============================================================
 	// fu instantiation
 	//===============================================================
-	assign wr_en_i		= ; // from rob. !!! rob should add complete_en signal
+	assign wr_en_i		= fu2preg_wr_en_o; // from rob. !!! rob should add complete_en signal
 							// or same as cdb_vld
 	assign rda_idx_i	= rs_iss_opa_tag_o; // !! from rs issue
 	assign rdb_idx_i	= rs_iss_opb_tag_o; // !! from rs issue
-	assign wr_idx_i		= rob2arch_map_tag_o; // !! Tnew from rob, wr preg
-	assign wr_data_i	= ; // !!! need value from fu
+	assign wr_idx_i		= fu2preg_wr_idx_o; // !! Tnew from rob, wr preg
+	assign wr_data_i	= fu2preg_wr_value_o; // need value from fu
 
 	Preg_file preg_file (
 		.clk		(clk),
