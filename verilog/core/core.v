@@ -46,6 +46,7 @@ module core (
 	//---------------------------------------------------------------
 	// signals for if_stage
 	//---------------------------------------------------------------
+<<<<<<< HEAD
 	logic						bp2if_predict_i;
 	logic  [63:0]				br_predict_target_PC_i;
 	logic  [63:0]				br_flush_target_PC_i;
@@ -58,6 +59,23 @@ module core (
 	logic [63:0]				if_NPC_out;			// PC of instruction after fetched (PC+4).
 	logic [31:0]				if_IR_out;			// fetched instruction out
 	logic       				if_valid_inst_out;	
+=======
+	logic			clk,                      // system clk
+	logic			rst,                      // system rst
+								        // makes pipeline behave as single-cycle
+	logic			bp2if_predict_i,
+	logic	[63:0]	br_predict_target_PC_i,
+	logic	[63:0]	br_flush_target_PC_i,
+	logic	[63:0]	Imem2proc_data,		        // Data coming back from instruction-memory
+	logic			Imem_valid,
+	logic			br_flush_en_i,
+	logic			id_request_i,
+
+	logic	[63:0]	proc2Imem_addr,		// Address sent to Instruction memory
+	logic	[63:0]	if_NPC_o,			// PC of instruction after fetched (PC+4).
+	logic	[31:0]	if_IR_o,			// fetched instruction out
+	logic			if_valid_inst_o	
+>>>>>>> 92927c82b21f3d66ce19e61c6169fef6b49e18c9
 	
 	//---------------------------------------------------------------
 	// signals for branch predictor
@@ -127,6 +145,34 @@ module core (
 	//---------------------------------------------------------------
 	// signals for rob
 	//---------------------------------------------------------------
+	logic	[`PRF_IDX_W-1:0]		fl2rob_tag_i;//tag sent from freelist
+	logic	[`PRF_IDX_W-2:0]		fl2rob_cur_head_i;//freelist head
+	logic	[`PRF_IDX_W-1:0]		map2rob_tag_i;//tag sent from maptable
+	logic	[`PRF_IDX_W-2:0]		decode2rob_logic_dest_i;//logic dest sent from decode
+	logic	[63:0]					decode2rob_PC_i;//instruction's PC sent from decode
+	logic							decode2rob_br_flag_i;//flag show whether the instruction is a branch
+	logic							decode2rob_br_pretaken_i;//branch predictor result sent from decode
+	logic	[63:0]					decode2rob_br_target_i;//branch target sent from decode 
+	logic							decode2rob_rd_mem_i;//flag shows whether this instruction read memory
+	logic							decode2rob_wr_mem_i;//flag shows whether this instruction write memory
+	logic							rob_dispatch_en_i;//signal from dispatch to allocate entry in rob
+	logic	[`BR_MASK_W-1:0]		decode2rob_br_mask_i;
+
+	logic	[`ROB_IDX_W:0]			fu2rob_idx_i;//tag sent from functional unit to know which entry's done register needed to be set 
+	logic							fu2rob_done_signal_i;//done signal from functional unit 
+	logic							fu2rob_br_taken_i;//branck taken result sent from functional unit
+
+	logic	[`HT_W-1:0]				rob2rs_tail_idx_o;//tail # sent to rs to record which entry the instruction is 
+	logic	[`PRF_IDX_W-1:0]		rob2fl_tag_o;//tag from ROB to freelist for returning the old tag to freelist 
+	logic	[`PRF_IDX_W-1:0]		rob2arch_map_tag_o;//tag from ROB to Arch map
+	logic	[`PRF_IDX_W-2:0]		rob2arch_map_logic_dest_o;//logic dest from ROB to Arch map
+	logic							rob_stall_dp_o;//signal show if the ROB is full
+	logic							rob_head_retire_rdy_o;//the head of ROb is ready to retire
+
+	logic							br_recovery_rdy_o;//ready to start early branch recovery
+	logic	[`PRF_IDX_W-2:0]		rob2fl_recover_head_o;
+	logic	[`BR_MASK_W-1:0]		br_recovery_mask_o;
+	logic	[`BR_STATE_W-1:0]		br_state_o;//branch state signal to branch mask
 
 
 	//---------------------------------------------------------------
@@ -163,7 +209,22 @@ module core (
 	//---------------------------------------------------------------
 	// signals for fu
 	//---------------------------------------------------------------
+	logic	[63:0]				rob2fu_PC_i,
+	logic	[`ROB_IDX_W-1:0]	rs2fu_rob_idx_i,
+	logic	[63:0]				rs2fu_ra_value_i,
+	logic	[63:0]				rs2fu_rb_value_i,
+	logic	[`PRF_IDX_W-1:0]	rs2fu_dest_tag_i,
+	logic	[31:0]				rs2fu_IR_i,
+	logic	[`FU_SEL_W-1:0]		rs2fu_sel_i,
 
+	logic						fu2preg_wr_en_o,
+	logic 	[`PRF_IDX_W-1:0]	fu2preg_wr_idx_o,
+	logic 	[63:0]				fu2preg_wr_value_o,
+	logic						fu2rob_done_o,
+	logic	[`ROB_IDX_W-1:0]	fu2rob_idx_o,
+	logic						fu2rob_br_taken_o,
+	logic	[63:0]				fu2rob_br_target_o,
+	logic 	[`PRF_IDX_W-1:0]	fu_cdb_broad_o
 
 	//---------------------------------------------------------------
 	// signals for early branch recovery (br stack)
@@ -214,6 +275,7 @@ module core (
 	//===============================================================
 	// if_stage instantiation
 	//===============================================================
+<<<<<<< HEAD
 	if_stage(
 			.clk					(clk),                      
 			.rst					(rst),                      
@@ -234,17 +296,40 @@ module core (
 	);
 
 
+=======
+	if_stage if_stage0(
+			.clk,                      // system clk
+			.rst,                      // system rst
+								        // makes pipeline behave as single-cycle
+			.branch_i,
+			.br_dirp_i,
+			.bp2if_predict_i,
+			.br_predict_target_PC_i,
+			.br_flush_target_PC_i,
+			.Imem2proc_data,		        // Data coming back from instruction-memory
+			.Imem_valid,
+			.br_flush_en_i,
+			.id_request_i,
+			.proc2Imem_addr,		// Address sent to Instruction memory
+			.if_NPC_o,			// PC of instruction after fetched (PC+4).
+			.if_IR_o,			// fetched instruction out
+			.if_valid_inst_o	    // when low, instruction is garbage
+           );       
+                    
+                    
+>>>>>>> 92927c82b21f3d66ce19e61c6169fef6b49e18c9
 	//===============================================================
 	// branch predictor instantiation
 	//===============================================================
-	
-
+	                
+                    
 	//===============================================================
 	// dispatch instantiation
 	//===============================================================
 	id_stage id_stage(
 			.clk				(clk),
 			.rst				(rst),
+<<<<<<< HEAD
 
 			.if_id_IR_i			(if_id_IR_i),
 			.if_id_valid_inst_i	(if_id_valid_inst_i),
@@ -264,6 +349,27 @@ module core (
 			.id_cpuid_o			(id_cpuid_o),
 			.id_illegal_o		(id_illegal_o),
 			.id_valid_inst_o	(id_valid_inst_o)
+=======
+                    	
+			.if_id_IR_i		(if_id_IR),
+			.if_id_valid_inst_i	(if_id_valid_inst),
+
+			.id_ra_idx_o		(id_ra_idx),
+			.id_rb_idx_o		(id_rb_idx),
+			.id_dest_idx_o		(id_dest_idx),
+			.id_fu_sel_o		(id_fu_sel),
+			.id_IR_o		(id_IR),
+			.id_rd_mem_o		(id_rd_mem),
+			.id_wr_mem_o		(id_wr_mem),
+			.id_cond_branch_o	(id_cond_branch),
+			.id_uncond_branch_o	(id_uncond_branch),
+			.id_ldl_mem_o		(id_ldl_mem),
+			.id_stc_mem_o		(id_stc_mem),
+			.id_halt_o		(id_halt),
+			.id_cpuid_o		(id_cpuid),
+			.id_illegal_o		(id_illegal),
+			.id_valid_inst_o	(id_valid_inst)
+>>>>>>> 92927c82b21f3d66ce19e61c6169fef6b49e18c9
 	);
 
 /*	bmg bmg(
@@ -318,6 +424,47 @@ module core (
 	);
 
 	//===============================================================
+	//rob instantiation
+	//===============================================================
+	rob rob1 (
+		.fl2rob_tag_i,//tag sent from freelist
+		.fl2rob_cur_head_i,//freelist head
+		.map2rob_tag_i,//tag sent from maptable
+		.decode2rob_logic_dest_i,//logic dest sent from decode
+		.decode2rob_PC_i,//instruction's PC sent from decode
+		.decode2rob_br_flag_i,//flag show whether the instruction is a branch
+		.decode2rob_br_pretaken_i,//branch predictor result sent from decode
+		.decode2rob_br_target_i,//branch target sent from decode 
+		.decode2rob_rd_mem_i,//flag shows whether this instruction read memory
+		.decode2rob_wr_mem_i,//flag shows whether this instruction write memory
+		.rob_dispatch_en_i,//signal from dispatch to allocate entry in rob
+		.decode2rob_br_mask_i,
+
+		//----------------------------------------------------------------------
+		//Functional Unit Signal Input
+		//----------------------------------------------------------------------
+		.fu2rob_idx_i,//tag sent from functional unit to know which entry's done register needed to be set 
+		.fu2rob_done_signal_i,//done signal from functional unit 
+		.fu2rob_br_taken_i,//branck taken result sent from functional unit
+
+
+		.rob2rs_tail_idx_o,//tail # sent to rs to record which entry the instruction is 
+		.rob2fl_tag_o,//tag from ROB to freelist for returning the old tag to freelist 
+		.rob2arch_map_tag_o,//tag from ROB to Arch map
+		.rob2arch_map_logic_dest_o,//logic dest from ROB to Arch map
+		.rob_stall_dp_o,//signal show if the ROB is full
+		.rob_head_retire_rdy_o,//the head of ROb is ready to retire
+
+		//----------------------------------------------------------------------
+		//Early Recovery Signal Ouput
+		//----------------------------------------------------------------------
+		.br_recovery_rdy_o,//ready to start early branch recovery
+		.rob2fl_recover_head_o,
+		.br_recovery_mask_o,
+		.br_state_o//branch state signal to branch mask
+	);	
+
+	//===============================================================
 	// map table and free list instantiation
 	//===============================================================
 	map_table	map_table0 (
@@ -356,6 +503,7 @@ module core (
 	//===============================================================
 	// fu instantiation
 	//===============================================================
+<<<<<<< HEAD
 	fu_main(
 		.clk				(clk),
 		.rst				(rst),
@@ -376,6 +524,27 @@ module core (
 		.fu2rob_br_taken_o	(fu2rob_br_taken_o),
 		.fu2rob_br_target_o	(fu2rob_br_target_o),
 		.fu_cdb_broad_o		(fu_cdb_broad_o)
+=======
+	fu_main fu_main0(
+		.clk,
+		.rst,
+		.rob2fu_PC_i,
+		.rs2fu_rob_idx_i,
+		.rs2fu_ra_value_i,
+		.rs2fu_rb_value_i,
+		.rs2fu_dest_tag_i,
+		.rs2fu_IR_i,
+		.rs2fu_sel_i,
+
+		.fu2preg_wr_en_o,
+		.fu2preg_wr_idx_o,
+		.fu2preg_wr_value_o,
+		.fu2rob_done_o,
+		.fu2rob_idx_o,
+		.fu2rob_br_taken_o,
+		.fu2rob_br_target_o,
+		.fu_cdb_broad_o
+>>>>>>> 92927c82b21f3d66ce19e61c6169fef6b49e18c9
 	);
 
 	//===============================================================
