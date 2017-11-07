@@ -5,6 +5,11 @@
 // Version History: add early recovery 
 // 	intial creation: 10/17/2017
 // 	***************************************************************************
+
+// Comments by hengfei: please test your module every time after you edit
+// it!!! very important!!! I can see some bugs by just looking this module.
+// labeled with "!!!". Delete this comment after you make them right
+
 `define DEBUG_OUT
 
 module	rob (
@@ -35,7 +40,10 @@ module	rob (
 		input								fu2rob_br_taken_i,//branck taken result sent from functional unit
         input       [63:0]                  fu2rob_br_target_i,//br_target sent from fu
         
-        input       [`ROB_IDX_W-1:0]        rs2rob_rd_NPC_i,//!!!rs read NPC data from tob 
+        input       [`ROB_IDX_W-1:0]        rs2rob_rd_NPC_i,//!!!rs read NPC data from rob, why???
+															// you already
+															// have this after
+															// dispatch!!! is it the idx??
         output      [63:0]                  rob2fu_rd_NPC_o,//!!!rob sent the NPC data to fu
 
 		output		[`HT_W-1:0]				rob2rs_tail_idx_o,//tail # sent to rs to record which entry the instruction is 
@@ -50,7 +58,7 @@ module	rob (
 		output	logic						br_recovery_rdy_o,//ready to start early branch recovery
 		output	logic	[`PRF_IDX_W-2:0]	rob2fl_recover_head_o,
 		output	logic	[`BR_MASK_W-1:0]	br_recovery_mask_o,
-		output	logic	                	br_wrong_o,
+		//output	logic	                	br_wrong_o, // wrong is same as recoer
         output  logic                       br_right_o
 
 	
@@ -152,28 +160,28 @@ module	rob (
 
     assign br_predict_wrong             = (br_pretaken_r[fu2rob_idx_i]!=fu2rob_br_taken_i)|(fu2rob_br_target_i!=br_target_r[fu2rob_idx_i]);
 
-    assign rob2fu_rd_NPC_o              = PC_r[rs2rob_rd_idx_i];
+    assign rob2fu_rd_NPC_o              = PC_r[rs2rob_rd_idx_i]; // !!! where is this signal???rs2rob_rd_idx_i - by hengfei
 	always_comb begin
 		if(br_flag_r[fu2rob_idx_i]&fu2rob_done_signal_i)
 			if(br_predict_wrong) begin
-                br_state_o          = `BR_PR_WRONG;
-                br_wrong_o          = 1;
+                br_state_o          = `BR_PR_WRONG; // !!! it's gone delete this
+                //br_wrong_o          = 1;
                 br_right_o          = 0;
 				br_recovery_mask_o  = br_mask_r[fu2rob_idx_i];
                 rob2fl_recover_head_o = fl_cur_head_r[fu2rob_idx_i];
 				br_recovery_rdy_o   = 1;
 			end else begin
-                br_state_o          = `BR_PR_RIGHT;
-                br_wrong_o          = 0;
+                br_state_o          = `BR_PR_RIGHT; // !!! it's gone
+                //br_wrong_o          = 0;
                 br_right_o          = 1;
 				br_recovery_mask_o  = br_mask_r[fu2rob_idx_i];
                 rob2fl_recover_head_o = 0;
 				br_recovery_rdy_o   = 0;
 			end
 		else begin
-			br_state_o          = `BR_NONE;
-            br_wrong_0          = 0;
-            br_right_0          = 0;
+			br_state_o          = `BR_NONE; // !!! it's gone
+            //br_wrong_o          = 0;
+            br_right_o          = 0;
 			br_recovery_rdy_o   = 0;
 			br_recovery_mask_o  = 0;
             rob2fl_recover_head_o = 0;

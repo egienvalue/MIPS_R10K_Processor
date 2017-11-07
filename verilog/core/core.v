@@ -4,7 +4,7 @@
 // 				here
 // Author: group 5
 // Version History
-//   <11/5> initial creation: integrate without br_stack, br_predictor, LSQ
+//   <11/5> initial creation: integrate without, br_predictor, LSQ
 //*****************************************************************************
 `timescale 1ns/100ps
 
@@ -20,7 +20,7 @@ module core (
 		output	logic	[63:0]					proc2mem_addr_o,
 		output	logic	[63:0]					proc2mem_data_o,
 
-		// need more ports for testbench!!!
+		// may need more ports for testbench!!!
 
 
 	);
@@ -75,8 +75,11 @@ module core (
 	logic						dispatch_lq_stall;
 	logic						dispatch_sq_stall;
 
+	logic						dispatch_norm_en;
+	logic						dispatch_br_en;
+	logic						dispatch_ld_en;
+	logic						dispatch_st_en;
 	logic						dispatch_en;
-	logic						disp2br_en;
 
 	// decoder
 	logic	[31:0]				if_id_IR_i;
@@ -143,7 +146,7 @@ module core (
 	logic	[`PRF_IDX_W-2:0]	fl2rob_cur_head_i;
 	logic	[`PRF_IDX_W-1:0]	map2rob_tag_i;
 	logic	[`PRF_IDX_W-2:0]	decode2rob_logic_dest_i;//lo
-	logic	[63:0]				decode2rob_PC_i;//instructio
+	logic	[63:0]				decode2rob_NPC_i;//instructio
 	logic						decode2rob_br_flag_i;//flag 
 	logic						decode2rob_br_pretaken_i;//b
 	logic	[63:0]				decode2rob_br_target_i;//bra
@@ -166,7 +169,7 @@ module core (
 	logic						br_recovery_rdy_o;//ready to
 	logic	[`PRF_IDX_W-2:0]	rob2fl_recover_head_o;
 	logic	[`BR_MASK_W-1:0]	br_recovery_mask_o;
-	logic						br_wrong_o;
+	//logic						br_wrong_o;
 	logic						br_right_o;
 
 
@@ -206,22 +209,23 @@ module core (
 	//---------------------------------------------------------------
 	// signals for fu
 	//---------------------------------------------------------------
-	logic	[63:0]				rob2fu_PC_i,
-	logic	[`ROB_IDX_W-1:0]	rs2fu_rob_idx_i,
-	logic	[63:0]				rs2fu_ra_value_i,
-	logic	[63:0]				rs2fu_rb_value_i,
-	logic	[`PRF_IDX_W-1:0]	rs2fu_dest_tag_i,
-	logic	[31:0]				rs2fu_IR_i,
-	logic	[`FU_SEL_W-1:0]		rs2fu_sel_i,
+	logic	[63:0]				rob2fu_NPC_i;
+	logic	[`ROB_IDX_W-1:0]	rs2fu_rob_idx_i;
+	logic	[63:0]				rs2fu_ra_value_i;
+	logic	[63:0]				rs2fu_rb_value_i;
+	logic	[`PRF_IDX_W-1:0]	rs2fu_dest_tag_i;
+	logic	[31:0]				rs2fu_IR_i;
+	logic	[`FU_SEL_W-1:0]		rs2fu_sel_i;
 
-	logic						fu2preg_wr_en_o,
-	logic 	[`PRF_IDX_W-1:0]	fu2preg_wr_idx_o,
-	logic 	[63:0]				fu2preg_wr_value_o,
-	logic						fu2rob_done_o,
-	logic	[`ROB_IDX_W-1:0]	fu2rob_idx_o,
-	logic						fu2rob_br_taken_o,
-	logic	[63:0]				fu2rob_br_target_o,
-	logic 	[`PRF_IDX_W-1:0]	fu_cdb_broad_o
+	logic						fu2preg_wr_en_o;
+	logic 	[`PRF_IDX_W-1:0]	fu2preg_wr_idx_o;
+	logic 	[63:0]				fu2preg_wr_value_o;
+	logic						fu2rob_done_o;
+	logic	[`ROB_IDX_W-1:0]	fu2rob_idx_o;
+	logic						fu2rob_br_taken_o;
+	logic	[63:0]				fu2rob_br_target_o;
+	logic 	[`PRF_IDX_W-1:0]	fu_cdb_broad_o;
+	logic						fu_cdb_vld_o;
 
 	//---------------------------------------------------------------
 	// signals for preg file
@@ -267,7 +271,7 @@ module core (
 	assign if2Icache_addr_i		= proc2Imem_addr;
 	assign if2Icache_flush_i	= br_recovery_rdy_o; // from rob
 	
-	Icache Icache0 (
+	Icache Icache (
 		.clk					(clk),
 		.rst					(rst),
 		
@@ -328,15 +332,22 @@ module core (
 	assign dispatch_rob_stall	= rob_stall_dp_o;
 	assign dispatch_fl_stall	= ~free_preg_vld_o && ~rob_head_retire_rdy_o;
 	assign dispatch_br_stk_stall= br_stack_full_o && ~br_right_o;
+	assign dispatch_lq_stall	= 1'b0; // LQ not added
+	assign dispatch_sq_stall	= 1'b0; // SQ not added
 	
-	assign dispatch_norm_en		= (~rs_full_o | rs_iss_vld_o) && (~rob_stall_dp_o) &&
-								  (free_preg_vld_o | rob_head_retire_rdy_o);
-	assign dispatch_br_en		= dispatch_norm_en && (~full_o | );
-	assign disp2br_en			= ;
+	assign dispatch_norm_en		= ~(dispatch_rs_stall | dispatch_rob_stall | dispatch_fl_stall);
+	assign dispatch_br_en		= ~(dispatch_rs_stall | dispatch_rob_stall | dispatch_br_stk_stall);
+	assign dispatch_ld_en		= dispatch_norm_en && ~dispatch_lq_stall;
+	assign dispatch_st_en		= ~(dispatch_rs_stall | dispatch_rob_stall | dispatch_sq_stall);
+
+	assign dispatch_en			= (id_cond_branch_o | id_uncond_branch_o) ? dispatch_br_en :
+								  (id_rd_mem_o) ? dispatch_ld_en : 
+								  (id_wr_mem_o) ? dispatch_st_en : dispatch_norm_en;
+
 	assign if_id_IR_i			= if_IR_o;
 	assign if_id_valid_inst_i	= if_valid_inst_o;
 	
-	id_stage id_stage(
+	id_stage id_stage (
 			.clk				(clk),
 			.rst				(rst),
 
@@ -374,12 +385,11 @@ module core (
 	assign id_IR_i				= id_IR_o;
 	assign rob_idx_i			= rob2rs_tail_idx_o;
 	assign cdb_tag_i			= fu_cdb_broad_o;
-	assign cdb_vld_i			= ; // !!! fu should add cdb_vld_o, when
-									// dest_areg != `ZERO_REG
+	assign cdb_vld_i			= fu_cdb_vld_o;
 	assign stall_dp_i			= ~dispatch_en;
 	assign bmg_br_mask_i		= br_mask_o;
-	assign rob_br_pred_correct_i= br_state_o[1]; // !!! one of the br_state_o in rob
-	assign rob_br_recovery_i	= br_state_o[0]; // !!! one of the br_state_o in rob
+	assign rob_br_pred_correct_i= br_right_o;
+	assign rob_br_recovery_i	= br_recovery_rdy_o;
 	assign rob_br_tag_fix_i		= br_bit_o; // from branch stack
 
 	rs rs (
@@ -421,7 +431,7 @@ module core (
 	assign fl2rob_cur_head_i		= free_preg_cur_head_o;
 	assign map2rob_tag_i			= dest_old_preg_o; // Told
 	assign decode2rob_logic_dest_i	= id_dest_idx_o;
-	assign decode2rob_PC_i			= if_NPC_o; // !!! Next PC, from if_stage?
+	assign decode2rob_NPC_i			= if_NPC_o;
 	assign decode2rob_br_flag_i		= id_cond_branch_o | id_uncond_branch_o;
 	assign decode2rob_br_pretaken_i	= 1'b0; // !! from BP, non-taken for now
 	assign decode2rob_br_target_i	= 64'h0; // !! from BP, non-taken for now
@@ -440,7 +450,7 @@ module core (
 		.fl2rob_cur_head_i			(fl2rob_cur_head_i),
 		.map2rob_tag_i				(map2rob_tag_i),
 		.decode2rob_logic_dest_i	(decode2rob_logic_dest_i),
-		.decode2rob_PC_i			(decode2rob_PC_i),
+		.decode2rob_NPC_i			(decode2rob_NPC_i),
 		.decode2rob_br_flag_i		(decode2rob_br_flag_i),
 		.decode2rob_br_pretaken_i	(decode2rob_br_pretaken_i),
 		.decode2rob_br_target_i		(decode2rob_br_target_i),
@@ -463,7 +473,7 @@ module core (
 		.br_recovery_rdy_o			(br_recovery_rdy_o),
 		.rob2fl_recover_head_o		(rob2fl_recover_head_o),
 		.br_recovery_mask_o			(br_recovery_mask_o),
-		.br_wrong_o					(br_wrong_o),
+		//.br_wrong_o					(br_wrong_o),
 		.br_right_o					(br_right_o),
 	);	
 
@@ -475,11 +485,10 @@ module core (
 	assign dest_areg_idx_i			= id_dest_idx_o;
 	assign new_free_preg_i			= free_preg_o; // !! Tnew from freelist
 	assign cdb_set_rdy_bit_preg_i	= fu_cdb_broad_o;
-	assign cdb_set_rdy_bit_en_i		= ; // !!! same as in rs, fu should add
-	//assign branch_state_i			= br_state_o;
+	assign cdb_set_rdy_bit_en_i		= fu_cdb_vld_o;
 	assign rc_mt_all_data_i			= rc_mt_all_data_o;
 
-	map_table	map_table0 (
+	map_table	map_table (
 		.clk					(clk),
 		.rst					(rst),	//|From where|	
 								
@@ -490,7 +499,7 @@ module core (
 		.dispatch_en_i			(dispatch_en), //[Decoder]		
 		.cdb_set_rdy_bit_preg_i	(cdb_set_rdy_bit_preg_i), //[CDB]			 
 		.cdb_set_rdy_bit_en_i	(cdb_set_rdy_bit_en_i),	//[CDB]			
-		.branch_state_i			(br_state_o), //[ROB]			
+		.branch_state_i			(br_state_i), //[ROB]			
 		.rc_mt_all_data_i		(rc_mt_all_data_i), //[Br_stack]
 
 		.opa_preg_o				(opa_preg_o), //[RS]			
@@ -513,7 +522,7 @@ module core (
 		.dispatch_en_i			(dispatch_en),	//[Decoder]		
 		.retire_en_i			(retire_en_i),	//[ROB]			
 		.retire_preg_i			(retire_preg_i),	//[ROB]			
-		.branch_state_i			(br_state_o), //[ROB]			
+		.branch_state_i			(br_state_i), //[ROB]			
 		.rc_head_i				(rc_head_i), //[Br_stack]
 
 		.free_preg_vld_o		(free_preg_vld_o), //[ROB, Map Table, RS]
@@ -524,7 +533,7 @@ module core (
 	//===============================================================
 	// fu instantiation
 	//===============================================================
-	assign rob2fu_PC_i			= ; // !!! what for?
+	assign rob2fu_NPC_i			= rob2fu_rd_NPC_o; // !!!
 	assign rs2fu_rob_idx_i		= rs_iss_rob_idx_o;
 	assign rs2fu_ra_value_i		= rda_data_o; // !! from preg_file
 	assign rs2fu_rb_value_i		= rdb_data_o; // !!
@@ -532,11 +541,11 @@ module core (
 	assign rs2fu_IR_i			= rs_iss_IR_o; //  why we need here?
 	assign rs2fu_sel_i			= rs_iss_fu_sel_o;
 
-	fu_main fu_main0(
+	fu_main fu_main (
 		.clk				(clk),
 		.rst				(rst),
 		
-		.rob2fu_PC_i		(rob2fu_PC_i),
+		.rob2fu_NPC_i		(rob2fu_NPC_i),
 		.rs2fu_rob_idx_i	(rs2fu_rob_idx_i),
 		.rs2fu_ra_value_i	(rs2fu_ra_value_i),
 		.rs2fu_rb_value_i	(rs2fu_rb_value_i),
@@ -544,7 +553,7 @@ module core (
 		.rs2fu_IR_i			(rs2fu_IR_i),
 		.rs2fu_sel_i		(rs2fu_sel_i),
 
-		.fu2preg_wr_en_o	(fu2preg_wr_en_o), //!!! same as cdb_vld??
+		.fu2preg_wr_en_o	(fu2preg_wr_en_o),
 		.fu2preg_wr_idx_o	(fu2preg_wr_idx_o),
 		.fu2preg_wr_value_o	(fu2preg_wr_value_o),
 		.fu2rob_done_o		(fu2rob_done_o),
@@ -557,8 +566,7 @@ module core (
 	//===============================================================
 	// fu instantiation
 	//===============================================================
-	assign wr_en_i		= fu2preg_wr_en_o; // from rob. !!! rob should add complete_en signal
-							// or same as cdb_vld
+	assign wr_en_i		= fu2preg_wr_en_o; //
 	assign rda_idx_i	= rs_iss_opa_tag_o; // !! from rs issue
 	assign rdb_idx_i	= rs_iss_opb_tag_o; // !! from rs issue
 	assign wr_idx_i		= fu2preg_wr_idx_o; // !! Tnew from rob, wr preg
@@ -581,13 +589,14 @@ module core (
 	//===============================================================
 	// early branch recovery instantiation
 	//===============================================================
-	assign is_br_i				= disp2br_en;
-	assign br_state_i			= br_state_o; // from rob
+	assign is_br_i				= dispatch_br_en;
+	assign br_state_i			= br_recovery_rdy_o ? `BR_PR_WRONG : 
+								  br_right_o ? `BR_PR_CORRECT : `BR_NONE; // 
 	assign br_dep_mask_i		= br_recovery_mask_o; // from rob
 	assign bak_mp_next_data_i	= bak_data_o;
 	assign bak_fl_head_i		= rc_head_i;
 
-	branch_stack branch_stack0(
+	branch_stack branch_stack (
 		.clk				(clk), 
 		.rst				(rst),
 
