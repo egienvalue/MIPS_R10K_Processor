@@ -70,11 +70,11 @@ module br_mask_ctrl(
 			end else if (br_state_i == `BR_PR_CORRECT && is_br_i) begin
 				first_zero_idx(br_dep_mask_i, br_bit_idx, br_bit); 
 				first_zero_idx(mask ^ br_bit, temp_bit_idx, temp_bit); 
-				next_mask = mask ^ br_bit ^ temp_bit);
-			end /*else if (is_br_i&&~full) begin
+				next_mask = mask ^ br_bit ^ temp_bit;
+			end else if (is_br_i) begin
 				first_zero_idx(mask, temp_bit_idx, temp_bit);
 				next_mask = mask ^ temp_bit;
-			end */else begin
+			end else begin
 				next_mask = mask;
 			end
 		end

@@ -43,7 +43,7 @@
 `define			HT_W 			($clog2(`ROB_W))
 `define			EX_UNIT_W		5
 `define			BR_PR_WRONG		2'b01
-`define			BR_PR_RIGHT		2'b10
+`define			BR_PR_CORRECT		2'b10
 `define			BR_NONE			2'b00
 `define			BR_STATE_W		2
 
