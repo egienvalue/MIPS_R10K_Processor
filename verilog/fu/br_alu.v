@@ -40,7 +40,8 @@ module br_alu (
 		output	logic				done_o,
 		output	logic	[63:0]		br_target_o,
 		output	logic				br_result_o,
-		output	logic	[`ROB_IDX_W-1:0]	rob_idx_o
+		output	logic	[`ROB_IDX_W-1:0]	rob_idx_o,
+        output  logic   [63:0]      br_pc_o
 	
 		);
 		logic	[63:0]	br_disp;
@@ -97,11 +98,13 @@ module br_alu (
 			br_result_o <= `SD 0;
 			br_target_o <= `SD 0;
 			rob_idx_o	<= `SD 0;
+            br_pc_o     <= `SD 0;
 		end else begin
 			done_o 		<= `SD done_nxt;
 			br_result_o <= `SD br_result_nxt;
 			br_target_o <= `SD br_target_nxt;
 			rob_idx_o	<= `SD rob_idx_nxt;
+            br_pc_o     <= `SD npc_i;
 		end
 	end
 

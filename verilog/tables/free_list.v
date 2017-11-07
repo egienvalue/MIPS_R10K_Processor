@@ -31,7 +31,7 @@ module free_list(
 		output  [4:0]				tl,
 		`endif
 												//|To where|
-		output						free_preg_vld_o,		//[ROB, Map Table, RS]	Is output valid?
+		output						free_preg_vld_o,		//[ROB, Map Table, RS]	Is output valid? // Meaning changed since 11/06 to "not empty". "1" means "not empty" and "0" vice-versa.
 		output	[5:0]				free_preg_o,			//[ROB, Map Table, Rs]	Output new free preg.
 		output	[4:0]				free_preg_cur_head_o	//[ROB]			Current head pointer.
 		);
@@ -51,10 +51,11 @@ module free_list(
 		assign empty = (count == 0);
 		assign full = (count >= 32);
 
-		assign free_preg_vld_o	=	~dispatch_en_i	? 0 : 
+		assign free_preg_vld_o	=	~empty;						// Modified 11/06. This output is functioned as "not empty" instead. 
+									/*~dispatch_en_i	? 0 : 
 									~empty			? 1 : 
 									retire_en_i		? 1 : 0;
-
+									*/
 		assign free_preg_o		=	~dispatch_en_i	? 6'b000000		: 
 									~empty			? FL[head]		:
 									retire_en_i		? retire_preg_i : 0;
@@ -68,7 +69,7 @@ module free_list(
 					FL[i] <= `SD 32+i;
 				end
 				tail <= `SD 0;
-			end else if (retire_en_i && ~(empty && dispatch_en_i) && ~full) begin
+			end else if (retire_en_i && ~(empty && dispatch_en_i) /*&& ~full*/) begin	// Modified 11/06. No need to check full or not. 
 				tail	 <=	`SD (tail + 1 >= 32) ? (tail - 31) : (tail + 1);
 				FL[tail] <= `SD retire_preg_i;
 			end else begin
@@ -80,7 +81,7 @@ module free_list(
 		always_ff @(posedge clk) begin
 			if (rst) begin
 				head <= `SD 0;
-			end else if (dispatch_en_i && ~empty) begin
+			end else if (dispatch_en_i /*&& ~empty*/) begin		// Modified 11/06. No need to check empty or not. 
 				head <= `SD (head + 1 >= 32) ? head + 1 - 32 : head + 1;
 			end else if (recover_en) begin
 				head <= `SD rc_head_i;
