@@ -68,7 +68,15 @@ module core (
 	// signals for dispatch
 	//---------------------------------------------------------------
 	// dispatch
+	logic						dispatch_rs_stall;
+	logic						dispatch_rob_stall;
+	logic						dispatch_fl_stall;
+	logic						dispatch_br_stk_stall;
+	logic						dispatch_lq_stall;
+	logic						dispatch_sq_stall;
+
 	logic						dispatch_en;
+	logic						disp2br_en;
 
 	// decoder
 	logic	[31:0]				if_id_IR_i;
@@ -158,7 +166,8 @@ module core (
 	logic						br_recovery_rdy_o;//ready to
 	logic	[`PRF_IDX_W-2:0]	rob2fl_recover_head_o;
 	logic	[`BR_MASK_W-1:0]	br_recovery_mask_o;
-	logic	[`BR_STATE_W-1:0]	br_state_o;
+	logic						br_wrong_o;
+	logic						br_right_o;
 
 
 	//---------------------------------------------------------------
@@ -226,9 +235,9 @@ module core (
 	//---------------------------------------------------------------
 	// signals for early branch recovery (br stack)
 	//---------------------------------------------------------------
-	logic						is_branch_i;			//[Dispatch]	
-	logic	[`BR_STATE_W-1:0]	branch_state_i;			//[ROB]			
-	logic	[`BR_MASK_W-1:0]	branch_dep_mask_i;		//[ROB]			
+	logic						is_br_i;			//[Dispatch]	
+	logic	[`BR_STATE_W-1:0]	br_state_i;			//[ROB]			
+	logic	[`BR_MASK_W-1:0]	br_dep_mask_i;		//[ROB]			
 	logic	[31:0][6:0]			bak_mp_next_data_i;		//[Map Table]	
 	logic	[4:0]				bak_fl_head_i;			//[Free List]
 
@@ -236,7 +245,7 @@ module core (
 	logic	[`BR_MASK_W-1:0]	br_bit_o;			//[RS]			
 	logic	[31:0][6:0]			rc_mt_all_data_o;		//[Map Table]
 	logic	[4:0]				rc_fl_head_o;			//[Free List]
-	logic						br_stack_full_o;	 
+	logic						full_o;
 
 	//---------------------------------------------------------------
 	// signals for LSQ
@@ -315,7 +324,15 @@ module core (
 	//===============================================================
 	// dispatch instantiation
 	//===============================================================
-	assign dispatch_en 			= ; // !!! no structural hazard
+	assign dispatch_rs_stall	= rs_full_o && ~rs_iss_vld_o;
+	assign dispatch_rob_stall	= rob_stall_dp_o;
+	assign dispatch_fl_stall	= ~free_preg_vld_o && ~rob_head_retire_rdy_o;
+	assign dispatch_br_stk_stall= br_stack_full_o && ~br_right_o;
+	
+	assign dispatch_norm_en		= (~rs_full_o | rs_iss_vld_o) && (~rob_stall_dp_o) &&
+								  (free_preg_vld_o | rob_head_retire_rdy_o);
+	assign dispatch_br_en		= dispatch_norm_en && (~full_o | );
+	assign disp2br_en			= ;
 	assign if_id_IR_i			= if_IR_o;
 	assign if_id_valid_inst_i	= if_valid_inst_o;
 	
@@ -446,7 +463,8 @@ module core (
 		.br_recovery_rdy_o			(br_recovery_rdy_o),
 		.rob2fl_recover_head_o		(rob2fl_recover_head_o),
 		.br_recovery_mask_o			(br_recovery_mask_o),
-		.br_state_o					(br_state_o)
+		.br_wrong_o					(br_wrong_o),
+		.br_right_o					(br_right_o),
 	);	
 
 	//===============================================================
