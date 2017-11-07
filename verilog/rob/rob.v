@@ -18,7 +18,7 @@ module	rob (
 		input		[`PRF_IDX_W-2:0]		fl2rob_cur_head_i,//freelist head
 		input		[`PRF_IDX_W-1:0]		map2rob_tag_i,//tag sent from maptable
 		input		[`PRF_IDX_W-2:0]		decode2rob_logic_dest_i,//logic dest sent from decode
-		input		[63:0]					decode2rob_PC_i,//instruction's PC sent from decode
+		input		[63:0]					decode2rob_NPC_i,//NPC sent from decode
 		input								decode2rob_br_flag_i,//flag show whether the instruction is a branch
 		input								decode2rob_br_pretaken_i,//branch predictor result sent from decode
 		input		[63:0]					decode2rob_br_target_i,//branch target sent from decode 
@@ -30,10 +30,13 @@ module	rob (
 		//----------------------------------------------------------------------
 		//Functional Unit Signal Input
 		//----------------------------------------------------------------------
-		input		[`ROB_IDX_W:0]		fu2rob_idx_i,//tag sent from functional unit to know which entry's done register needed to be set 
+		input		[`ROB_IDX_W-1:0]		fu2rob_idx_i,//tag sent from functional unit to know which entry's done register needed to be set 
 		input								fu2rob_done_signal_i,//done signal from functional unit 
 		input								fu2rob_br_taken_i,//branck taken result sent from functional unit
-
+        input       [63:0]                  fu2rob_br_target_i,//br_target sent from fu
+        
+        input       [`ROB_IDX_W-1:0]        rs2rob_rd_NPC_i,//!!!rs read NPC data from tob 
+        output      [63:0]                  rob2fu_rd_NPC_o,//!!!rob sent the NPC data to fu
 
 		output		[`HT_W-1:0]				rob2rs_tail_idx_o,//tail # sent to rs to record which entry the instruction is 
 		output		[`PRF_IDX_W-1:0]		rob2fl_tag_o,//tag from ROB to freelist for returning the old tag to freelist 
@@ -41,14 +44,14 @@ module	rob (
 		output		[`PRF_IDX_W-2:0]		rob2arch_map_logic_dest_o,//logic dest from ROB to Arch map
 		output								rob_stall_dp_o,//signal show if the ROB is full
 		output								rob_head_retire_rdy_o,//the head of ROb is ready to retire
-
 		//----------------------------------------------------------------------
 		//Early Recovery Signal Ouput
 		//----------------------------------------------------------------------
 		output	logic						br_recovery_rdy_o,//ready to start early branch recovery
 		output	logic	[`PRF_IDX_W-2:0]	rob2fl_recover_head_o,
 		output	logic	[`BR_MASK_W-1:0]	br_recovery_mask_o,
-		output	logic	[`BR_STATE_W-1:0]	br_state_o
+		output	logic	                	br_wrong_o,
+        output  logic                       br_right_o
 
 	
 		//----------------------------------------------------------------------
@@ -133,6 +136,7 @@ module	rob (
 	logic						fu_br_taken_r_nxt;
 	logic						fu_done_r_nxt;
 	wire						dispatch_en;
+    wire                        br_predict_wrong;
 
 	assign dispatch_en					= rob_dispatch_en_i;
 	
@@ -142,26 +146,37 @@ module	rob (
 	assign rob2arch_map_logic_dest_o	= rob_head_retire_rdy_o ? logic_dest_r[head_r[`HT_W-1:0]] : 0;
 	assign rob_head_retire_rdy_o 		= (done_r[head_r[`HT_W-1:0]]==1);
 	assign rob_stall_dp_o				= ((head_r^tail_r)==6'b100000)&&(~rob_head_retire_rdy_o);
-	assign rob2fl_recover_head_o		= ~br_recovery_rdy_o ? 0 : fl_cur_head_r[fu2rob_idx_i];
 
 	assign head_r_nxt					= rob_head_retire_rdy_o ? (head_r+1) : head_r;
 	assign tail_r_nxt 					= br_recovery_rdy_o ? (fu2rob_idx_i+1) : dispatch_en ? (tail_r+1) : tail_r;
 
+    assign br_predict_wrong             = (br_pretaken_r[fu2rob_idx_i]!=fu2rob_br_taken_i)|(fu2rob_br_target_i!=br_target_r[fu2rob_idx_i]);
+
+    assign rob2fu_rd_NPC_o              = PC_r[rs2rob_rd_idx_i];
 	always_comb begin
 		if(br_flag_r[fu2rob_idx_i]&fu2rob_done_signal_i)
-			if(br_pretaken_r[fu2rob_idx_i]==fu2rob_br_taken_i) begin
-				br_state_o	= `BR_PR_RIGHT;
-				br_recovery_mask_o	= br_mask_r[fu2rob_idx_i];
-				br_recovery_rdy_o	= 0;
+			if(br_predict_wrong) begin
+                br_state_o          = `BR_PR_WRONG;
+                br_wrong_o          = 1;
+                br_right_o          = 0;
+				br_recovery_mask_o  = br_mask_r[fu2rob_idx_i];
+                rob2fl_recover_head_o = fl_cur_head_r[fu2rob_idx_i];
+				br_recovery_rdy_o   = 1;
 			end else begin
-				br_state_o = `BR_PR_WRONG;
-				br_recovery_mask_o	= br_mask_r[fu2rob_idx_i];
-				br_recovery_rdy_o = 1;
+                br_state_o          = `BR_PR_RIGHT;
+                br_wrong_o          = 0;
+                br_right_o          = 1;
+				br_recovery_mask_o  = br_mask_r[fu2rob_idx_i];
+                rob2fl_recover_head_o = 0;
+				br_recovery_rdy_o   = 0;
 			end
 		else begin
-			br_state_o	= `BR_NONE;
-			br_recovery_rdy_o = 0;
-			br_recovery_mask_o = 0;
+			br_state_o          = `BR_NONE;
+            br_wrong_0          = 0;
+            br_right_0          = 0;
+			br_recovery_rdy_o   = 0;
+			br_recovery_mask_o  = 0;
+            rob2fl_recover_head_o = 0;
 		end
 	end
 
@@ -171,7 +186,7 @@ module	rob (
 				t_old_dest_tag_r_nxt 		= map2rob_tag_i; 
 				t_dest_tag_r_nxt 			= fl2rob_tag_i;
 				t_logic_dest_r_nxt 			= decode2rob_logic_dest_i;
-				t_PC_r_nxt					= decode2rob_PC_i;
+				t_PC_r_nxt					= decode2rob_NPC_i;
 				t_br_pretaken_r_nxt			= decode2rob_br_pretaken_i;
 				t_br_flag_r_nxt				= decode2rob_br_flag_i;
 				t_br_target_r_nxt			= decode2rob_br_target_i;
@@ -197,7 +212,7 @@ module	rob (
 				t_old_dest_tag_r_nxt 		= map2rob_tag_i; 
 				t_dest_tag_r_nxt 			= fl2rob_tag_i;
 				t_logic_dest_r_nxt 			= decode2rob_logic_dest_i;
-				t_PC_r_nxt					= decode2rob_PC_i;
+				t_PC_r_nxt					= decode2rob_NPC_i;
 				t_br_pretaken_r_nxt			= decode2rob_br_pretaken_i;
 				t_br_flag_r_nxt				= decode2rob_br_flag_i;
 				t_br_target_r_nxt			= decode2rob_br_target_i;
@@ -226,7 +241,7 @@ module	rob (
 		if(rob_head_retire_rdy_o) begin
 			h_old_dest_tag_r_nxt		= 0;
             h_dest_tag_r_nxt			= 0;
-            h_logic_dest_r_nxt			= 0;
+            h_logic_dest_r_nxt			= `ZERO_REG;
             h_done_r_nxt				= 0;
             h_PC_r_nxt					= 0;
             h_br_flag_r_nxt				= 0;
@@ -297,7 +312,7 @@ module	rob (
 			tail_r			<= `SD 0;
 			old_dest_tag_r	<= `SD 0;
 			dest_tag_r		<= `SD 0;
-			logic_dest_r	<= `SD 0;
+			logic_dest_r	<= `SD `ZERO_REG;
 			done_r			<= `SD 0;
 			PC_r			<= `SD 0;
 			br_flag_r		<= `SD 0;
