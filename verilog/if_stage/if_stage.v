@@ -25,7 +25,8 @@ module if_stage(
 				  input			id_request_i,
 
 				  output logic	[63:0]	proc2Imem_addr,		// Address sent to Instruction memory
-				  output logic	[63:0]	if_NPC_o,			// PC of instruction after fetched (PC+4).
+				  output logic	[63:0]	if_PC_o,			// PC of instruction.
+				  output logic	[63:0]	if_target_PC_o,
 				  output logic	[31:0]	if_IR_o,			// fetched instruction out
 				  output logic			if_valid_inst_o	    // when low, instruction is garbage
                );
@@ -76,8 +77,9 @@ module if_stage(
 	assign PC_enable = (~ifb2if_full&& Imem_valid) | bp2if_predict_i | br_flush_en_i;
 	//(Imem_valid | br_dirp_i | return_i | br_flush_en_i )&& ~ifb2if_full;
 
-	// Pass PC+4 down pipeline w/instruction
-	assign if_NPC_o = ifb2if_PC_reg + 4;
+	// Pass PC down pipeline w/instruction
+	assign if_PC_o			= ifb2if_PC_reg;
+	assign if_target_PC_o	= next_PC;
 
 	assign if_valid_inst_o = ~if2id_empty_o && Imem_valid;//ready_for_valid & Imem_valid;
 

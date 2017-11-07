@@ -109,7 +109,7 @@ module core_tb;
 		//
 		$display("@@@       TAGA  | RDYA |  TAGB  | RDYB |DEST_TAG| FU_SEL|   IR     |ROB_IDX|BR_MASK| AVAIL | Instr");
 		for (i = 0; i < `RS_ENT_NUM; i = i + 1) begin
-			$display("@@@ %-3d: %h |  %b   | %h |  %b   | %h |   %d   | %h |  %d   | %b |   %b | %s", i, 
+			$display("@@@ %-3d: %d |  %b   | %d |  %b   | %d |   %d   | %h |  %d   | %b |   %b | %s", i, 
 				core_0.rs.opa_tag_vec[i], core_0.rs.opa_rdy_vec[i],
 				core_0.rs.opb_tag_vec[i], core_0.rs.opb_rdy_vec[i], 
 				core_0.rs.dest_tag_vec[i], core_0.rs.fu_sel_vec[i],
@@ -131,10 +131,34 @@ module core_tb;
 	endtask // task print_rs
 
 	task print_rob;
+		$display("@@@");
+		$display("@@@");
+		$display("@@@ At cycle%d:", clock_count);
+		$display("@@@ The content of ROB is:");
+		// print whole rob
+		$display("@@@      Tnew | Told | dest | Done | rd_wr | br | br p&t |   PC   |  t-PC  | br_mask | ");
+		for (i = 0; i < `ROB_W; i++) begin
+			$display("@@@ %-2d: p%d | p%d | r%d | %b | %b %b | %b | %b%b | %h | %b | ", i, 
+				core_0.rob.dest_tag_r, core_0.rob.old_dest_tag_r, core_0.rob.logic_dest_r, 
+				core_0.rob.done_r, core_0.rob.rd_mem_r, core_0.rob.wr_mem_r, core_0.rob.br_flag_r,
+				core_0.rob.br_pretaken_r, core_0.rob.br_taken_r, core_0.rob.PC_r, core_0.rob.br_target_r, 
+				core_0.rob.br_mask_r);
+		end
+		// print valid rob
+		//
+		//
 
+		// print head and tail pointer
+		$display("@@@ #pointer# head: %d | tail: %d | disp_en: %b", core_0.rob.head_r[`HT_W-1:0], 
+			core_0.rob.tail_r[`HT_W-1:0], core_0.rob.rob_dispatch_en_i);
+		$display("@@@ #done# fu done: %d | rob done entry: %d", core_0.rob.fu2rob_done_signal_i,
+			core_0.rob.fu2rob_idx_i);
+		if (core_0.rob.rob_head_retire_rdy_o)
+			$display("@@@ #retire# retiring rob head at this cycle");
+		if (core_0.rob.br_recovery_rdy_o)
+			$display("@@@ #br_recovery# recovering to rob entry: %d", core_0.rob.tail_r_nxt);
 
-
-	end
+	endtask // task print_rob
 
 	
 	initial

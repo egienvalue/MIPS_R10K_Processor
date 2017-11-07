@@ -55,7 +55,8 @@ module core (
 	logic						id_request_i;
 
 	logic [63:0]				proc2Imem_addr;		
-	logic [63:0]				if_NPC_o;			
+	logic [63:0]				if_PC_o;			
+	logic [63:0]				if_target_PC_o;			
 	logic [31:0]				if_IR_o;
 	logic       				if_valid_inst_o;	
 	
@@ -313,7 +314,8 @@ module core (
 			.id_request_i			(id_request_i),
 
 			.proc2Imem_addr			(proc2Imem_addr),
-			.if_NPC_o				(if_NPC_o),	
+			.if_PC_o				(if_PC_o),	
+			.if_target_PC_o			(if_target_PC_o),	
 			.if_IR_o				(if_IR_o),		
 			.if_valid_inst_o		(if_valid_inst_o)
 			//output logic		  if2id_empty_o
@@ -431,10 +433,10 @@ module core (
 	assign fl2rob_cur_head_i		= free_preg_cur_head_o;
 	assign map2rob_tag_i			= dest_old_preg_o; // Told
 	assign decode2rob_logic_dest_i	= id_dest_idx_o;
-	assign decode2rob_NPC_i			= if_NPC_o;
+	assign decode2rob_PC_i			= if_PC_o;
 	assign decode2rob_br_flag_i		= id_cond_branch_o | id_uncond_branch_o;
 	assign decode2rob_br_pretaken_i	= 1'b0; // !! from BP, non-taken for now
-	assign decode2rob_br_target_i	= 64'h0; // !! from BP, non-taken for now
+	assign decode2rob_br_target_i	= if_target_PC_o; //non-taken for now
 	assign decode2rob_rd_mem_i		= id_rd_mem_o;
 	assign decode2rob_wr_mem_i		= id_wr_mem_o;
 	assign rob_dispatch_en_i		= dispatch_en;
@@ -450,7 +452,7 @@ module core (
 		.fl2rob_cur_head_i			(fl2rob_cur_head_i),
 		.map2rob_tag_i				(map2rob_tag_i),
 		.decode2rob_logic_dest_i	(decode2rob_logic_dest_i),
-		.decode2rob_NPC_i			(decode2rob_NPC_i),
+		.decode2rob_PC_i			(decode2rob_NPC_i),
 		.decode2rob_br_flag_i		(decode2rob_br_flag_i),
 		.decode2rob_br_pretaken_i	(decode2rob_br_pretaken_i),
 		.decode2rob_br_target_i		(decode2rob_br_target_i),
