@@ -51,7 +51,7 @@ module core_tb;
 		.proc2mem_data_o	(proc2mem_data),
 
 		.core_retired_instrs(core_retired_instrs),
-		.core_error_status	(core_error_status),
+		.core_error_status	(core_error_status)
 	);
 
 	// instantiate main memory
@@ -165,13 +165,11 @@ module core_tb;
 			for (int i = core_0.rob.head_r[`HT_W-1:0]; i!=core_0.rob.tail_r[`HT_W-1:0]; i++) begin
 				if(i>=`ROB_W)
     		        i = i%`ROB_W;
-					$fdisplay("@@@ %-2d: p%d |  p%d |  r%d |   %b  |  %b %b  |  %b |   %b%b   | %h | %h |  %b  |", i, 
+				$fdisplay("@@@ %-2d: p%d |  p%d |  r%d |   %b  |  %b %b  |  %b |   %b%b   | %h | %h |  %b  |", i, 
 					core_0.rob.dest_tag_r[i], core_0.rob.old_dest_tag_r[i], core_0.rob.logic_dest_r[i], 
 					core_0.rob.done_r[i], core_0.rob.rd_mem_r[i], core_0.rob.wr_mem_r[i], core_0.rob.br_flag_r[i],
 					core_0.rob.br_pretaken_r[i], core_0.rob.br_taken_r[i], core_0.rob.PC_r[i], core_0.rob.br_target_r[i], 
 					core_0.rob.br_mask_r[i]);
-				end
-
 			end
 		end
 		// print head and tail pointer
@@ -261,9 +259,9 @@ module core_tb;
 			if(core_retired_instrs>0) begin
 				if(core_retire_wr_en)
 					$fdisplay(	wb_fileno, "PC=%x, REG[%d]=%x",
-								core_0.rob.PC_r[head_r[`HT_W-1:0]],
-								core_0.rob.logic_dest_r[head_r[`HT_W-1:0]],
-								core_0.preg_file.reg_data_r[core_0.rob.logic_dest_r[head_r[`HT_W-1:0]]]);
+								core_0.rob.PC_r[core_0.rob.head_r[`HT_W-1:0]],
+								core_0.rob.logic_dest_r[core_0.rob.head_r[`HT_W-1:0]],
+								core_0.preg_file.reg_data_r[core_0.rob.logic_dest_r[core_0.rob.head_r[`HT_W-1:0]]]);
 				else
 					$fdisplay(wb_fileno, "PC=%x, ---",core_retire_PC);
 			end
