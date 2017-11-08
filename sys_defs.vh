@@ -193,7 +193,7 @@
 // the Alpha register file zero register, any read of this register always
 // returns a zero value, and any write to this register is thrown away
 //
-`define ZERO_REG        5'd31
+`define ZERO_REG       31
 
 //
 // Memory bus commands control signals

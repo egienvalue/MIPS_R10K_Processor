@@ -117,6 +117,7 @@ module map_table(
 				end
 				default:
 			endcase
+			next_RDY[31] = 1; // edited by hengfei ZERO_REG is always ready
 		end
 
 		always_comb begin					// Find index by cdb's tag

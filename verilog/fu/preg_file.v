@@ -1,4 +1,4 @@
-module Preg_file(
+module preg_file(
 		input						clk,
 		input						rst,
 		input						wr_en_i,

@@ -21,7 +21,8 @@ module core (
 		output	logic	[63:0]					proc2mem_data_o,
 
 		// may need more ports for testbench!!!
-
+		output	logic	[3:0]					core_retired_instrs,
+		output	logic	[3:0]					core_error_status,
 
 	);
 
@@ -81,6 +82,7 @@ module core (
 	logic						dispatch_ld_en;
 	logic						dispatch_st_en;
 	logic						dispatch_en;
+	logic						dispatch_fl_en;
 
 	// decoder
 	logic	[31:0]				if_id_IR_i;
@@ -261,7 +263,20 @@ module core (
 	// signals for Dcache
 	//---------------------------------------------------------------
 	
-	
+
+	//===============================================================
+	// core output assignments
+	//===============================================================
+	assign proc2mem_command_o	= proc2Imem_command_o; // Dcache not added
+	assign proc2mem_addr_o		= proc2Imem_addr_o;
+	assign proc2mem_data_o		= 64'h0;
+
+	//===============================================================
+	// outputs for core_tb.v
+	//===============================================================
+	assign core_retired_instrs	= {3'b0,rob_head_retire_rdy_o};
+	assign core_error_status	= rob_illegal_o ? `HALTED_ON_ILLEGAL : 
+								  rob_halt_o ? `HALTED_ON_HALT : `NO_ERROR;
 
 	//===============================================================
 	// Icache instantiation
@@ -345,6 +360,7 @@ module core (
 	assign dispatch_en			= (id_cond_branch_o | id_uncond_branch_o) ? dispatch_br_en :
 								  (id_rd_mem_o) ? dispatch_ld_en : 
 								  (id_wr_mem_o) ? dispatch_st_en : dispatch_norm_en;
+	assign dispatch_fl_en		= dispatch_en && (id_dest_idx_o != `ZERO_REG);
 
 	assign if_id_IR_i			= if_IR_o;
 	assign if_id_valid_inst_i	= if_valid_inst_o;
@@ -521,7 +537,7 @@ module core (
 		.clk					(clk),
 		.rst					(rst), //|From where|
 
-		.dispatch_en_i			(dispatch_en),	//[Decoder]		
+		.dispatch_en_i			(dispatch_fl_en),	//[Decoder]		
 		.retire_en_i			(retire_en_i),	//[ROB]			
 		.retire_preg_i			(retire_preg_i),	//[ROB]			
 		.branch_state_i			(br_state_i), //[ROB]			
@@ -574,7 +590,7 @@ module core (
 	assign wr_idx_i		= fu2preg_wr_idx_o; // !! Tnew from rob, wr preg
 	assign wr_data_i	= fu2preg_wr_value_o; // need value from fu
 
-	Preg_file preg_file (
+	preg_file preg_file (
 		.clk		(clk),
 		.rst		(rst),
 		.wr_en_i	(wr_en_i),

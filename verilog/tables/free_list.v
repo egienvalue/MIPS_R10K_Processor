@@ -56,7 +56,7 @@ module free_list(
 									~empty			? 1 : 
 									retire_en_i		? 1 : 0;
 									*/
-		assign free_preg_o		=	~dispatch_en_i	? 6'b000000		: 
+		assign free_preg_o		=	~dispatch_en_i	? `ZERO_REG		: // Modidied by hengfei. 
 									~empty			? FL[head]		:
 									retire_en_i		? retire_preg_i : 0;
 
