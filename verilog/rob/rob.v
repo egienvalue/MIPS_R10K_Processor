@@ -23,7 +23,7 @@ module	rob (
 		input		[`PRF_IDX_W-2:0]		fl2rob_cur_head_i,//freelist head
 		input		[`PRF_IDX_W-1:0]		map2rob_tag_i,//tag sent from maptable
 		input		[`PRF_IDX_W-2:0]		decode2rob_logic_dest_i,//logic dest sent from decode
-		input		[63:0]					decode2rob_NPC_i,//NPC sent from decode
+		input		[63:0]					decode2rob_PC_i,//PC sent from decode
 		input								decode2rob_br_flag_i,//flag show whether the instruction is a branch
 		input								decode2rob_br_pretaken_i,//branch predictor result sent from decode
 		input		[63:0]					decode2rob_br_target_i,//branch target sent from decode 
@@ -40,10 +40,7 @@ module	rob (
 		input								fu2rob_br_taken_i,//branck taken result sent from functional unit
         input       [63:0]                  fu2rob_br_target_i,//br_target sent from fu
         
-        input       [`ROB_IDX_W-1:0]        rs2rob_rd_NPC_i,//!!!rs read NPC data from rob, why???
-															// you already
-															// have this after
-															// dispatch!!! is it the idx??
+        input       [`ROB_IDX_W-1:0]        rs2rob_rd_idx_i,// rs sent read index to rob for reading NPC
         output      [63:0]                  rob2fu_rd_NPC_o,//!!!rob sent the NPC data to fu
 
 		output		[`HT_W-1:0]				rob2rs_tail_idx_o,//tail # sent to rs to record which entry the instruction is 
@@ -58,7 +55,6 @@ module	rob (
 		output	logic						br_recovery_rdy_o,//ready to start early branch recovery
 		output	logic	[`PRF_IDX_W-2:0]	rob2fl_recover_head_o,
 		output	logic	[`BR_MASK_W-1:0]	br_recovery_mask_o,
-		//output	logic	                	br_wrong_o, // wrong is same as recoer
         output  logic                       br_right_o
 
 	
@@ -102,7 +98,7 @@ module	rob (
 	logic	[`ROB_W-1:0]					br_flag_r;
 	logic	[`ROB_W-1:0]					br_taken_r;
 	logic	[`ROB_W-1:0]					br_pretaken_r;
-	logic	[`ROB_W-1:0]					br_target_r;
+	logic	[`ROB_W-1:0][63:0]				br_target_r;
 	logic	[`ROB_W-1:0]					wr_mem_r;
 	logic	[`ROB_W-1:0]					rd_mem_r;
 	logic	[`ROB_W-1:0][`PRF_IDX_W-2:0]	fl_cur_head_r;
@@ -160,27 +156,21 @@ module	rob (
 
     assign br_predict_wrong             = (br_pretaken_r[fu2rob_idx_i]!=fu2rob_br_taken_i)|(fu2rob_br_target_i!=br_target_r[fu2rob_idx_i]);
 
-    assign rob2fu_rd_NPC_o              = PC_r[rs2rob_rd_idx_i]; // !!! where is this signal???rs2rob_rd_idx_i - by hengfei
+    assign rob2fu_rd_NPC_o              = PC_r[rs2rob_rd_idx_i]+4; //sent the NPC to branch alu to calculate the branch target 
 	always_comb begin
 		if(br_flag_r[fu2rob_idx_i]&fu2rob_done_signal_i)
 			if(br_predict_wrong) begin
-                br_state_o          = `BR_PR_WRONG; // !!! it's gone delete this
-                //br_wrong_o          = 1;
                 br_right_o          = 0;
 				br_recovery_mask_o  = br_mask_r[fu2rob_idx_i];
                 rob2fl_recover_head_o = fl_cur_head_r[fu2rob_idx_i];
 				br_recovery_rdy_o   = 1;
 			end else begin
-                br_state_o          = `BR_PR_RIGHT; // !!! it's gone
-                //br_wrong_o          = 0;
                 br_right_o          = 1;
 				br_recovery_mask_o  = br_mask_r[fu2rob_idx_i];
                 rob2fl_recover_head_o = 0;
 				br_recovery_rdy_o   = 0;
 			end
 		else begin
-			br_state_o          = `BR_NONE; // !!! it's gone
-            //br_wrong_o          = 0;
             br_right_o          = 0;
 			br_recovery_rdy_o   = 0;
 			br_recovery_mask_o  = 0;
@@ -194,7 +184,7 @@ module	rob (
 				t_old_dest_tag_r_nxt 		= map2rob_tag_i; 
 				t_dest_tag_r_nxt 			= fl2rob_tag_i;
 				t_logic_dest_r_nxt 			= decode2rob_logic_dest_i;
-				t_PC_r_nxt					= decode2rob_NPC_i;
+				t_PC_r_nxt					= decode2rob_PC_i;
 				t_br_pretaken_r_nxt			= decode2rob_br_pretaken_i;
 				t_br_flag_r_nxt				= decode2rob_br_flag_i;
 				t_br_target_r_nxt			= decode2rob_br_target_i;
@@ -220,7 +210,7 @@ module	rob (
 				t_old_dest_tag_r_nxt 		= map2rob_tag_i; 
 				t_dest_tag_r_nxt 			= fl2rob_tag_i;
 				t_logic_dest_r_nxt 			= decode2rob_logic_dest_i;
-				t_PC_r_nxt					= decode2rob_NPC_i;
+				t_PC_r_nxt					= decode2rob_PC_i;
 				t_br_pretaken_r_nxt			= decode2rob_br_pretaken_i;
 				t_br_flag_r_nxt				= decode2rob_br_flag_i;
 				t_br_target_r_nxt			= decode2rob_br_target_i;
