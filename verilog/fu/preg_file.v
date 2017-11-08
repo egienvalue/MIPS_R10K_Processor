@@ -6,7 +6,7 @@ module preg_file(
 		input						wr_data_i,
 
 
-		output		[63:0]			rda_data_o, rdb_data_o
+		output	logic	[63:0]		rda_data_o, rdb_data_o
 	
 		);
 

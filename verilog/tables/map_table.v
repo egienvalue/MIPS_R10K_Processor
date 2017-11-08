@@ -21,7 +21,7 @@
 //
 typedef enum {NORMAL, ROLLBACK} STATE;	
 
-`define DEBUG
+//`define DEBUG
 
 module map_table(
 		input						clk,
@@ -44,12 +44,12 @@ module map_table(
 			output					cdb_match_fd,
 		`endif
 																//|To where|
-		output	[5:0]				opa_preg_o,					//[RS]			Oprand A physical reg output.
-		output	[5:0]				opb_preg_o,					//[RS]			Oprand B physical reg output.
-		output		 				opa_preg_rdy_bit_o,			//[RS]			Oprand A physical reg ready bit output. 
-		output		 				opb_preg_rdy_bit_o,			//[RS]			Oprand B physical reg ready bit output.
-		output	[5:0]				dest_old_preg_o,			//[ROB]			Old dest physical reg output. 
-		output	[31:0][6:0]			bak_data_o					//[Br_stack]	Back up data to branch stack.
+		output	logic	[5:0]			opa_preg_o,					//[RS]			Oprand A physical reg output.
+		output	logic	[5:0]			opb_preg_o,					//[RS]			Oprand B physical reg output.
+		output	logic		 			opa_preg_rdy_bit_o,			//[RS]			Oprand A physical reg ready bit output. 
+		output	logic		 			opb_preg_rdy_bit_o,			//[RS]			Oprand B physical reg ready bit output.
+		output	logic	[5:0]			dest_old_preg_o,			//[ROB]			Old dest physical reg output. 
+		output	logic	[31:0][6:0]		bak_data_o					//[Br_stack]	Back up data to branch stack.
 
 		);
 

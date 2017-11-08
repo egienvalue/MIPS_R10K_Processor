@@ -156,6 +156,8 @@ module core (
 	logic						decode2rob_wr_mem_i;//flag s
 	logic						rob_dispatch_en_i;//signal f
 	logic	[`BR_MASK_W-1:0]	decode2rob_br_mask_i;
+	logic						id2rob_halt_i;
+	logic						id2rob_illegal_i;
 
 	logic	[`ROB_IDX_W:0]		fu2rob_idx_i;//tag sent from
 	logic						fu2rob_done_signal_i;//done 
@@ -177,6 +179,9 @@ module core (
 	logic	[`BR_MASK_W-1:0]	br_recovery_mask_o;
 	//logic						br_wrong_o;
 	logic						br_right_o;
+	
+	logic						rob_halt_o;
+	logic						rob_illegal_o;
 
 
 	//---------------------------------------------------------------
@@ -460,6 +465,8 @@ module core (
 	assign decode2rob_wr_mem_i		= id_wr_mem_o;
 	assign rob_dispatch_en_i		= dispatch_en;
 	assign decode2rob_br_mask_i		= br_mask_o; // !! from br stack
+	assign id2rob_halt_i			= id_halt_o;
+	assign id2rob_illegal_i			= id_illegal_o;
 	assign fu2rob_idx_i				= fu2rob_idx_o;
 	assign fu2rob_done_signal_i		= fu2rob_done_o;
 	assign fu2rob_br_taken_i		= fu2rob_br_taken_o;
@@ -481,6 +488,8 @@ module core (
 		.decode2rob_wr_mem_i		(decode2rob_wr_mem_i),
 		.rob_dispatch_en_i			(rob_dispatch_en_i),
 		.decode2rob_br_mask_i		(decode2rob_br_mask_i),
+		.id2rob_halt_i				(id2rob_halt_i),
+		.id2rob_illegal_i			(id2rob_illegal_i),
 
 		.fu2rob_idx_i				(fu2rob_idx_i),
 		.fu2rob_done_signal_i		(fu2rob_done_signal_i),
@@ -501,7 +510,9 @@ module core (
 		.rob2fl_recover_head_o		(rob2fl_recover_head_o),
 		.br_recovery_mask_o			(br_recovery_mask_o),
 		//.br_wrong_o					(br_wrong_o),
-		.br_right_o					(br_right_o)
+		.br_right_o					(br_right_o),
+		.rob_halt_o					(rob_halt_o),
+		.rob_illegal_o				(rob_illegal_o)
 	);	
 
 	//===============================================================
@@ -587,7 +598,9 @@ module core (
 		.fu2rob_idx_o		(fu2rob_idx_o),
 		.fu2rob_br_taken_o	(fu2rob_br_taken_o),
 		.fu2rob_br_target_o	(fu2rob_br_target_o),
-		.fu_cdb_broad_o		(fu_cdb_broad_o)
+
+		.fu_cdb_broad_o		(fu_cdb_broad_o),
+		.fu_cdb_vld_o		(fu_cdb_vld_o)
 	);
 
 	//===============================================================

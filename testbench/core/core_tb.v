@@ -118,14 +118,14 @@ module core_tb;
 
 	// task for printing rs
 	task print_rs;
-		$fdisplay("@@@");
-		$fdisplay("@@@");
-		$fdisplay("@@@ At cycle%d:", clock_count);
-		$fdisplay("@@@ The content of RS is:");
+		$fdisplay(rs_fileno, "@@@");
+		$fdisplay(rs_fileno, "@@@");
+		$fdisplay(rs_fileno, "@@@ At cycle%d:", clock_count);
+		$fdisplay(rs_fileno, "@@@ The content of RS is:");
 		//
-		$fdisplay("@@@       TAGA  | RDYA |  TAGB  | RDYB |DEST_TAG| FU_SEL|   IR     |ROB_IDX|BR_MASK| AVAIL | Instr");
+		$fdisplay(rs_fileno, "@@@       TAGA  | RDYA |  TAGB  | RDYB |DEST_TAG| FU_SEL|   IR     |ROB_IDX|BR_MASK| AVAIL | Instr");
 		for (int i = 0; i < `RS_ENT_NUM; i = i + 1) begin
-			$fdisplay("@@@ %-3d: %d |  %b   | %d |  %b   | %d |   %d   | %h |  %d   | %b |   %b | %s", i, 
+			$fdisplay(rs_fileno, "@@@ %-3d: %d |  %b   | %d |  %b   | %d |   %d   | %h |  %d   | %b |   %b | %s", i, 
 				core_0.rs.opa_tag_vec[i], core_0.rs.opa_rdy_vec[i],
 				core_0.rs.opb_tag_vec[i], core_0.rs.opb_rdy_vec[i], 
 				core_0.rs.dest_tag_vec[i], core_0.rs.fu_sel_vec[i],
@@ -133,29 +133,29 @@ module core_tb;
 				core_0.rs.br_mask_vec[i], core_0.rs.avail_vec[i],rs_instr_str[i]);
 		end
 
-		$fdisplay("@@@ Status of schedule vector: %b", core_0.rs.exunit_schedule_r);
-		$fdisplay("@@@ CDB status: valid = %b, tag = %b", core_0.rs.cdb_vld_i, core_0.rs.cdb_tag_i);
-		$fdisplay("@@@ rs_full_o = %b", core_0.rs.rs_full_o);
+		$fdisplay(rs_fileno, "@@@ Status of schedule vector: %b", core_0.rs.exunit_schedule_r);
+		$fdisplay(rs_fileno, "@@@ CDB status: valid = %b, tag = %b", core_0.rs.cdb_vld_i, core_0.rs.cdb_tag_i);
+		$fdisplay(rs_fileno, "@@@ rs_full_o = %b", core_0.rs.rs_full_o);
 		if (core_0.rs.rs_iss_vld_o) begin
-			$fdisplay("@@@ #Issue# RS: %d | instr: %s", core_0.rs.iss_idx, rs_instr_str[core_0.rs.iss_idx]);
-			$fdisplay("@@@ opa_tag = %b, opb_tag = %b, dest_tag = %b, fu_sel = %d, IR = %h, rob_idx = %d, br_mask = %b",
+			$fdisplay(rs_fileno, "@@@ #Issue# RS: %d | instr: %s", core_0.rs.iss_idx, rs_instr_str[core_0.rs.iss_idx]);
+			$fdisplay(rs_fileno, "@@@ opa_tag = %b, opb_tag = %b, dest_tag = %b, fu_sel = %d, IR = %h, rob_idx = %d, br_mask = %b",
 				core_0.rs.rs_iss_opa_tag_o, core_0.rs.rs_iss_opb_tag_o, core_0.rs.rs_iss_dest_tag_o, 
 				core_0.rs.rs_iss_fu_sel_o, core_0.rs.rs_iss_IR_o, core_0.rs.rs_iss_rob_idx_o, core_0.rs.rs_iss_br_mask_o);
-			$fdisplay("@@@ Schedule vector of issued instr: %b", core_0.rs.rs_ent_schedule_vec[core_0.rs.iss_idx]);
+			$fdisplay(rs_fileno, "@@@ Schedule vector of issued instr: %b", core_0.rs.rs_ent_schedule_vec[core_0.rs.iss_idx]);
 		end else
-			$fdisplay("@@@ #None# No instructions can be issued this cycle");
+			$fdisplay(rs_fileno, "@@@ #None# No instructions can be issued this cycle");
 	endtask // task print_rs
 
 	task print_rob;
-		$fdisplay("@@@");
-		$fdisplay("@@@");
-		$fdisplay("@@@ At cycle%d:", clock_count);
-		$fdisplay("@@@ The content of ROB is:");
-		$fdisplay("@@@    Tnew | Told | dest | Done | rd_wr | br | br p&t |        PC        |      t-PC        | br_mask | ");
+		$fdisplay(rob_fileno, "@@@");
+		$fdisplay(rob_fileno, "@@@");
+		$fdisplay(rob_fileno, "@@@ At cycle%d:", clock_count);
+		$fdisplay(rob_fileno, "@@@ The content of ROB is:");
+		$fdisplay(rob_fileno, "@@@    Tnew | Told | dest | Done | rd_wr | br | br p&t |        PC        |      t-PC        | br_mask | ");
 		// print whole rob
 		if (`PRINT_ROB_WHOLE == 1) begin
 			for (int i = 0; i < `ROB_W; i++) begin
-				$fdisplay("@@@ %-2d: p%d |  p%d |  r%d |   %b  |  %b %b  |  %b |   %b%b   | %h | %h |  %b  | ", i, 
+				$fdisplay(rob_fileno, "@@@ %-2d: p%d |  p%d |  r%d |   %b  |  %b %b  |  %b |   %b%b   | %h | %h |  %b  | ", i, 
 					core_0.rob.dest_tag_r[i], core_0.rob.old_dest_tag_r[i], core_0.rob.logic_dest_r[i], 
 					core_0.rob.done_r[i], core_0.rob.rd_mem_r[i], core_0.rob.wr_mem_r[i], core_0.rob.br_flag_r[i],
 					core_0.rob.br_pretaken_r[i], core_0.rob.br_taken_r[i], core_0.rob.PC_r[i], core_0.rob.br_target_r[i], 
@@ -165,7 +165,7 @@ module core_tb;
 			for (int i = core_0.rob.head_r[`HT_W-1:0]; i!=core_0.rob.tail_r[`HT_W-1:0]; i++) begin
 				if(i>=`ROB_W)
     		        i = i%`ROB_W;
-				$fdisplay("@@@ %-2d: p%d |  p%d |  r%d |   %b  |  %b %b  |  %b |   %b%b   | %h | %h |  %b  |", i, 
+				$fdisplay(rob_fileno, "@@@ %-2d: p%d |  p%d |  r%d |   %b  |  %b %b  |  %b |   %b%b   | %h | %h |  %b  |", i, 
 					core_0.rob.dest_tag_r[i], core_0.rob.old_dest_tag_r[i], core_0.rob.logic_dest_r[i], 
 					core_0.rob.done_r[i], core_0.rob.rd_mem_r[i], core_0.rob.wr_mem_r[i], core_0.rob.br_flag_r[i],
 					core_0.rob.br_pretaken_r[i], core_0.rob.br_taken_r[i], core_0.rob.PC_r[i], core_0.rob.br_target_r[i], 
@@ -173,14 +173,14 @@ module core_tb;
 			end
 		end
 		// print head and tail pointer
-		$fdisplay("@@@ #pointer# head: %d | tail: %d | disp_en: %b", core_0.rob.head_r[`HT_W-1:0], 
+		$fdisplay(rob_fileno, "@@@ #pointer# head: %d | tail: %d | disp_en: %b", core_0.rob.head_r[`HT_W-1:0], 
 			core_0.rob.tail_r[`HT_W-1:0], core_0.rob.rob_dispatch_en_i);
-		$fdisplay("@@@ #done# fu done: %d | rob done entry: %d", core_0.rob.fu2rob_done_signal_i,
+		$fdisplay(rob_fileno, "@@@ #done# fu done: %d | rob done entry: %d", core_0.rob.fu2rob_done_signal_i,
 			core_0.rob.fu2rob_idx_i);
 		if (core_0.rob.rob_head_retire_rdy_o)
-			$fdisplay("@@@ #retire# retiring rob head at this cycle");
+			$fdisplay(rob_fileno, "@@@ #retire# retiring rob head at this cycle");
 		if (core_0.rob.br_recovery_rdy_o)
-			$fdisplay("@@@ #br_recovery# recovering to rob entry: %d", core_0.rob.tail_r_nxt);
+			$fdisplay(rob_fileno, "@@@ #br_recovery# recovering to rob entry: %d", core_0.rob.tail_r_nxt);
 
 	endtask // task print_rob
 
@@ -263,7 +263,7 @@ module core_tb;
 								core_0.rob.logic_dest_r[core_0.rob.head_r[`HT_W-1:0]],
 								core_0.preg_file.reg_data_r[core_0.rob.logic_dest_r[core_0.rob.head_r[`HT_W-1:0]]]);
 				else
-					$fdisplay(wb_fileno, "PC=%x, ---",core_retire_PC);
+					$fdisplay(wb_fileno, "PC=%x, ---",core_0.rob.PC_r[core_0.rob.head_r[`HT_W-1:0]]);
 			end
 
 			// deal with any halting conditions
