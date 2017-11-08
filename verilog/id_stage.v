@@ -79,7 +79,7 @@ module decoder(// Inputs
 					opb_select = inst[12] ? `ALU_OPB_IS_ALU_IMM : `ALU_OPB_IS_REGB;
 					dest_reg = `DEST_IS_REGC;
 					case (inst[31:26])
-						`INTA_GRP:
+						`INTA_GRP: begin
 							fu_sel = `FU_SEL_ALU;
 							case (inst[11:5])
 								`CMPULT_INST:  alu_func = `ALU_CMPULT;
@@ -91,7 +91,8 @@ module decoder(// Inputs
 								`CMPLE_INST:   alu_func = `ALU_CMPLE;
 								default:        illegal = `TRUE;
 							endcase // case(inst[11:5])
-						`INTL_GRP:
+						end
+						`INTL_GRP: begin
 							fu_sel = `FU_SEL_ALU;
 							case (inst[11:5])
 
@@ -103,7 +104,8 @@ module decoder(// Inputs
 								`EQV_INST:    alu_func = `ALU_EQV;
 								default:       illegal = `TRUE;
 							endcase // case(inst[11:5])
-						`INTS_GRP:
+						end
+						`INTS_GRP: begin
 							fu_sel = `FU_SEL_ALU;
 							case (inst[11:5])
 								`SRL_INST:  alu_func = `ALU_SRL;
@@ -111,12 +113,14 @@ module decoder(// Inputs
 								`SRA_INST:  alu_func = `ALU_SRA;
 								default:    illegal = `TRUE;
 							endcase // case(inst[11:5])
-						`INTM_GRP:
+						end
+						`INTM_GRP: begin
 							fu_sel = `FU_SEL_MULT;
 							case (inst[11:5])
 								`MULQ_INST:       alu_func = `ALU_MULQ;
 								default:          illegal = `TRUE;
 							endcase // case(inst[11:5])
+						end
 						`ITFP_GRP:       illegal = `TRUE;       // unimplemented
 						`FLTV_GRP:       illegal = `TRUE;       // unimplemented
 						`FLTI_GRP:       illegal = `TRUE;       // unimplemented
@@ -156,7 +160,7 @@ module decoder(// Inputs
 							fu_sel = `FU_SEL_LOAD;
 						end // case: `LDQ_INST
 						`LDQ_L_INST:
-							begin
+						begin
 							rd_mem = `TRUE;
 							ldl_mem = `TRUE;
 							dest_reg = `DEST_IS_REGA;
@@ -199,9 +203,10 @@ module decoder(// Inputs
 							fu_sel = `FU_SEL_UNCOND_BRANCH;
 						end
 
-						default:
+						default: begin
 							cond_branch = `TRUE; // all others are conditional
 							fu_sel = `FU_SEL_COND_BRANCH;
+						end
 					endcase // case(inst[31:26])
 				end
 			endcase // case(inst[31:29] << 3)
@@ -242,9 +247,9 @@ module id_stage(
 	logic   [1:0] dest_reg_select;
 
 	// instruction fields read from IF/ID pipeline register
-	wire    [4:0] ra_idx = if_id_IR[25:21];   // inst operand A register index
-	wire    [4:0] rb_idx = if_id_IR[20:16];   // inst operand B register index
-	wire    [4:0] rc_idx = if_id_IR[4:0];     // inst operand C register index
+	wire    [4:0] ra_idx = if_id_IR_i[25:21];   // inst operand A register index
+	wire    [4:0] rb_idx = if_id_IR_i[20:16];   // inst operand B register index
+	wire    [4:0] rc_idx = if_id_IR_i[4:0];     // inst operand C register index
 
 	assign id_IR_o = if_id_IR_i;
 

@@ -32,7 +32,7 @@ module br_stack_ent(
 		input	[4:0]				bak_fl_head_i,		//[Free List]	Back up head of free list.
 
 		output	[31:0][6:0]			rc_mt_all_data_o,	//[Map Table]	Recovery data for map table.
-		output	[4:0]				rc_fl_head_o,		//[Free List]	Recovery head value for free list.
+		output	[4:0]				rc_fl_head_o		//[Free List]	Recovery head value for free list.
 	);
 
 	logic	[31:0][6:0]	map_table_stack, fixed_nxt_mts;			// Branch Stack
@@ -54,7 +54,6 @@ module br_stack_ent(
 		end else begin
 			map_table_stack <= `SD fixed_nxt_mts;
         	fl_head_stack	<= `SD fixed_nxt_fhs;
-		end
 		end
 	end
 

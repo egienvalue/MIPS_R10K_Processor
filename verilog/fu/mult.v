@@ -4,7 +4,7 @@
 // allow a faster clock period than straight *
 // This module instantiates 8 pipeline stages as an array of submodules.
 // 
-module mult_stage(
+module mult_stage (
 					input clock, reset, start,
 					input [63:0] product_in, mplier_in, mcand_in,
 
@@ -44,7 +44,7 @@ module mult_stage(
 
 endmodule
 
-module mult(
+module mult (
 				input 						clk, 
 				input						rst,
 				input	[63:0]				opa_i, 

@@ -82,6 +82,8 @@ module map_table(
 		end
 
 		always_comb begin	// Here we make the next_MAP/RDY ready for sequential assignments.
+			next_MAP	= MAP; // added by hengfei. set default value, otherwise synthesis will generate Latches
+			next_RDY	= RDY;
 			case(state)
 				NORMAL:
 				begin
@@ -115,7 +117,6 @@ module map_table(
 						next_RDY[i] = rc_mt_all_data_i[i][6];
 					end
 				end
-				default:
 			endcase
 			next_RDY[31] = 1; // edited by hengfei ZERO_REG is always ready
 		end

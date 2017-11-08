@@ -32,9 +32,9 @@ module branch_stack(
 		
 		output	[`BR_MASK_W-1:0]	br_mask_o,			//[ROB]			Send current mask value to ROB to save in an ROB entry.
 		output	[`BR_MASK_W-1:0]	br_bit_o,			//[RS]			Output corresponding branch bit immediately after knowing wrong or correct. 
-		output						full_o				//[ROB]			Tell ROB that stack is full and no further branch dispatch is allowed. 
+		output						full_o,				//[ROB]			Tell ROB that stack is full and no further branch dispatch is allowed. 
 		output	[31:0][6:0]			rc_mt_all_data_o,	//[Map Table]	Recovery data for map table.
-		output	[4:0]				rc_fl_head_o,		//[Free List]	Recovery head value for free list.
+		output	[4:0]				rc_fl_head_o		//[Free List]	Recovery head value for free list.
 	);
 
 
@@ -76,7 +76,7 @@ module branch_stack(
         .bak_mp_next_data_i(bak_mp_next_data_i),	
         .bak_fl_head_i(bak_fl_head_i),
         .rc_mt_all_data_o(unslctd_mt_data),	
-        .rc_fl_head_o(unslctd_fl_data),
+        .rc_fl_head_o(unslctd_fl_data)
 	);
 
 endmodule

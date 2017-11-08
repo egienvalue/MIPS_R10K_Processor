@@ -4,7 +4,7 @@
 // 				here
 // Author: group 5
 // Version History
-//   <11/5> initial creation: integrate without, br_predictor, LSQ
+//   <11/5> initial creation: integrate without br_predictor, LSQ
 //*****************************************************************************
 `timescale 1ns/100ps
 
@@ -22,8 +22,7 @@ module core (
 
 		// may need more ports for testbench!!!
 		output	logic	[3:0]					core_retired_instrs,
-		output	logic	[3:0]					core_error_status,
-
+		output	logic	[3:0]					core_error_status
 	);
 
 
@@ -123,7 +122,7 @@ module core (
 	logic	[`FU_SEL_W-1:0]		id_fu_sel_i;
 	logic	[31:0]				id_IR_i;
 	logic	[`ROB_IDX_W-1:0]	rob_idx_i;
-	logic	[`RPF_IDX_W-1:0]	cdb_tag_i;
+	logic	[`PRF_IDX_W-1:0]	cdb_tag_i;
 	logic						cdb_vld_i;
 	logic						stall_dp_i;
 	logic	[`BR_MASK_W-1:0]	bmg_br_mask_i;
@@ -143,13 +142,13 @@ module core (
 
 
 	//---------------------------------------------------------------
-	// signals for rob
+	// signals for ROB
 	//---------------------------------------------------------------
 	logic	[`PRF_IDX_W-1:0]	fl2rob_tag_i;
 	logic	[`PRF_IDX_W-2:0]	fl2rob_cur_head_i;
 	logic	[`PRF_IDX_W-1:0]	map2rob_tag_i;
 	logic	[`PRF_IDX_W-2:0]	decode2rob_logic_dest_i;//lo
-	logic	[63:0]				decode2rob_NPC_i;//instructio
+	logic	[63:0]				decode2rob_PC_i;//instructio
 	logic						decode2rob_br_flag_i;//flag 
 	logic						decode2rob_br_pretaken_i;//b
 	logic	[63:0]				decode2rob_br_target_i;//bra
@@ -161,6 +160,10 @@ module core (
 	logic	[`ROB_IDX_W:0]		fu2rob_idx_i;//tag sent from
 	logic						fu2rob_done_signal_i;//done 
 	logic						fu2rob_br_taken_i;//branck t
+	logic	[63:0]				fu2rob_br_target_i;
+
+	logic	[`ROB_IDX_W-1:0]	rs2rob_rd_idx_i;
+	logic	[63:0]				rob2fu_rd_NPC_o;
 
 	logic	[`HT_W-1:0]			rob2rs_tail_idx_o;//tail # s
 	logic	[`PRF_IDX_W-1:0]	rob2fl_tag_o;//tag from ROB 
@@ -195,7 +198,7 @@ module core (
 	logic		 				opa_preg_rdy_bit_o;	    //[RS]			
 	logic		 				opb_preg_rdy_bit_o;	    //[RS]			
 	logic	[5:0]				dest_old_preg_o;		//[ROB]			
-	logic	[31:0][6:0]			bak_data_o				//[Br_stack]	
+	logic	[31:0][6:0]			bak_data_o;			//[Br_stack]	
 	
 	// Freelist
 	//logic						dispatch_en_i;			//[Decoder]		
@@ -234,7 +237,7 @@ module core (
 	// signals for preg file
 	//---------------------------------------------------------------
 	logic						wr_en_i;
-	logic	[`P_REG_SIZE:0]		rda_idx_i,rdb_idx_i, wr_idx_i;
+	logic	[`PRF_IDX_W-1:0]	rda_idx_i,rdb_idx_i, wr_idx_i;
 	logic						wr_data_i;
 
 	logic	[63:0]				rda_data_o, rdb_data_o;
@@ -252,7 +255,7 @@ module core (
 	logic	[`BR_MASK_W-1:0]	br_bit_o;			//[RS]			
 	logic	[31:0][6:0]			rc_mt_all_data_o;		//[Map Table]
 	logic	[4:0]				rc_fl_head_o;			//[Free List]
-	logic						full_o;
+	logic						br_stack_full_o;
 
 	//---------------------------------------------------------------
 	// signals for LSQ
@@ -460,6 +463,8 @@ module core (
 	assign fu2rob_idx_i				= fu2rob_idx_o;
 	assign fu2rob_done_signal_i		= fu2rob_done_o;
 	assign fu2rob_br_taken_i		= fu2rob_br_taken_o;
+	assign fu2rob_br_target_i		= fu2rob_br_target_o;
+	assign rs2rob_rd_idx_i			= rs_iss_rob_idx_o;
 
 	rob rob (
 		.clk						(clk),
@@ -468,7 +473,7 @@ module core (
 		.fl2rob_cur_head_i			(fl2rob_cur_head_i),
 		.map2rob_tag_i				(map2rob_tag_i),
 		.decode2rob_logic_dest_i	(decode2rob_logic_dest_i),
-		.decode2rob_PC_i			(decode2rob_NPC_i),
+		.decode2rob_PC_i			(decode2rob_PC_i),
 		.decode2rob_br_flag_i		(decode2rob_br_flag_i),
 		.decode2rob_br_pretaken_i	(decode2rob_br_pretaken_i),
 		.decode2rob_br_target_i		(decode2rob_br_target_i),
@@ -480,6 +485,10 @@ module core (
 		.fu2rob_idx_i				(fu2rob_idx_i),
 		.fu2rob_done_signal_i		(fu2rob_done_signal_i),
 		.fu2rob_br_taken_i			(fu2rob_br_taken_i),
+		.fu2rob_br_target_i			(fu2rob_br_target_i),
+
+		.rs2rob_rd_idx_i			(rs2rob_rd_idx_i),
+		.rob2fu_rd_NPC_o			(rob2fu_rd_NPC_o),
 
 		.rob2rs_tail_idx_o			(rob2rs_tail_idx_o),
 		.rob2fl_tag_o				(rob2fl_tag_o),
@@ -492,7 +501,7 @@ module core (
 		.rob2fl_recover_head_o		(rob2fl_recover_head_o),
 		.br_recovery_mask_o			(br_recovery_mask_o),
 		//.br_wrong_o					(br_wrong_o),
-		.br_right_o					(br_right_o),
+		.br_right_o					(br_right_o)
 	);	
 
 	//===============================================================
@@ -582,7 +591,7 @@ module core (
 	);
 
 	//===============================================================
-	// fu instantiation
+	// physical regfile instantiation
 	//===============================================================
 	assign wr_en_i		= fu2preg_wr_en_o; //
 	assign rda_idx_i	= rs_iss_opa_tag_o; // !! from rs issue
@@ -644,3 +653,4 @@ module core (
 
 
 endmodule: core
+

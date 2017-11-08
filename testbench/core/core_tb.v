@@ -7,6 +7,8 @@
 //*****************************************************************************
 `timescale 1ns/100ps
 
+`define		PRINT_ROB_WHOLE		1
+
 module core_tb;
 
 	logic			clk;
@@ -122,7 +124,7 @@ module core_tb;
 		$fdisplay("@@@ The content of RS is:");
 		//
 		$fdisplay("@@@       TAGA  | RDYA |  TAGB  | RDYB |DEST_TAG| FU_SEL|   IR     |ROB_IDX|BR_MASK| AVAIL | Instr");
-		for (i = 0; i < `RS_ENT_NUM; i = i + 1) begin
+		for (int i = 0; i < `RS_ENT_NUM; i = i + 1) begin
 			$fdisplay("@@@ %-3d: %d |  %b   | %d |  %b   | %d |   %d   | %h |  %d   | %b |   %b | %s", i, 
 				core_0.rs.opa_tag_vec[i], core_0.rs.opa_rdy_vec[i],
 				core_0.rs.opb_tag_vec[i], core_0.rs.opb_rdy_vec[i], 
@@ -149,19 +151,29 @@ module core_tb;
 		$fdisplay("@@@");
 		$fdisplay("@@@ At cycle%d:", clock_count);
 		$fdisplay("@@@ The content of ROB is:");
+		$fdisplay("@@@    Tnew | Told | dest | Done | rd_wr | br | br p&t |        PC        |      t-PC        | br_mask | ");
 		// print whole rob
-		$fdisplay("@@@      Tnew | Told | dest | Done | rd_wr | br | br p&t |   PC   |  t-PC  | br_mask | ");
-		for (i = 0; i < `ROB_W; i++) begin
-			$fdisplay("@@@ %-2d: p%d | p%d | r%d | %b | %b %b | %b | %b%b | %h | %b | ", i, 
-				core_0.rob.dest_tag_r, core_0.rob.old_dest_tag_r, core_0.rob.logic_dest_r, 
-				core_0.rob.done_r, core_0.rob.rd_mem_r, core_0.rob.wr_mem_r, core_0.rob.br_flag_r,
-				core_0.rob.br_pretaken_r, core_0.rob.br_taken_r, core_0.rob.PC_r, core_0.rob.br_target_r, 
-				core_0.rob.br_mask_r);
-		end
-		// print valid rob
-		//
-		//
+		if (`PRINT_ROB_WHOLE == 1) begin
+			for (int i = 0; i < `ROB_W; i++) begin
+				$fdisplay("@@@ %-2d: p%d |  p%d |  r%d |   %b  |  %b %b  |  %b |   %b%b   | %h | %h |  %b  | ", i, 
+					core_0.rob.dest_tag_r[i], core_0.rob.old_dest_tag_r[i], core_0.rob.logic_dest_r[i], 
+					core_0.rob.done_r[i], core_0.rob.rd_mem_r[i], core_0.rob.wr_mem_r[i], core_0.rob.br_flag_r[i],
+					core_0.rob.br_pretaken_r[i], core_0.rob.br_taken_r[i], core_0.rob.PC_r[i], core_0.rob.br_target_r[i], 
+					core_0.rob.br_mask_r[i]);
+			end
+		end else begin // print valid rob
+			for (int i = core_0.rob.head_r[`HT_W-1:0]; i!=core_0.rob.tail_r[`HT_W-1:0]; i++) begin
+				if(i>=`ROB_W)
+    		        i = i%`ROB_W;
+					$fdisplay("@@@ %-2d: p%d |  p%d |  r%d |   %b  |  %b %b  |  %b |   %b%b   | %h | %h |  %b  |", i, 
+					core_0.rob.dest_tag_r[i], core_0.rob.old_dest_tag_r[i], core_0.rob.logic_dest_r[i], 
+					core_0.rob.done_r[i], core_0.rob.rd_mem_r[i], core_0.rob.wr_mem_r[i], core_0.rob.br_flag_r[i],
+					core_0.rob.br_pretaken_r[i], core_0.rob.br_taken_r[i], core_0.rob.PC_r[i], core_0.rob.br_target_r[i], 
+					core_0.rob.br_mask_r[i]);
+				end
 
+			end
+		end
 		// print head and tail pointer
 		$fdisplay("@@@ #pointer# head: %d | tail: %d | disp_en: %b", core_0.rob.head_r[`HT_W-1:0], 
 			core_0.rob.tail_r[`HT_W-1:0], core_0.rob.rob_dispatch_en_i);

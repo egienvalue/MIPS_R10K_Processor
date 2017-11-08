@@ -1,6 +1,6 @@
 module fu_main(
-		input clk;
-		input rst;
+		input 							clk,
+		input 							rst,
 		
 		input		[63:0]				rob2fu_NPC_i,
 		input 		[`ROB_IDX_W-1:0]	rs2fu_rob_idx_i,
@@ -42,7 +42,7 @@ module fu_main(
 	logic		[63:0]				mult_result;
 	logic							mult_done;
 	logic		[`HT_W-1:0]			mult_rob_idx;
-	logic		[`PRF_IDX_W-1:0]	mult_dest_reg;
+	logic		[`PRF_IDX_W-1:0]	mult_dest_tag;
 	
 	//wire [63:0] mem_disp = { {48{rs2fu_IR_i[15]}}, rs2fu_IR_i[15:0] };
 	//wire [63:0] br_disp  = { {41{rs2fu_IR_i[20]}}, rs2fu_IR_i[20:0], 2'b00 };
@@ -80,7 +80,8 @@ module fu_main(
 		case (rs2fu_sel_i)
 			`FU_SEL_NONE:	ex_unit_en = `EX_UNIT_W'b00000;
 			`FU_SEL_ALU :	ex_unit_en = `EX_UNIT_W'b00001;
-			`FU_SEL_BR:		ex_unit_en = `EX_UNIT_W'b00010;
+			`FU_SEL_UNCOND_BRANCH,`FU_SEL_COND_BRANCH:
+							ex_unit_en = `EX_UNIT_W'b00010;
 			`FU_SEL_MULT:	ex_unit_en = `EX_UNIT_W'b00100;
 			`FU_SEL_LOAD:	ex_unit_en = `EX_UNIT_W'b01000;
 			`FU_SEL_STORE:	ex_unit_en = `EX_UNIT_W'b10000;
@@ -94,7 +95,7 @@ module fu_main(
             cdb_vld_r   <= `SD 0;
             cdb_value_r <= `SD 0;
         end else begin
-			cdb_tag_r   <= `SD cdb_tag_nxt;
+			cdb_tag_r   <= `SD cdb_tag_r_nxt;
             cdb_vld_r   <= `SD cdb_vld_r_nxt;
             cdb_value_r <= `SD cdb_value_r_nxt;
         end    
@@ -108,18 +109,18 @@ module fu_main(
 			.opb_i(rs2fu_rb_value_i),
 			.inst_i(rs2fu_IR_i),
 			.dest_tag_i(rs2fu_dest_tag_i),
-			.rob_idx_i(rs2fu_rob_idx_i)
+			.rob_idx_i(rs2fu_rob_idx_i),
 			.result_o(int_alu_result),
 			.dest_tag_o(int_alu_dest_tag),
 			.rob_idx_o(int_alu_rob_idx),
 			.done_o(int_alu_done)
-			);
+	);
 	
 	
 	br_alu br_alu1 (
 			.clk,
 			.rst,
-			.start_i(ex_unit_en[1])
+			.start_i(ex_unit_en[1]),
 			.npc_i(rob2fu_NPC_i),
 			.opa_i(rs2fu_ra_value_i),
 			.inst_i(rs2fu_IR_i),
@@ -134,7 +135,7 @@ module fu_main(
 	mult mult1 (	
 			.clk,
 			.rst,
-			.start_i(ex_unit_en[2])
+			.start_i(ex_unit_en[2]),
 			.opa_i(rs2fu_ra_value_i),
 			.opb_i(rs2fu_rb_value_i),
 			.inst_i(rs2fu_IR_i),
@@ -143,7 +144,7 @@ module fu_main(
 			.product(mult_result),
 			.rob_idx_o(mult_rob_idx),
 			.done(mult_done)	
-			);
+	);
 	
 	
 endmodule	  

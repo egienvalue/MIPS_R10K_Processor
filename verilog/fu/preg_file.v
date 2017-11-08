@@ -2,7 +2,7 @@ module preg_file(
 		input						clk,
 		input						rst,
 		input						wr_en_i,
-		input		[`P_REG_SIZE:0]	rda_idx_i,rdb_idx_i, wr_idx_i,
+		input	[`PRF_IDX_W-1:0]	rda_idx_i,rdb_idx_i, wr_idx_i,
 		input						wr_data_i,
 
 
@@ -10,35 +10,35 @@ module preg_file(
 	
 		);
 
-	logic	[`P_REG_SIZE:0][63:0]	reg_data_r;
+	logic	[`PRF_NUM-1:0][63:0]	reg_data_r;
 		
 	wire	[63:0]		rda_reg = reg_data_r[rda_idx_i];
-	wire	[63:0]		rdb_reg = reg_data_r[rdb_idx_i]
+	wire	[63:0]		rdb_reg = reg_data_r[rdb_idx_i];
 	
 	always_comb begin
-		if(rda_idx_i == `ZERO_REG_P)
+		if(rda_idx_i == `ZERO_REG)
 			rda_data_o = 0;
-		else if (wr_en_i && (wr_idx_i == rda_idx))
+		else if (wr_en_i && (wr_idx_i == rda_idx_i))
 			rda_data_o = wr_data_i;
 		else
-			rda_out = rda_reg;
+			rda_data_o = rda_reg;
 	end
 	
 		
 	always_comb begin
-		if(rdb_idx_i == `ZERO_REG_P)
+		if(rdb_idx_i == `ZERO_REG)
 			rdb_data_o = 0;
-		else if (wr_en_i && (wr_idx_i == rdb_idx))
+		else if (wr_en_i && (wr_idx_i == rdb_idx_i))
 			rdb_data_o = wr_data_i;
 		else
-			rdb_out = rdb_reg;
+			rdb_data_o = rdb_reg;
 	end
 
-	always_ff @(posedge clk)
+	always_ff @(posedge clk) begin
 		if(rst)
 			reg_data_r <= `SD 0;
 		else if (wr_en_i)
-			reg_date_r[wr_idx] <= `SD wr_data_i;
+			reg_data_r[wr_idx_i] <= `SD wr_data_i;
 	end
 
 
