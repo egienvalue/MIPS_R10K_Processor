@@ -126,6 +126,7 @@ module map_table(
 			cdb_match_found = 0;
 			if(cdb_set_rdy_bit_en_i) begin
 				for (int i=0;i<`MT_NUM;i++) begin
+4
 					if (MAP[i] == cdb_set_rdy_bit_preg_i) begin
 						cdb_match_index = i;
 						cdb_match_found = 1;

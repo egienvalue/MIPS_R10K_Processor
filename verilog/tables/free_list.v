@@ -50,7 +50,6 @@ module free_list(
 
 		assign empty		= (count == 0);
 		assign full			= (count >= `FL_NUM);
-
 		assign free_preg_vld_o	=	~empty;						// Modified 11/06. This output is functioned as "not empty" instead. 
 									/*~dispatch_en_i	? 0 : 
 									~empty			? 1 : 

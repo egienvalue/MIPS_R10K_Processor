@@ -52,8 +52,8 @@
 `define			PRF_IDX_W		($clog2(`PRF_NUM))
 `define			LRF_NUM			32
 `define			LRF_IDX_W		($clog2(`LRF_NUM))
-`define			MT_NUM			LRF_NUM
-`define			FL_NUM			PRF_NUM - MT_NUM
+`define			MT_NUM			`LRF_NUM
+`define			FL_NUM			`PRF_NUM - `MT_NUM
 
 
 
