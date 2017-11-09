@@ -49,16 +49,16 @@ module br_mask_ctrl(
 			end
 		endtask
 
-		logic	[`BR_MASK_W-1:0]			mask;						// Mask
-		logic	[`BR_MASK_W-1:0]			next_mask;					// Next mask
-		logic	[3:0]						br_bit_idx,	temp_bit_idx;	// Branch bit index number
-		logic 	[`BR_MASK_W-1:0]			br_bit, temp_bit;			// in which "br_bit" is assigned to br_bit_o. 
-		logic								full;
+		logic	[`BR_MASK_W-1:0]		mask;						// Mask
+		logic	[`BR_MASK_W-1:0]		next_mask;					// Next mask
+		logic	[3:0]					br_bit_idx,	temp_bit_idx;	// Branch bit index number
+		logic 	[`BR_MASK_W-1:0]		br_bit, temp_bit;			// in which "br_bit" is assigned to br_bit_o. 
+		logic							full;
 
-		assign full = (mask == {`BR_MASK_W{1'b1}}) ? 1:0;
-		assign full_o = full;
-		assign br_mask_o = mask;										// Assign current branch mask output
-		assign br_bit_o = br_bit;
+		assign full			= (mask == {`BR_MASK_W{1'b1}}) ? 1:0;
+		assign full_o		= full;
+		assign br_mask_o	= mask;										// Assign current branch mask output
+		assign br_bit_o		= br_bit;
 
 		always_comb begin												// Assign br_bit_idx and next_mask. Assign next_mask under the condition of br_state_i (wrong or correct?)
 			if (br_state_i == `BR_PR_WRONG) begin
