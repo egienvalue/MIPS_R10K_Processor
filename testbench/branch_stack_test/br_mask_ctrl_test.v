@@ -30,7 +30,7 @@ module testbench;
 	
 	logic	[11:0]				clock_count;
 
-
+	logic	[`BR_MASK_W-1:0]	temp_bits;
 	// 2. Module instantiation. 
 	br_mask_ctrl mask_ctrl0 (
 		.clk, 
@@ -88,21 +88,53 @@ module testbench;
 		@(negedge clk);
 		@(negedge clk);
 		//---------------------------------Cases start------------
-		// Case 1: dispatch 32 entries
+		temp_bits = 5'b00000;
+		// Case 1: 5 branches come
 		$display("@@@ Case 1");
 		is_br_i = 1'b1;
 		for(int i=0;i<5;i++) begin
 			@(posedge clk);
 			#4
-			if (br_mask_o!={i{1'b1}} || full_o!=0 || br_bit_o!=0) begin
+			temp_bits[i] = 1;
+			if (br_mask_o!= temp_bits|| full_o!= (i==4) || br_bit_o!=0) begin
 				$display("@@@ Failed.");
+				$display("@@@ br_mask_o: %b, br_bit_o: %5b, full_o:%d.", temp_bits, 0,1);
 				$finish;
 			end
 			@(negedge clk);
 		end
 
+		is_br_i = 1'b0;
 		@(posedge clk);
 		@(posedge clk);
+		@(posedge clk);
+		@(posedge clk);
+		@(posedge clk);
+		@(posedge clk);
+
+		// Case 2: idx 2 branch correct
+
+		@(negedge clk);
+		br_state_i = `BR_PR_CORRECT;
+		br_dep_mask_i = 5'b00011;
+		@(posedge clk);
+		@(negedge clk);
+		br_dep_mask_i = 5'b01111;
+		@(posedge clk);
+		@(negedge clk);
+		br_state_i = `BR_PR_WRONG;
+		br_dep_mask_i = 5'b00001;
+		@(posedge clk);
+		@(negedge clk);
+		br_state_i = 0;
+		br_dep_mask_i = 0;
+		@(posedge clk);
+		@(posedge clk);
+		@(posedge clk);
+		@(posedge clk);
+		
+		
+
 
 		// It's better at every loop check output manually first and check
 		// through mem table second(write a simulation function above)...  

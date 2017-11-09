@@ -74,8 +74,10 @@ module br_mask_ctrl(
 			end else if (is_br_i) begin
 				first_zero_idx(mask, temp_bit_idx, temp_bit);
 				next_mask = mask ^ temp_bit;
+				br_bit = 0;
 			end else begin
 				next_mask = mask;
+				br_bit = 0;
 			end
 		end
 	
