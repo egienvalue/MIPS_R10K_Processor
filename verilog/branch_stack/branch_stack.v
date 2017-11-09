@@ -27,21 +27,21 @@ module branch_stack(
 		input										is_br_i,			//[Dispatch]	A new branch is dispatched, mask should be updated.
 		input	[`BR_STATE_W-1:0]					br_state_i,			//[ROB]			Branch prediction wrong or correct?		
 		input	[`BR_MASK_W-1:0]					br_dep_mask_i,		//[ROB]			The mask of currently resolved branch.
-		input	[MT_NUM-1:0][PRF_IDX_W:0]			bak_mp_next_data_i,	//[Map Table]	Back up data from map table.
-		input	[LRF_IDX_W-1:0]						bak_fl_head_i,		//[Free List]	Back up head of free list.
+		input	[`MT_NUM-1:0][`PRF_IDX_W:0]			bak_mp_next_data_i,	//[Map Table]	Back up data from map table.
+		input	[`LRF_IDX_W-1:0]					bak_fl_head_i,		//[Free List]	Back up head of free list.
 		
 		output	logic	[`BR_MASK_W-1:0]			br_mask_o,			//[ROB]			Send current mask value to ROB to save in an ROB entry.
 		output	logic	[`BR_MASK_W-1:0]			br_bit_o,			//[RS]			Output corresponding branch bit immediately after knowing wrong or correct. 
 		output	logic								full_o,				//[ROB]			Tell ROB that stack is full and no further branch dispatch is allowed. 
-		output	logic	[MT_NUM-1:0][PRF_IDX_W:0]	rc_mt_all_data_o,	//[Map Table]	Recovery data for map table.
-		output	logic	[LRF_IDX_W-1:0]				rc_fl_head_o		//[Free List]	Recovery head value for free list.
+		output	logic	[`MT_NUM-1:0][`PRF_IDX_W:0]	rc_mt_all_data_o,	//[Map Table]	Recovery data for map table.
+		output	logic	[`LRF_IDX_W-1:0]			rc_fl_head_o		//[Free List]	Recovery head value for free list.
 	);
 
 
-	logic [`BR_MASK_W-1:0]							br_mask;
+	logic [`BR_MASK_W-1:0]								br_mask;
 
-	logic [`BR_MASK_W-1:0][MT_NUM-1:0][PRF_IDX_W:0]	unslctd_mt_data;
-	logic [`BR_MASK_W-1:0][LRF_IDX_W-1:0]			unslctd_fl_data;
+	logic [`BR_MASK_W-1:0][`MT_NUM-1:0][`PRF_IDX_W:0]	unslctd_mt_data;
+	logic [`BR_MASK_W-1:0][`LRF_IDX_W-1:0]				unslctd_fl_data;
 
 	assign br_mask_o = br_mask;
 
@@ -55,6 +55,9 @@ module branch_stack(
 					break;
 				end
 			end
+		end else begin
+			rc_mt_all_data_o =	0;
+            rc_fl_head_o	 =	0;
 		end
 	end
 		
