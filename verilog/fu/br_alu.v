@@ -48,7 +48,7 @@ module br_alu (
 		logic			done_nxt;
 		logic			cond_br;
 		logic	[63:0]	br_target_nxt;
-		logic	[63:0]	br_result_nxt;
+		logic   		br_result_nxt;
 		logic			brcond_result;
 		//logic	[`ROB_IDX_W-1:0]	rob_idx_r;
 		logic	[`ROB_IDX_W-1:0]	rob_idx_nxt;
@@ -59,12 +59,14 @@ module br_alu (
 		wire    [4:0] rb_idx = inst_i[20:16];	
 
 	always_comb begin
+        
+        br_target_nxt = npc_i;
+        cond_br = 0;
 		case({inst_i[31:29], 3'b0})
 			6'h18:// JMP, JSR, RET, and JSR_CO
 				begin
 					br_target_nxt = {rb_idx[4:2],2'b00};
 					cond_br  = 0;
-					done_nxt = 1;
 				end
 			6'h30, 6'h38:
 				begin
@@ -73,15 +75,13 @@ module br_alu (
 						`BR_INST, `BSR_INST: 
 							begin
 								cond_br  = 0;
-								done_nxt = 1;
 							end
 						default: 
 							begin
 								cond_br  = 1;
-								done_nxt = 1;
 							end
 						endcase
-				end
+				end            
 			endcase
 		end
 			
@@ -100,7 +100,7 @@ module br_alu (
 			rob_idx_o	<= `SD 0;
             br_pc_o     <= `SD 0;
 		end else begin
-			done_o 		<= `SD done_nxt;
+			done_o 		<= `SD start_i;
 			br_result_o <= `SD br_result_nxt;
 			br_target_o <= `SD br_target_nxt;
 			rob_idx_o	<= `SD rob_idx_nxt;

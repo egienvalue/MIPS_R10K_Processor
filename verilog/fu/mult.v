@@ -61,6 +61,10 @@ module mult (
 			);
 
 	parameter NUM_OF_STAGE = 4;
+    logic   [`PRF_IDX_W-1:0]    dest_tag_r;
+    logic   [`PRF_IDX_W-1:0]    dest_tag_r_nxt;
+    logic   [`ROB_IDX_W-1:0]    rob_idx_r_nxt;
+    logic   [`ROB_IDX_W-1:0]    rob_idx_r;
 
 	logic [63:0] mcand_out, mplier_out;
 	logic [(NUM_OF_STAGE-1)*64-1:0] internal_products, internal_mcands, internal_mpliers;
@@ -69,8 +73,12 @@ module mult (
 	wire [63:0] mcand = opa_i;
 	wire [63:0] mplier;
 	assign mplier = inst_i[12] ? mult_imm : opb_i;
-
-
+    assign dest_tag_r_nxt   = start_i ? dest_tag_i : 
+                              done ? `ZERO_REG : dest_tag_r;
+    assign rob_idx_r_nxt    = start_i ? dest_tag_i : 
+                              done ? 0 : dest_tag_r;
+    assign dest_tag_o       = dest_tag_r;
+    assign rob_idx_o        = rob_idx_r;
 	mult_stage #(.BITS_OF_STAGE(64/NUM_OF_STAGE)) mstage[NUM_OF_STAGE-1:0]  (
 		.clock(clk),
 		.reset(rst),
@@ -86,11 +94,11 @@ module mult (
 
 	always_ff @(posedge clk) begin
 		if (rst) begin
-			rob_idx_o <= `SD 0;
-			dest_tag_o <= `SD 0;
-		end else if (start_i) begin
-			rob_idx_o <= `SD rob_idx_i;
-			dest_tag_o <= `SD dest_tag_i;
+			rob_idx_r <= `SD 0;
+			dest_tag_r <= `SD 0;
+		end else begin
+			rob_idx_r <= `SD rob_idx_r_nxt;
+			dest_tag_r <= `SD dest_tag_r_nxt;
 		end
 	end
 

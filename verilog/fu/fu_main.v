@@ -1,3 +1,4 @@
+
 module fu_main(
 		input 							clk,
 		input 							rst,
@@ -26,7 +27,6 @@ module fu_main(
 	logic		[`PRF_IDX_W-1:0]	cdb_tag_r,cdb_tag_r_nxt;
     logic       [63:0]              cdb_value_r, cdb_value_r_nxt;
 	logic		[`EX_UNIT_W-1:0]	ex_unit_en;
-	logic		[`HT_W-1:0]			rob_num_r;
 	
 	logic		[63:0]				int_alu_result;
 	logic							int_alu_done;
@@ -102,8 +102,8 @@ module fu_main(
 	end
 
 	int_alu int_alu1 (
-			.clk,
-			.rst,
+			.clk(clk),
+			.rst(rst),
 			.start_i(ex_unit_en[0]),
 			.opa_i(rs2fu_ra_value_i),
 			.opb_i(rs2fu_rb_value_i),
@@ -118,8 +118,8 @@ module fu_main(
 	
 	
 	br_alu br_alu1 (
-			.clk,
-			.rst,
+			.clk(clk),
+			.rst(rst),
 			.start_i(ex_unit_en[1]),
 			.npc_i(rob2fu_NPC_i),
 			.opa_i(rs2fu_ra_value_i),
@@ -133,8 +133,8 @@ module fu_main(
 			);
 	
 	mult mult1 (	
-			.clk,
-			.rst,
+			.clk(clk),
+			.rst(rst),
 			.start_i(ex_unit_en[2]),
 			.opa_i(rs2fu_ra_value_i),
 			.opb_i(rs2fu_rb_value_i),
@@ -143,6 +143,7 @@ module fu_main(
 			.dest_tag_i(rs2fu_dest_tag_i),
 			.product(mult_result),
 			.rob_idx_o(mult_rob_idx),
+            .dest_tag_o(mult_dest_tag),
 			.done(mult_done)	
 	);
 	
