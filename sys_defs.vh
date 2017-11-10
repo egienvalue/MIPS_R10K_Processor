@@ -55,6 +55,17 @@
 // Chuan
 `define			PRF_NUM			64
 `define			PRF_IDX_W		($clog2(`PRF_NUM))
+`define			LRF_NUM			32
+`define			LRF_IDX_W		($clog2(`LRF_NUM))
+`define			MT_NUM			`LRF_NUM
+`define			FL_NUM			`PRF_NUM - `MT_NUM
+`define			BHR_W			10
+`define			PHT_NUM			2**`BHR_W
+
+`define			BTB_TAG_W		10		//BTB
+`define			BTB_VAL_W		12
+`define			BTB_SEL_W		8
+`define			BTB_NUM			2**`BTB_SEL_W
 
 
 
