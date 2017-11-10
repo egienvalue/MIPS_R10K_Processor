@@ -57,6 +57,12 @@
 `define			BHR_W			10
 `define			PHT_NUM			2**`BHR_W
 
+`define			BTB_TAG_W		10		//BTB
+`define			BTB_VAL_W		12
+`define			BTB_SEL_W		8
+`define			BTB_NUM			2**`BTB_SEL_W
+
+
 
 // Lu
 `define			RS_ENT_NUM		8
