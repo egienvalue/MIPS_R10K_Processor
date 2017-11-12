@@ -7,19 +7,17 @@ typedef enum {
 
    
 module DIRP(
-	input						clk;
-	input						rst;
+	input						clk,
+	input						rst,
 	input						is_br_i,
 	input	[`BR_STATE_W-1:0]	reslv_i, 
-	input						is_taken_i;
+	input						is_taken_i,
 	input	[`BHR_W-1:0]		recrv_BHR_i,
 
 	output						pred_o,
 	output	[`BHR_W-1:0]		save_BHR_o
 	);
 
-	localparam 
-	
 	P_STATE	PHT [`PHT_NUM-1:0];	// Use bimodal/saturation counter.		
 	logic	[`BHR_W-1:0]		BHR;
 	logic	[`BHR_W-1:0]		next_BHR;
@@ -28,11 +26,12 @@ module DIRP(
 	// Comb assign pred.
 	assign pred = PHT[BHR][1];
 	assign pred_o = pred;
+	assign save_BHR_o = BHR;
 	
 	// Comb assign next_BHR
 	always_comb	begin
-		if (reslv_i == `BR_PR_CORRECT) begin
-			next_BHR = {recrv_BHR_i[`BHR_W-2:0], 0};
+		if (reslv_i == `BR_PR_WRONG) begin
+			next_BHR = {recrv_BHR_i[`BHR_W-2:0], is_taken_i};
 		end else if (is_br_i) begin
 			next_BHR = {BHR[`BHR_W-2:0], pred};
 		end else begin

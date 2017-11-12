@@ -46,6 +46,11 @@
 `define			BR_PR_CORRECT		2'b10
 `define			BR_NONE			2'b00
 `define			BR_STATE_W		2
+`define         BHR_W           16
+`define         PT_W            32
+`define         PT_IDX_W        ($clog2(`PT_W))
+`define         THRESHOLD       32
+`define         WEIGHT_W        ($clog2(`THRESHOLD)+1)
 
 // Chuan
 `define			PRF_NUM			64
@@ -54,7 +59,9 @@
 `define			LRF_IDX_W		($clog2(`LRF_NUM))
 `define			MT_NUM			`LRF_NUM
 `define			FL_NUM			`PRF_NUM - `MT_NUM
-`define			BHR_W			10
+`define			PC_IDX_W		5
+`define			BHT_NUM			2**`PC_IDX_W
+`define			BHT_W			5
 `define			PHT_NUM			2**`BHR_W
 
 `define			BTB_TAG_W		10		//BTB
