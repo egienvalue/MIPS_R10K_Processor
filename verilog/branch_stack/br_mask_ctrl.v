@@ -26,6 +26,9 @@ module br_mask_ctrl(
 		input						clk, 
 		input						rst,
 		input						is_br_i,		//[Dispatch]	A new branch is dispatched, mask should be updated.
+		input						is_cond_i,		//[Dispatch]
+		input						is_taken_i,		//[Dispatch]
+
 		input	[`BR_STATE_W-1:0]	br_state_i,		//[ROB]			Branch prediction wrong or correct?		
 		input	[`BR_MASK_W-1:0]	br_dep_mask_i,	//[ROB]			The mask of currently resolved branch.
 		
@@ -39,13 +42,14 @@ module br_mask_ctrl(
 			output	[3:0]				idx;			// Return the index of the first zero (example:4'b0010)
 			output	[`BR_MASK_W-1:0]	br_bit;			// Return an bit array in one-hot style (example:5'b00010)
 			begin
+				br_bit = `BR_MASK_W'b0;
 				for (int i=0;i<`BR_MASK_W;i++) begin
 					if (br_mask[i] == 0) begin
 						idx = i;
 						break;
 					end
 				end
-				br_bit = `BR_MASK_W'b1 << idx;
+				br_bit[idx] = 1'b1; 
 			end
 		endtask
 
@@ -64,14 +68,14 @@ module br_mask_ctrl(
 			if (br_state_i == `BR_PR_WRONG) begin
 				first_zero_idx(br_dep_mask_i, br_bit_idx, br_bit); 
 				next_mask = br_dep_mask_i;
-			end else if (br_state_i == `BR_PR_CORRECT && ~is_br_i) begin
+			end else if (br_state_i == `BR_PR_CORRECT && ~is_br_i && is_cond_i) begin
 				first_zero_idx(br_dep_mask_i, br_bit_idx, br_bit); 
 				next_mask = mask ^ br_bit;				
-			end else if (br_state_i == `BR_PR_CORRECT && is_br_i) begin
+			end else if (br_state_i == `BR_PR_CORRECT && is_br_i && is_cond_i) begin
 				first_zero_idx(br_dep_mask_i, br_bit_idx, br_bit); 
 				first_zero_idx(mask ^ br_bit, temp_bit_idx, temp_bit); 
 				next_mask = mask ^ br_bit ^ temp_bit;
-			end else if (is_br_i) begin
+			end else if (is_br_i && ~(~is_cond_i && is_taken_i)) begin
 				first_zero_idx(mask, temp_bit_idx, temp_bit);
 				next_mask = mask ^ temp_bit;
 				br_bit = 0;
