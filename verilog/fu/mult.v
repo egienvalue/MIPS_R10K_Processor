@@ -3,7 +3,9 @@
 // of the result.  This is not an ideal multiplier but is sufficient to 
 // allow a faster clock period than straight *
 // This module instantiates 8 pipeline stages as an array of submodules.
-// 
+//
+// <11/11> changed rob_idx_o, dest_tag_o to be pipelined
+//
 module mult_stage (
 					input clock, reset, start,
 					input [63:0] product_in, mplier_in, mcand_in,
@@ -61,10 +63,11 @@ module mult (
 			);
 
 	parameter NUM_OF_STAGE = 4;
-    logic   [`PRF_IDX_W-1:0]    dest_tag_r;
-    logic   [`PRF_IDX_W-1:0]    dest_tag_r_nxt;
-    logic   [`ROB_IDX_W-1:0]    rob_idx_r_nxt;
-    logic   [`ROB_IDX_W-1:0]    rob_idx_r;
+    logic   [NUM_OF_STAGE-1:0][`PRF_IDX_W-1:0]    dest_tag_r;
+    //logic   [`PRF_IDX_W-1:0]    dest_tag_r_nxt;
+
+    logic   [NUM_OF_STAGE-1:0][`ROB_IDX_W-1:0]    rob_idx_r;
+    //logic   [`ROB_IDX_W-1:0]    rob_idx_r_nxt;
 
 	logic [63:0] mcand_out, mplier_out;
 	logic [(NUM_OF_STAGE-1)*64-1:0] internal_products, internal_mcands, internal_mpliers;
@@ -72,13 +75,17 @@ module mult (
 	wire [63:0] mult_imm  = { 56'b0, inst_i[20:13] };
 	wire [63:0] mcand = opa_i;
 	wire [63:0] mplier;
+
 	assign mplier = inst_i[12] ? mult_imm : opb_i;
-    assign dest_tag_r_nxt   = start_i ? dest_tag_i : 
-                              done ? `ZERO_REG : dest_tag_r;
-    assign rob_idx_r_nxt    = start_i ? dest_tag_i : 
-                              done ? 0 : dest_tag_r;
-    assign dest_tag_o       = dest_tag_r;
-    assign rob_idx_o        = rob_idx_r;
+
+    //assign dest_tag_r_nxt   = start_i ? dest_tag_i : 
+    //                          done ? `ZERO_REG : dest_tag_r;
+    //assign rob_idx_r_nxt    = start_i ? dest_tag_i : 
+    //                          done ? 0 : dest_tag_r;
+
+    assign dest_tag_o       = dest_tag_r[NUM_OF_STAGE-1];
+    assign rob_idx_o        = rob_idx_r[NUM_OF_STAGE-1];
+
 	mult_stage #(.BITS_OF_STAGE(64/NUM_OF_STAGE)) mstage[NUM_OF_STAGE-1:0]  (
 		.clock(clk),
 		.reset(rst),
@@ -94,11 +101,17 @@ module mult (
 
 	always_ff @(posedge clk) begin
 		if (rst) begin
-			rob_idx_r <= `SD 0;
-			dest_tag_r <= `SD 0;
+			for (int i = 0; i < NUM_OF_STAGE; i++) begin
+				rob_idx_r[i]	<= `SD 0;
+				dest_tag_r[i]	<= `SD 31;
+			end
 		end else begin
-			rob_idx_r <= `SD rob_idx_r_nxt;
-			dest_tag_r <= `SD dest_tag_r_nxt;
+			rob_idx_r[0]	<= `SD rob_idx_i;
+			dest_tag_r[0]	<= `SD dest_tag_i;
+			for (int i = 1; i < NUM_OF_STAGE; i++) begin
+				rob_idx_r[i]	<= `SD rob_idx_r[i-1];
+				dest_tag_r[i]	<= `SD dest_tag_r[i-1];
+			end
 		end
 	end
 

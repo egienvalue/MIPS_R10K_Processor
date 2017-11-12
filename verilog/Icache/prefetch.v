@@ -5,6 +5,8 @@
 // Version History:
 // 	intial creation: 10/18/2017
 // 	<10/25> move prefetch logic to seperate module here
+// 	<11/10> added forward allocate during pfetch_head_data_rdy (vld_r, PC_r, head_r,
+// 	tail_r)
 // ****************************************************************************
 
 module prefetch (
@@ -17,6 +19,7 @@ module prefetch (
 		input											cachemem_hit_i, // fetch hit on cache
 		input											Icache2pfetch_hit_i, // pfetch hit on cache
 
+		input											if2Icache_req_i,
 		input											if2pfetch_flush_i,
 
 		input			[63:0]							Ictrl2pfetch_addr_i,
@@ -64,6 +67,7 @@ module prefetch (
 
 	wire											pfetch_full;
 	wire											pfetch_empty;
+	wire											pfetch_head_data_rdy;
 	
 	// signals
 	logic		[63:0]								pfetch2Icache_wr_addr; 
@@ -132,7 +136,7 @@ module prefetch (
 	always_comb begin
 		pfetch2Ictrl_hit_o = 1'b0;
 		for (int i = 0; i < `PFETCH_NUM; i++) begin
-			if (Ictrl2pfetch_addr_i == PC_r[i])
+			if (Ictrl2pfetch_addr_i == PC_r[i] && vld_r[i])
 				pfetch2Ictrl_hit_o = 1'b1;
 		end
 	end
@@ -142,7 +146,7 @@ module prefetch (
 		pfetch_smiss_gnt = `PFETCH_NUM'b0;
 		if (~cachemem_hit_i && pfetch2Ictrl_hit_o) begin
 			for (int i = 0; i < `PFETCH_NUM; i++) begin
-				if (PC_r[i] == Ictrl2pfetch_addr_i && vld_r[i])
+				if (PC_r[i] == Ictrl2pfetch_addr_i && vld_r[i] && ~sent_r[i])
 					pfetch_smiss_gnt[i] = 1'b1;
 			end
 		end
@@ -172,8 +176,10 @@ module prefetch (
 	// prefetch status register updating 								  //
 	//--------------------------------------------------------------------//
 	// Entry full and empty
-	assign pfetch_full = (head_msb_r != tail_msb_r) && (head_r == tail_r);
-	assign pfetch_empty= ({head_msb_r,head_r} == {tail_msb_r,tail_r});
+	assign pfetch_full			= (head_msb_r != tail_msb_r) && (head_r == tail_r);
+	assign pfetch_empty			= ({head_msb_r,head_r} == {tail_msb_r,tail_r});
+	assign pfetch_head_data_rdy = (Imem2proc_tag_i != 0) && 
+								  (mem_tag_r[head_r] == Imem2proc_tag_i) && vld_r[head_r];
 
 	// prefetch PC
 	always_comb begin
@@ -182,10 +188,10 @@ module prefetch (
 			for (int i = 0; i < `PFETCH_NUM; i++) begin
 				PC_r_nxt[i] = Ictrl2pfetch_addr_i + 8 + i*8;
 			end
-		end else if (cachemem_hit_i) begin
+		end else if (if2Icache_req_i)/*if (cachemem_hit_i)*/ begin
 			if (pfetch_empty) begin
 				PC_r_nxt[tail_r] = Ictrl2pfetch_addr_i + 8;
-			end else if (~pfetch_full) begin
+			end else if (~pfetch_full | pfetch_head_data_rdy) begin
 				if (tail_r == 0)
 					PC_r_nxt[tail_r] = PC_r[`PFETCH_NUM-1] + 8;
 				else
@@ -214,7 +220,7 @@ module prefetch (
 						vld_r_nxt[i] = 1'b0; // data back, clear entry 
 				end
 			end
-			if (cachemem_hit_i && ~pfetch_full) begin
+			if (/*cachemem_hit_i &&*/if2Icache_req_i && (~pfetch_full | pfetch_head_data_rdy)) begin
 				vld_r_nxt[tail_r] = 1'b1;
 			end
 		end
@@ -263,11 +269,11 @@ module prefetch (
 			head_msb_r_nxt= 0;
 			tail_msb_r_nxt= 1; // full
 		end else begin
-			if (~pfetch_empty && ~vld_r[head_r]) begin // free head move
+			if ((~pfetch_empty && ~vld_r[head_r]) | pfetch_head_data_rdy) begin // free head move
 				head_r_nxt		= (head_r == `PFETCH_NUM-1) ? 0 : head_r + 1;
 				head_msb_r_nxt	= (head_r == `PFETCH_NUM-1) ? ~head_msb_r : head_msb_r;
 			end
-			if (cachemem_hit_i && ~pfetch_full) begin // allocate, tail move
+			if (/*cachemem_hit_i &&*/if2Icache_req_i && (~pfetch_full | pfetch_head_data_rdy)) begin // allocate, tail move
 				tail_r_nxt		= (tail_r == `PFETCH_NUM-1) ? 0 : tail_r + 1;
 				tail_msb_r_nxt	= (tail_r == `PFETCH_NUM-1) ? ~tail_msb_r : tail_msb_r;
 			end

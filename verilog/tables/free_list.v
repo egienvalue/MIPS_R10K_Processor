@@ -15,7 +15,7 @@
 // 	intial creation: 10/17/2017
 // 	***************************************************************************
 
-`define DEBUG
+//`define FL_DEBUG
 module free_list(
 		input						clk,
 		input						rst,					//|From where|
@@ -25,7 +25,7 @@ module free_list(
 		input	[`BR_STATE_W-1:0]	branch_state_i,			//[ROB]			Branch prediction wrong or correct?
 		input	[`LRF_IDX_W-1:0]	rc_head_i,			//[Br_stack]			Recover head to some point
 
-		`ifdef DEBUG
+		`ifdef FL_DEBUG
 		output	[`PRF_IDX_W-1:0]	cnt,
 		output	[`LRF_IDX_W-1:0]	hd,
 		output  [`LRF_IDX_W-1:0]	tl,
@@ -44,9 +44,12 @@ module free_list(
 		logic									recover_en;
 
 		assign recover_en	= (branch_state_i == `BR_PR_WRONG);
+		
+		`ifdef FL_DEBUG
 		assign cnt			= count;
 		assign hd			= head;
 		assign tl			= tail;
+		`endif
 
 		assign empty		= (count == 0);
 		assign full			= (count >= `FL_NUM);

@@ -81,8 +81,8 @@
 `define			BR_MASK_W		5
 
 // Shijing
-`define IFB_SIZE 64
-`define TAG_SIZE 6
+`define IFB_SIZE 8
+`define TAG_SIZE ($clog2(`IFB_SIZE))
 
 `ifndef __SYS_DEFS_VH__
 `define __SYS_DEFS_VH__

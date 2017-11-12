@@ -18,6 +18,7 @@ module Icache_ctrl (
 		input											cachemem_hit_i,
 
 		input			[63:0]							if2Icache_addr_i,
+		input											if2Icache_req_i,
 		input											if2Icache_flush_i, // wrong BP
 
 		input											pfetch2Ictrl_hit_i,
