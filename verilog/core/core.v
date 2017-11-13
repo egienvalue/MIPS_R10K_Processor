@@ -254,7 +254,9 @@ module core (
 	//---------------------------------------------------------------
 	// signals for early branch recovery (br stack)
 	//---------------------------------------------------------------
-	logic						is_br_i;			//[Dispatch]	
+	logic						is_br_i;			//[Dispatch]
+	logic						is_cond_i;
+	logic						is_taken_i;
 	logic	[`BR_STATE_W-1:0]	br_state_i;			//[ROB]			
 	logic	[`BR_MASK_W-1:0]	br_dep_mask_i;		//[ROB]			
 	logic	[31:0][6:0]			bak_mp_next_data_i;		//[Map Table]	
@@ -346,7 +348,8 @@ module core (
 			.proc2Imem_addr			(proc2Imem_addr),
 			.if_PC_o				(if_PC_o),	
 			.if_target_PC_o			(if_target_PC_o),	
-			.if_IR_o				(if_IR_o),		
+			.if_IR_o				(if_IR_o),
+			.if_pred_bit_o			(if_pred_bit_o),
 			.if_valid_inst_o		(if_valid_inst_o)
 			//output logic		  if2id_empty_o
 	);
@@ -470,7 +473,7 @@ module core (
 	assign decode2rob_logic_dest_i	= id_dest_idx_o;
 	assign decode2rob_PC_i			= if_PC_o;
 	assign decode2rob_br_flag_i		= id_cond_branch_o | id_uncond_branch_o;
-	assign decode2rob_br_pretaken_i	= 1'b0; // !! from BP, non-taken for now
+	assign decode2rob_br_pretaken_i	= if_pred_bit_o; // if insn buffer
 	assign decode2rob_br_target_i	= if_target_PC_o; //non-taken for now
 	assign decode2rob_rd_mem_i		= id_rd_mem_o;
 	assign decode2rob_wr_mem_i		= id_wr_mem_o;
@@ -646,6 +649,8 @@ module core (
 	// early branch recovery instantiation
 	//===============================================================
 	assign is_br_i				= dispatch_br_en;
+	assign is_cond_i			= id_cond_branch_o;
+	assign is_taken_i			= if_pred_bit_o; // from if pb prediction
 	assign br_state_i			= br_recovery_rdy_o ? `BR_PR_WRONG : 
 								  br_right_o ? `BR_PR_CORRECT : `BR_NONE; // 
 	assign br_dep_mask_i		= br_recovery_mask_o; // from rob
@@ -656,7 +661,9 @@ module core (
 		.clk				(clk), 
 		.rst				(rst),
 
-		.is_br_i			(is_br_i),			
+		.is_br_i			(is_br_i),
+		.is_cond_i			(is_cond_i),
+		.is_taken_i			(is_taken_i),
 		.br_state_i			(br_state_i),
 		.br_dep_mask_i		(br_dep_mask_i),
 		.bak_mp_next_data_i	(bak_mp_next_data_i),	

@@ -5,6 +5,7 @@
 // Version History:
 // 	intial creation: 10/26/2017
 // 	<11/11> added target_PC_r for storage
+// 	<11/13> added prediction bit for bp for storage
 // 	***************************************************************************
 
 module ifb(
@@ -16,12 +17,14 @@ module ifb(
 		input	[63:0]	if_target_PC_i,
 		input	flush_en_i,//branch flush signal
 		input	decode_en_i,//
+		input	bp2if_pred_bit_i,
 
 		output	logic	ifb_2if_full_o,
 		output	logic	ifb_2id_empty_o,
 		output	logic	[31:0]	ifb_insn_o,
 		output	logic	[63:0]	ifb_PC_o,
-		output	logic	[63:0]	ifb_target_PC_o
+		output	logic	[63:0]	ifb_target_PC_o,
+		output  logic			ifb_pred_bit_o
 	);
 
 	logic	[(`TAG_SIZE-1):0]	ifb_head;
@@ -34,9 +37,10 @@ module ifb(
 	logic	[`IFB_SIZE-1:0][63:0] PC_array;
 	logic	[`IFB_SIZE-1:0][31:0] insn_array;
 	logic	[`IFB_SIZE-1:0][63:0] target_PC_r;
+	logic	[`IFB_SIZE-1:0]		  pred_bit_r;
 
-	logic	[`IFB_SIZE-1:0][63:0] PC_array_nxt;
-	logic	[`IFB_SIZE-1:0][31:0] insn_array_nxt;
+	//logic	[`IFB_SIZE-1:0][63:0] PC_array_nxt;
+	//logic	[`IFB_SIZE-1:0][31:0] insn_array_nxt;
 
 	//logic	direct;
 	
@@ -48,6 +52,7 @@ module ifb(
 	assign ifb_PC_o   = decode_en_i ? PC_array[ifb_head] : 0;//~decode_en_i ? 0 : PC_array[ifb_head];
 	assign ifb_insn_o = decode_en_i ? insn_array[ifb_head] : 0;//~decode_en_i ? 0 : insn_array[ifb_head];
 	assign ifb_target_PC_o = decode_en_i ? target_PC_r[ifb_head] : 0;
+	assign ifb_pred_bit_o  = decode_en_i ? pred_bit_r[ifb_head] : 0;
 
 	assign ifb_2id_empty_o = ((ifb_head == ifb_tail) && (h_round == t_round));
 	assign ifb_2if_full_o  = ((ifb_tail == ifb_head) && (h_round != t_round));
@@ -74,6 +79,7 @@ module ifb(
 			PC_array	<= `SD {`IFB_SIZE{64'h0}};
 			insn_array	<= `SD {`IFB_SIZE{32'h0}};
 			target_PC_r	<= `SD {`IFB_SIZE{64'h0}};
+			pred_bit_r	<= `SD `IFB_SIZE'b0;
 		end else begin
 			if (flush_en_i) begin
 				ifb_head	<= `SD 0;
@@ -92,6 +98,7 @@ module ifb(
 					PC_array[ifb_tail]   <= `SD if_PC_i;
 					insn_array[ifb_tail] <= `SD if_insn_i;
 					target_PC_r[ifb_tail]<= `SD if_target_PC_i;
+					pred_bit_r[ifb_tail] <= `SD bp2if_pred_bit_i;
 				end
 			end
 		end
