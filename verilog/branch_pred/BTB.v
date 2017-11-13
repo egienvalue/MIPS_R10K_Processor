@@ -1,16 +1,16 @@
 
 module BTB(
-	input			clk;
-	input			rst;
-	input	[63:0]	if_pc_i;		// [IF] PC from IF stage to see if it's a branch. Read only, never write. 
-	input			ex_is_br_i;		// [EX] If in the last cycle at the EX stage there's a branch insn, then at this cycle BTB must do something.
-	input			ex_is_cond_i;	// [EX] Save whether it's a conditional branch.
-	input			ex_is_taken_i;	// [EX] 1 is taken, 0 not taken.
-	input	[63:0]	ex_pc_i;		// [EX] Branch PC from EX stage. If taken, add entry or maintain. If not-taken, remove entry or maintain empty.  	
-	input	[63:0]	ex_br_target_i; // [EX] Target address computed out in EX stage. Non-zero only if taken!
-	output			is_hit_o;		// [DIRP] Tell DIRP if this pc is a branch or not.
-	output			is_cond_o;		// [IF] Used to select prediction results.
-	output	[63:0]	target_pc_o;	// [IF]	Prediction of target pc.
+	input			clk,
+	input			rst,
+	input	[63:0]	if_pc_i,		// [IF] PC from IF stage to see if it's a branch. Read only, never write. 
+	input			ex_is_br_i,		// [EX] If in the last cycle at the EX stage there's a branch insn, then at this cycle BTB must do something.
+	input			ex_is_cond_i,	// [EX] Save whether it's a conditional branch.
+	input			ex_is_taken_i,	// [EX] 1 is taken, 0 not taken.
+	input	[63:0]	ex_pc_i,		// [EX] Branch PC from EX stage. If taken, add entry or maintain. If not-taken, remove entry or maintain empty.  	
+	input	[63:0]	ex_br_target_i, // [EX] Target address computed out in EX stage. Non-zero only if taken!
+	output			is_hit_o,		// [DIRP] Tell DIRP if this pc is a branch or not.
+	output			is_cond_o,		// [IF] Used to select prediction results.
+	output	[63:0]	target_pc_o		// [IF]	Prediction of target pc.
 	);
 
 	logic	[`BTB_NUM-1:0][`BTB_TAG_W-1:0]	TAGS, VALS, CONDS;
