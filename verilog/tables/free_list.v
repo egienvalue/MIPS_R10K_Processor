@@ -62,7 +62,8 @@ module free_list(
 									~empty			? FL[head]		:
 									retire_en_i		? retire_preg_i : 0;
 
-		assign free_preg_cur_head_o = dispatch_en_i ? head : 5'b00000;
+		//assign free_preg_cur_head_o = dispatch_en_i ? head : 5'b00000;
+		assign free_preg_cur_head_o = head;
 
 		//write FL and tail
 		always_ff @(posedge clk) begin
@@ -83,10 +84,10 @@ module free_list(
 		always_ff @(posedge clk) begin
 			if (rst) begin
 				head <= `SD 0;
-			end else if (dispatch_en_i /*&& ~empty*/) begin		// Modified 11/06. No need to check empty or not. 
-				head <= `SD (head + 1 >= `FL_NUM) ? (head + 1 - `FL_NUM) : (head + 1);
 			end else if (recover_en) begin
 				head <= `SD rc_head_i;
+			end else if (dispatch_en_i /*&& ~empty*/) begin		// Modified 11/06. No need to check empty or not. 
+				head <= `SD (head + 1 >= `FL_NUM) ? (head + 1 - `FL_NUM) : (head + 1);
 			end else begin
 				head <= `SD head;
 			end

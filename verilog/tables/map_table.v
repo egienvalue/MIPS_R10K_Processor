@@ -97,7 +97,7 @@ module map_table(
 							if (i==cdb_match_index) begin
 								next_RDY[i] = 1;
 							end else begin
-								next_RDY[i] = RDY[i];   // Accordant with the origin.
+								//next_RDY[i] = RDY[i];   // Accordant with the origin.
 							end
 						end
 					end else begin

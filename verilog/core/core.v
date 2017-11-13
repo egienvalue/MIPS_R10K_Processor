@@ -360,7 +360,7 @@ module core (
 	//===============================================================
 	// dispatch instantiation
 	//===============================================================
-	assign dispatch_rs_stall	= rs_full_o && ~rs_iss_vld_o;
+	assign dispatch_rs_stall	= rs_full_o; //&& ~rs_iss_vld_o;
 	assign dispatch_rob_stall	= rob_stall_dp_o;
 	assign dispatch_fl_stall	= ~free_preg_vld_o && ~rob_head_retire_rdy_o;
 	assign dispatch_br_stk_stall= br_stack_full_o && ~br_right_o;
@@ -650,7 +650,7 @@ module core (
 								  br_right_o ? `BR_PR_CORRECT : `BR_NONE; // 
 	assign br_dep_mask_i		= br_recovery_mask_o; // from rob
 	assign bak_mp_next_data_i	= bak_data_o;
-	assign bak_fl_head_i		= rc_head_i;
+	assign bak_fl_head_i		= free_preg_cur_head_o;
 
 	branch_stack branch_stack (
 		.clk				(clk), 
