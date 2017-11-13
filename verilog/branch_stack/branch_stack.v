@@ -25,6 +25,8 @@ module branch_stack(
 		input										clk, 
 		input										rst,
 		input										is_br_i,			//[Dispatch]	A new branch is dispatched, mask should be updated.
+		input										is_cond_i,			//[Dispatch]
+		input										is_taken_i,			//[Dispatch]
 		input	[`BR_STATE_W-1:0]					br_state_i,			//[ROB]			Branch prediction wrong or correct?		
 		input	[`BR_MASK_W-1:0]					br_dep_mask_i,		//[ROB]			The mask of currently resolved branch.
 		input	[`MT_NUM-1:0][`PRF_IDX_W:0]			bak_mp_next_data_i,	//[Map Table]	Back up data from map table.
@@ -64,7 +66,9 @@ module branch_stack(
 	br_mask_ctrl br_mask_ctrl0(
 		.clk(clk), 
     	.rst(rst),
-    	.is_br_i(is_br_i),		
+    	.is_br_i(is_br_i),
+		.is_cond_i(is_cond_i),
+		.is_taken_i(is_taken_i),
     	.br_state_i(br_state_i),		
     	.br_dep_mask_i(br_dep_mask_i),	
     	.br_mask_o(br_mask),		

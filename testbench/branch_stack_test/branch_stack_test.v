@@ -20,6 +20,8 @@ module testbench;
 	logic								clk;
 	logic								rst;
 	logic 								is_br_i;			
+	logic								is_cond_i;
+	logic								is_taken_i;
 	logic	[`BR_STATE_W-1:0]			br_state_i;			
 	logic	[`BR_MASK_W-1:0]			br_dep_mask_i;		
 	logic	[`MT_NUM-1:0][`PRF_IDX_W:0]	bak_mp_next_data_i;	
@@ -39,6 +41,8 @@ module testbench;
 		.clk, 
 		.rst,
 		.is_br_i,				//[Dispatch]	A new branch is dispatched, mask should be updated.
+		.is_cond_i,		
+		.is_taken_i,
 		.br_state_i,			//[ROB]			Branch prediction wrong or correct?		
 		.br_dep_mask_i,			//[ROB]			The mask of currently resolved branch.
 		.bak_mp_next_data_i,	//[Map Table]	Back up data from map table.
@@ -62,7 +66,9 @@ module testbench;
 	task clear_inputs;
 		begin
 			is_br_i		= 0; 
-            br_state_i	= 0;	 
+			is_cond_i	= 0;	
+			is_taken_i	= 0;   
+			br_state_i	= 0;	 
             br_dep_mask_i	= 0; 
             bak_mp_next_data_i = 0; 
             bak_fl_head_i	=0;

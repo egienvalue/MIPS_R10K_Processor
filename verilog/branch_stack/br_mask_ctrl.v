@@ -59,23 +59,26 @@ module br_mask_ctrl(
 		logic 	[`BR_MASK_W-1:0]		br_bit, temp_bit;			// in which "br_bit" is assigned to br_bit_o. 
 		logic							full;
 
+		logic							is_save_br;
+
 		assign full			= (mask == {`BR_MASK_W{1'b1}}) ? 1:0;
 		assign full_o		= full;
 		assign br_mask_o	= mask;										// Assign current branch mask output
 		assign br_bit_o		= br_bit;
+		assign is_save_br	= is_br_i && (is_cond_i || ((~is_cond_i) && (~is_taken_i))); 
 
 		always_comb begin												// Assign br_bit_idx and next_mask. Assign next_mask under the condition of br_state_i (wrong or correct?)
 			if (br_state_i == `BR_PR_WRONG) begin
 				first_zero_idx(br_dep_mask_i, br_bit_idx, br_bit); 
 				next_mask = br_dep_mask_i;
-			end else if (br_state_i == `BR_PR_CORRECT && ~is_br_i && is_cond_i) begin
+			end else if (br_state_i == `BR_PR_CORRECT && ~is_save_br) begin
 				first_zero_idx(br_dep_mask_i, br_bit_idx, br_bit); 
 				next_mask = mask ^ br_bit;				
-			end else if (br_state_i == `BR_PR_CORRECT && is_br_i && is_cond_i) begin
+			end else if (br_state_i == `BR_PR_CORRECT && is_save_br) begin
 				first_zero_idx(br_dep_mask_i, br_bit_idx, br_bit); 
 				first_zero_idx(mask ^ br_bit, temp_bit_idx, temp_bit); 
 				next_mask = mask ^ br_bit ^ temp_bit;
-			end else if (is_br_i && ~(~is_cond_i && is_taken_i)) begin
+			end else if (is_save_br) begin
 				first_zero_idx(mask, temp_bit_idx, temp_bit);
 				next_mask = mask ^ temp_bit;
 				br_bit = 0;
