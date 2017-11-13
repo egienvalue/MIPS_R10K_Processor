@@ -19,9 +19,9 @@
 // 	intial creation: 10/17/2017
 // 	***************************************************************************
 //
-typedef enum {NORMAL, ROLLBACK} STATE;	
+typedef enum logic {NORMAL = 1'b0, ROLLBACK = 1'b1} STATE;	
 
-//`define DEBUG
+//`define MT_DEBUG
 
 module map_table(
 		input										clk,
@@ -37,7 +37,7 @@ module map_table(
 		input	[`MT_NUM-1:0][`PRF_IDX_W:0]			rc_mt_all_data_i,			//[Br_stack]	Recovery data for map table.	Highest bit [`PRF_IDX_W] is RDY.
 		
 		
-		`ifdef DEBUG
+		`ifdef MT_DEBUG
 			input	[`LRF_IDX_W-1:0]				read_idx_i,					// Check the original map table only. 
 			output	[`PRF_IDX_W-1:0]				read_preg_o,
 			output									read_rdy_bit_o,
@@ -62,7 +62,7 @@ module map_table(
 	
 		STATE state;
 	
-		`ifdef DEBUG
+		`ifdef MT_DEBUG
 			assign read_preg_o		= MAP[read_idx_i];
 			assign read_rdy_bit_o	= RDY[read_idx_i];
 			assign cdb_match_fd		= cdb_match_found;
@@ -70,8 +70,13 @@ module map_table(
 	
 		assign opa_preg_o			= dispatch_en_i ? MAP[opa_areg_idx_i]: 6'b000000;		// Always use original map table here. Copies only for dealing with branch issues.
 		assign opb_preg_o			= dispatch_en_i ? MAP[opb_areg_idx_i]: 6'b000000;
-		assign opa_preg_rdy_bit_o	= dispatch_en_i ? cdb_match_index==opa_areg_idx_i ? 1 : RDY[opa_areg_idx_i] : 0;
-		assign opb_preg_rdy_bit_o	= dispatch_en_i ? cdb_match_index==opb_areg_idx_i ? 1 : RDY[opb_areg_idx_i] : 0;
+
+		//assign opa_preg_rdy_bit_o	= dispatch_en_i ? cdb_match_index==opa_areg_idx_i ? 1 : RDY[opa_areg_idx_i] : 0;
+		//assign opb_preg_rdy_bit_o	= dispatch_en_i ? cdb_match_index==opb_areg_idx_i ? 1 : RDY[opb_areg_idx_i] : 0;
+
+		assign opa_preg_rdy_bit_o = RDY[opa_areg_idx_i];
+		assign opb_preg_rdy_bit_o = RDY[opb_areg_idx_i];
+
 		assign dest_old_preg_o		= dispatch_en_i ? MAP[dest_areg_idx_i] : 6'b000000;
 		assign state				= (branch_state_i == `BR_PR_WRONG) ? ROLLBACK : NORMAL; 	// Two different situations. 
 
@@ -103,8 +108,8 @@ module map_table(
 								next_MAP[dest_areg_idx_i] = new_free_preg_i;
 								next_RDY[dest_areg_idx_i] = 0;
 							end else begin
-								next_MAP[i] = MAP[i];		// Accordant with the origin.
-								next_RDY[i] = RDY[i];
+								//next_MAP[i] = MAP[i];		// Accordant with the origin.
+								//next_RDY[i] = RDY[i];
 							end
 						end
 					end else begin
@@ -126,7 +131,6 @@ module map_table(
 			cdb_match_found = 0;
 			if(cdb_set_rdy_bit_en_i) begin
 				for (int i=0;i<`MT_NUM;i++) begin
-4
 					if (MAP[i] == cdb_set_rdy_bit_preg_i) begin
 						cdb_match_index = i;
 						cdb_match_found = 1;

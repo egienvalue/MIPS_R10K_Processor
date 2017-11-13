@@ -10,6 +10,7 @@ module fu_main(
 		input		[`PRF_IDX_W-1:0]	rs2fu_dest_tag_i,
 		input		[31:0]				rs2fu_IR_i,
 		input		[`FU_SEL_W-1:0]		rs2fu_sel_i,
+		input							rs2fu_iss_vld_i,
 
 		output							fu2preg_wr_en_o,
 		output 		[`PRF_IDX_W-1:0]	fu2preg_wr_idx_o,
@@ -77,16 +78,20 @@ module fu_main(
 	end
 	
 	always_comb begin
-		case (rs2fu_sel_i)
-			`FU_SEL_NONE:	ex_unit_en = `EX_UNIT_W'b00000;
-			`FU_SEL_ALU :	ex_unit_en = `EX_UNIT_W'b00001;
-			`FU_SEL_UNCOND_BRANCH,`FU_SEL_COND_BRANCH:
-							ex_unit_en = `EX_UNIT_W'b00010;
-			`FU_SEL_MULT:	ex_unit_en = `EX_UNIT_W'b00100;
-			`FU_SEL_LOAD:	ex_unit_en = `EX_UNIT_W'b01000;
-			`FU_SEL_STORE:	ex_unit_en = `EX_UNIT_W'b10000;
-			default:		ex_unit_en = `EX_UNIT_W'b00000;
-		endcase
+		if (~rs2fu_iss_vld_i) begin
+			ex_unit_en = `EX_UNIT_W'b00000;
+		end else begin
+			case (rs2fu_sel_i)
+				`FU_SEL_NONE:	ex_unit_en = `EX_UNIT_W'b00000;
+				`FU_SEL_ALU :	ex_unit_en = `EX_UNIT_W'b00001;
+				`FU_SEL_UNCOND_BRANCH,`FU_SEL_COND_BRANCH:
+								ex_unit_en = `EX_UNIT_W'b00010;
+				`FU_SEL_MULT:	ex_unit_en = `EX_UNIT_W'b00100;
+				`FU_SEL_LOAD:	ex_unit_en = `EX_UNIT_W'b01000;
+				`FU_SEL_STORE:	ex_unit_en = `EX_UNIT_W'b10000;
+				default:		ex_unit_en = `EX_UNIT_W'b00000;
+			endcase
+		end
 	end		
 	
 	always_ff @(posedge clk) begin

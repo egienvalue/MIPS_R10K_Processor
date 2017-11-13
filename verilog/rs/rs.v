@@ -86,10 +86,10 @@ module rs (
 	assign	rs_iss_opb_tag_o	= opb_tag_vec[iss_idx];
 	assign	rs_iss_dest_tag_o	= dest_tag_vec[iss_idx];
 	assign	rs_iss_fu_sel_o		= fu_sel_vec[iss_idx];
-	assign	rs_iss_IR_o		= IR_vec[iss_idx];
+	assign	rs_iss_IR_o			= IR_vec[iss_idx];
 	assign	rs_iss_rob_idx_o	= rob_idx_vec[iss_idx];
 	assign	rs_iss_br_mask_o	= br_mask_vec[iss_idx];
-	assign	rs_full_o		= ~(|avail_vec);
+	assign	rs_full_o			= ~(|avail_vec);
 
 	// Instantiate reservation station entries
 	genvar i;
@@ -156,7 +156,7 @@ module rs (
 				`FU_SEL_NONE:		rs_ent_schedule_vec[j] = 0;
 				`FU_SEL_ALU:		rs_ent_schedule_vec[j] = `SCHEDULE_VEC_ALU;
 				`FU_SEL_UNCOND_BRANCH, `FU_SEL_COND_BRANCH:	
-							rs_ent_schedule_vec[j] = `SCHEDULE_VEC_BRANCH;
+									rs_ent_schedule_vec[j] = `SCHEDULE_VEC_BRANCH;
 				`FU_SEL_LOAD:		rs_ent_schedule_vec[j] = `SCHEDULE_VEC_LOAD;
 				`FU_SEL_STORE:		rs_ent_schedule_vec[j] = `SCHEDULE_VEC_STORE;
 				`FU_SEL_MULT:		rs_ent_schedule_vec[j] = `SCHEDULE_VEC_MULT;

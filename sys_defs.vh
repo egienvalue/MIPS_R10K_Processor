@@ -46,6 +46,11 @@
 `define			BR_PR_CORRECT		2'b10
 `define			BR_NONE			2'b00
 `define			BR_STATE_W		2
+`define         BHR_W           16
+`define         PT_W            32
+`define         PT_IDX_W        ($clog2(`PT_W))
+`define         THRESHOLD       32
+`define         WEIGHT_W        ($clog2(`THRESHOLD)+1)
 
 // Chuan
 `define			PRF_NUM			64
@@ -90,8 +95,8 @@
 `define			BR_MASK_W		5
 
 // Shijing
-`define IFB_SIZE 64
-`define TAG_SIZE 6
+`define IFB_SIZE 8
+`define TAG_SIZE ($clog2(`IFB_SIZE))
 
 `ifndef __SYS_DEFS_VH__
 `define __SYS_DEFS_VH__

@@ -25,6 +25,7 @@ module if_stage(
 				  input			id_request_i,
 
 				  output logic	[63:0]	proc2Imem_addr,		// Address sent to Instruction memory
+				  output logic			if2Icache_req_o,
 				  output logic	[63:0]	if_PC_o,			// PC of instruction.
 				  output logic	[63:0]	if_target_PC_o,
 				  output logic	[31:0]	if_IR_o,			// fetched instruction out
@@ -40,7 +41,10 @@ module if_stage(
 	logic	 [31:0]	if_IR_in;
 	logic    [63:0] ifb2if_PC_reg;
 	logic			ifb2if_full;
+	logic			ifb2if_empty;
+
 	logic    [63:0] target_PC;
+
 	assign ifb_en = ~ifb2if_full && Imem_valid;
 
 
@@ -50,15 +54,19 @@ module if_stage(
 		.ifb_en_i(ifb_en),
 		.if_insn_i(if_IR_in),
 		.if_PC_i(PC_reg),
+		.if_target_PC_i(next_PC),
 		.flush_en_i(br_flush_en_i),
 		.decode_en_i(id_request_i),
 		.ifb_2if_full_o(ifb2if_full),
-		.ifb_2id_empty_o(if2id_empty_o),
+		.ifb_2id_empty_o(ifb2if_empty),
 		.ifb_insn_o(if_IR_o),
-		.ifb_PC_o(ifb2if_PC_reg)
+		.ifb_PC_o(ifb2if_PC_reg),
+		.ifb_target_PC_o(if_target_PC_o)
 
 	);
+
 	assign proc2Imem_addr = {PC_reg[63:3], 3'b0};
+	assign if2Icache_req_o= ~ifb2if_full | ~Imem_valid;
 
 	// this mux is because the Imem gives us 64 bits not 32 bits
 	assign if_IR_in = PC_reg[2] ? Imem2proc_data[63:32] : Imem2proc_data[31:0];
@@ -74,14 +82,13 @@ module if_stage(
 
 
 	// The take-branch signal must override stalling (otherwise it may be lost)
-	assign PC_enable = (~ifb2if_full&& Imem_valid) | bp2if_predict_i | br_flush_en_i;
+	assign PC_enable = (~ifb2if_full&& Imem_valid) | br_flush_en_i;
 	//(Imem_valid | br_dirp_i | return_i | br_flush_en_i )&& ~ifb2if_full;
 
 	// Pass PC down pipeline w/instruction
 	assign if_PC_o			= ifb2if_PC_reg;
-	assign if_target_PC_o	= next_PC;
 
-	assign if_valid_inst_o = ~if2id_empty_o && Imem_valid;//ready_for_valid & Imem_valid;
+	assign if_valid_inst_o = ~ifb2if_empty; //&& Imem_valid;//ready_for_valid & Imem_valid;
 
 
 	// This register holds the PC value

@@ -4,13 +4,14 @@
 // Author: Jun, Shijing
 // Version History: add early recovery 
 // 	intial creation: 10/17/2017
+// 	<11/11> added IR and vld bit fields in rob - Hengfei
 // 	***************************************************************************
 
 // Comments by hengfei: please test your module every time after you edit
 // it!!! very important!!! I can see some bugs by just looking this module.
 // labeled with "!!!". Delete this comment after you make them right
 
-`define DEBUG_OUT
+//`define DEBUG_OUT
 
 module	rob (
 		input					clk,
@@ -33,6 +34,7 @@ module	rob (
 		input		[`BR_MASK_W-1:0]		decode2rob_br_mask_i,
         input                               id2rob_halt_i,
         input                               id2rob_illegal_i,
+		input		[31:0]					id2rob_IR_i,
 
 		//----------------------------------------------------------------------
 		//Functional Unit Signal Input
@@ -93,6 +95,7 @@ module	rob (
 	//--------------------------------------------------------------------------
 	//Register storing the data of ROB
 	//--------------------------------------------------------------------------
+	logic	[`ROB_W-1:0]					vld_r;
 	logic	[`HT_W:0]						head_r;
 	logic	[`HT_W:0]						tail_r;
 	logic	[`ROB_W-1:0][`PRF_IDX_W-1:0]	old_dest_tag_r, dest_tag_r;
@@ -109,6 +112,7 @@ module	rob (
 	logic	[`ROB_W-1:0][`BR_MASK_W-1:0]	br_mask_r;
     logic   [`ROB_W-1:0]                    halt_r;
     logic   [`ROB_W-1:0]                    illegal_r;
+	logic	[`ROB_W-1:0][31:0]				IR_r;
 
 	//--------------------------------------------------------------------------
 	//Register for updating the head and tail
@@ -117,6 +121,12 @@ module	rob (
     logic                       t_illegal_r_nxt;
     logic                       h_halt_r_nxt;
     logic                       h_illegal_r_nxt;
+
+	// added by hengfei 11/11
+	logic	[31:0]				t_IR_r_nxt;
+	logic						t_vld_r_nxt;
+	logic	[31:0]				h_IR_r_nxt;
+	logic						h_vld_r_nxt;
 
 	logic	[`PRF_IDX_W-2:0]	t_fl_cur_head_r_nxt;
 	logic	[`PRF_IDX_W-2:0]	h_fl_cur_head_r_nxt;	
@@ -151,7 +161,8 @@ module	rob (
 	logic						fu_done_r_nxt;
 
 	wire dispatch_en					= rob_dispatch_en_i;
-	wire br_predict_wrong             = (br_pretaken_r[fu2rob_idx_i]!=fu2rob_br_taken_i)|(fu2rob_br_target_i!=br_target_r[fu2rob_idx_i]);
+	wire br_predict_wrong				= (br_pretaken_r[fu2rob_idx_i]!=fu2rob_br_taken_i) |
+										  (fu2rob_br_target_i!=br_target_r[fu2rob_idx_i]);
 
 	assign rob2rs_tail_idx_o			= tail_r[`HT_W-1:0];
 	assign rob2fl_tag_o					= rob_head_retire_rdy_o ? old_dest_tag_r[head_r[`HT_W-1:0]]	: 0;
@@ -203,6 +214,8 @@ module	rob (
 				t_wr_mem_r_nxt				= decode2rob_wr_mem_i;
                 t_halt_r_nxt                = id2rob_halt_i;
                 t_illegal_r_nxt             = id2rob_illegal_i;
+				t_IR_r_nxt					= id2rob_IR_i;
+				t_vld_r_nxt					= 1'b1;
 			end else begin
 				t_old_dest_tag_r_nxt 		= h_old_dest_tag_r_nxt;
 				t_dest_tag_r_nxt 			= h_dest_tag_r_nxt;
@@ -217,6 +230,8 @@ module	rob (
 				t_wr_mem_r_nxt				= h_wr_mem_r_nxt;
                 t_halt_r_nxt                = h_halt_r_nxt;
                 t_illegal_r_nxt             = h_illegal_r_nxt;
+				t_IR_r_nxt					= h_IR_r_nxt;
+				t_vld_r_nxt					= h_vld_r_nxt;
 			end
 		end else begin
 			if (dispatch_en) begin
@@ -233,6 +248,8 @@ module	rob (
 				t_wr_mem_r_nxt				= decode2rob_wr_mem_i;
                 t_halt_r_nxt                = id2rob_halt_i;
                 t_illegal_r_nxt             = id2rob_illegal_i;
+				t_IR_r_nxt					= id2rob_IR_i;
+				t_vld_r_nxt					= 1'b1;
 			end else begin
 				t_old_dest_tag_r_nxt  		= old_dest_tag_r[tail_r[`HT_W-1:0]];	
 				t_dest_tag_r_nxt 	 		= dest_tag_r[tail_r[`HT_W-1:0]];   	
@@ -247,7 +264,8 @@ module	rob (
 				t_wr_mem_r_nxt		 		= wr_mem_r[tail_r[`HT_W-1:0]];
                 t_halt_r_nxt                = halt_r[tail_r[`HT_W-1:0]];
                 t_illegal_r_nxt             = illegal_r[tail_r[`HT_W-1:0]];
-  
+  				t_IR_r_nxt					= IR_r[tail_r[`HT_W-1:0]];
+				t_vld_r_nxt					= vld_r[tail_r[`HT_W-1:0]];
 			end
 		end
 
@@ -255,9 +273,9 @@ module	rob (
 	end
 	always_comb begin
 		if(rob_head_retire_rdy_o) begin
-			h_old_dest_tag_r_nxt		= 0;
-            h_dest_tag_r_nxt			= 0;
-            h_logic_dest_r_nxt			= `ZERO_REG;
+			h_old_dest_tag_r_nxt		= 6'd31;
+            h_dest_tag_r_nxt			= 6'd31;
+            h_logic_dest_r_nxt			= 5'd31;
             h_done_r_nxt				= 0;
             h_PC_r_nxt					= 0;
             h_br_flag_r_nxt				= 0;
@@ -270,7 +288,8 @@ module	rob (
 		    h_wr_mem_r_nxt				= 0;
             h_halt_r_nxt                = 0;
             h_illegal_r_nxt             = 0;
-		
+			h_IR_r_nxt					= 0;
+			h_vld_r_nxt					= 0;
 		end else begin
 			h_old_dest_tag_r_nxt		= old_dest_tag_r[head_r[`HT_W-1:0]]; 
             h_dest_tag_r_nxt			= dest_tag_r[head_r[`HT_W-1:0]];
@@ -287,6 +306,8 @@ module	rob (
 		    h_wr_mem_r_nxt				= wr_mem_r[head_r[`HT_W-1:0]];
             h_halt_r_nxt                = halt_r[head_r[`HT_W-1:0]];
             h_illegal_r_nxt             = illegal_r[head_r[`HT_W-1:0]];
+			h_IR_r_nxt					= IR_r[head_r[`HT_W-1:0]];
+			h_vld_r_nxt					= vld_r[head_r[`HT_W-1:0]];
 		end
 	end
 
@@ -330,9 +351,9 @@ module	rob (
 		if (rst) begin
 			head_r			<= `SD 0;
 			tail_r			<= `SD 0;
-			old_dest_tag_r	<= `SD 0;
-			dest_tag_r		<= `SD 0;
-			logic_dest_r	<= `SD `ZERO_REG;
+			old_dest_tag_r	<= `SD {`ROB_W{6'd31}};
+			dest_tag_r		<= `SD {`ROB_W{6'd31}};
+			logic_dest_r	<= `SD {`ROB_W{5'd31}};
 			done_r			<= `SD 0;
 			PC_r			<= `SD 0;
 			br_flag_r		<= `SD 0;
@@ -342,7 +363,11 @@ module	rob (
 			br_mask_r		<= `SD 0;
 			rd_mem_r		<= `SD 0;
 			wr_mem_r		<= `SD 0;
-			fl_cur_head_r	<= `SD 0;	
+			fl_cur_head_r	<= `SD 0;
+			halt_r			<= `SD 0;
+			illegal_r		<= `SD 0;
+			IR_r			<= `SD {`ROB_W{32'h0}};
+			vld_r			<= `SD 0;
 		end else begin
 			head_r								<= `SD head_r_nxt;
 			tail_r								<= `SD tail_r_nxt;
@@ -362,6 +387,8 @@ module	rob (
 			rd_mem_r[head_r[`HT_W-1:0]]			<= `SD h_rd_mem_r_nxt;
             halt_r[head_r[`HT_W-1:0]]           <= `SD h_halt_r_nxt;
             illegal_r[head_r[`HT_W-1:0]]        <= `SD h_illegal_r_nxt;
+			IR_r[head_r[`HT_W-1:0]]				<= `SD h_IR_r_nxt;
+			vld_r[head_r[`HT_W-1:0]]			<= `SD h_vld_r_nxt;
 				
 			old_dest_tag_r[tail_r[`HT_W-1:0]]	<= `SD t_old_dest_tag_r_nxt;
 			dest_tag_r[tail_r[`HT_W-1:0]]		<= `SD t_dest_tag_r_nxt;
@@ -376,9 +403,11 @@ module	rob (
 			fl_cur_head_r[tail_r[`HT_W-1:0]]	<= `SD t_fl_cur_head_r_nxt;
             halt_r[tail_r[`HT_W-1:0]]           <= `SD t_halt_r_nxt;
             illegal_r[tail_r[`HT_W-1:0]]        <= `SD t_illegal_r_nxt;
+			IR_r[tail_r[`HT_W-1:0]]				<= `SD t_IR_r_nxt;
+			vld_r[tail_r[`HT_W-1:0]]			<= `SD t_vld_r_nxt;
 			
-			br_taken_r[fu2rob_idx_i]		<= `SD fu_br_taken_r_nxt;
-			done_r[fu2rob_idx_i]			<= `SD fu_done_r_nxt;
+			br_taken_r[fu2rob_idx_i]			<= `SD fu_br_taken_r_nxt;
+			done_r[fu2rob_idx_i]				<= `SD fu_done_r_nxt;
 			
 		end 
 	end	

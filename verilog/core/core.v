@@ -35,6 +35,7 @@ module core (
 	logic	[3:0]							Imem2proc_tag_i;
 
 	logic	[63:0]							if2Icache_addr_i;
+	logic									if2Icache_req_i;
 	logic									if2Icache_flush_i;
 
 	logic	[63:0]							proc2Imem_addr_o;
@@ -54,7 +55,8 @@ module core (
 	logic						br_flush_en_i;
 	logic						id_request_i;
 
-	logic [63:0]				proc2Imem_addr;		
+	logic [63:0]				proc2Imem_addr;
+	logic						if2Icache_req_o;
 	logic [63:0]				if_PC_o;			
 	logic [63:0]				if_target_PC_o;			
 	logic [31:0]				if_IR_o;
@@ -158,8 +160,9 @@ module core (
 	logic	[`BR_MASK_W-1:0]	decode2rob_br_mask_i;
 	logic						id2rob_halt_i;
 	logic						id2rob_illegal_i;
+	logic	[31:0]				id2rob_IR_i;
 
-	logic	[`ROB_IDX_W:0]		fu2rob_idx_i;//tag sent from
+	logic	[`ROB_IDX_W-1:0]	fu2rob_idx_i;//tag sent from
 	logic						fu2rob_done_signal_i;//done 
 	logic						fu2rob_br_taken_i;//branck t
 	logic	[63:0]				fu2rob_br_target_i;
@@ -227,6 +230,7 @@ module core (
 	logic	[`PRF_IDX_W-1:0]	rs2fu_dest_tag_i;
 	logic	[31:0]				rs2fu_IR_i;
 	logic	[`FU_SEL_W-1:0]		rs2fu_sel_i;
+	logic						rs2fu_iss_vld_i;
 
 	logic						fu2preg_wr_en_o;
 	logic 	[`PRF_IDX_W-1:0]	fu2preg_wr_idx_o;
@@ -293,6 +297,7 @@ module core (
 	assign Imem2Icache_data_i	= mem2proc_data_i;
 	assign Imem2proc_tag_i		= mem2proc_tag_i;
 	assign if2Icache_addr_i		= proc2Imem_addr;
+	assign if2Icache_req_i		= if2Icache_req_o;
 	assign if2Icache_flush_i	= br_recovery_rdy_o; // from rob
 	
 	Icache Icache (
@@ -304,6 +309,7 @@ module core (
 		.Imem2proc_tag_i		(Imem2proc_tag_i),
 
 		.if2Icache_addr_i		(if2Icache_addr_i),
+		.if2Icache_req_i		(if2Icache_req_i),
 		.if2Icache_flush_i		(if2Icache_flush_i),
 
 		.proc2Imem_addr_o		(proc2Imem_addr_o),
@@ -336,6 +342,7 @@ module core (
 			.br_flush_en_i			(br_flush_en_i),
 			.id_request_i			(id_request_i),
 
+			.if2Icache_req_o		(if2Icache_req_o),
 			.proc2Imem_addr			(proc2Imem_addr),
 			.if_PC_o				(if_PC_o),	
 			.if_target_PC_o			(if_target_PC_o),	
@@ -360,10 +367,14 @@ module core (
 	assign dispatch_lq_stall	= 1'b0; // LQ not added
 	assign dispatch_sq_stall	= 1'b0; // SQ not added
 	
-	assign dispatch_norm_en		= ~(dispatch_rs_stall | dispatch_rob_stall | dispatch_fl_stall);
-	assign dispatch_br_en		= ~(dispatch_rs_stall | dispatch_rob_stall | dispatch_br_stk_stall);
-	assign dispatch_ld_en		= dispatch_norm_en && ~dispatch_lq_stall;
-	assign dispatch_st_en		= ~(dispatch_rs_stall | dispatch_rob_stall | dispatch_sq_stall);
+	assign dispatch_norm_en		= ~(dispatch_rs_stall | dispatch_rob_stall | 
+									dispatch_fl_stall | ~if_valid_inst_o) && ~br_recovery_rdy_o;
+	assign dispatch_br_en		= ~(dispatch_rs_stall | dispatch_rob_stall | dispatch_br_stk_stall) &&
+								   (id_cond_branch_o | id_uncond_branch_o) && ~br_recovery_rdy_o;
+	assign dispatch_ld_en		= dispatch_norm_en && ~dispatch_lq_stall && id_rd_mem_o &&
+								 ~br_recovery_rdy_o;
+	assign dispatch_st_en		= ~(dispatch_rs_stall | dispatch_rob_stall | dispatch_sq_stall) && 
+									id_wr_mem_o && ~br_recovery_rdy_o;
 
 	assign dispatch_en			= (id_cond_branch_o | id_uncond_branch_o) ? dispatch_br_en :
 								  (id_rd_mem_o) ? dispatch_ld_en : 
@@ -467,6 +478,7 @@ module core (
 	assign decode2rob_br_mask_i		= br_mask_o; // !! from br stack
 	assign id2rob_halt_i			= id_halt_o;
 	assign id2rob_illegal_i			= id_illegal_o;
+	assign id2rob_IR_i				= id_IR_o;
 	assign fu2rob_idx_i				= fu2rob_idx_o;
 	assign fu2rob_done_signal_i		= fu2rob_done_o;
 	assign fu2rob_br_taken_i		= fu2rob_br_taken_o;
@@ -475,7 +487,8 @@ module core (
 
 	rob rob (
 		.clk						(clk),
-		.rst						(rst),									
+		.rst						(rst),
+
 		.fl2rob_tag_i				(fl2rob_tag_i),
 		.fl2rob_cur_head_i			(fl2rob_cur_head_i),
 		.map2rob_tag_i				(map2rob_tag_i),
@@ -490,6 +503,7 @@ module core (
 		.decode2rob_br_mask_i		(decode2rob_br_mask_i),
 		.id2rob_halt_i				(id2rob_halt_i),
 		.id2rob_illegal_i			(id2rob_illegal_i),
+		.id2rob_IR_i				(id2rob_IR_i),
 
 		.fu2rob_idx_i				(fu2rob_idx_i),
 		.fu2rob_done_signal_i		(fu2rob_done_signal_i),
@@ -509,8 +523,8 @@ module core (
 		.br_recovery_rdy_o			(br_recovery_rdy_o),
 		.rob2fl_recover_head_o		(rob2fl_recover_head_o),
 		.br_recovery_mask_o			(br_recovery_mask_o),
-		//.br_wrong_o					(br_wrong_o),
 		.br_right_o					(br_right_o),
+
 		.rob_halt_o					(rob_halt_o),
 		.rob_illegal_o				(rob_illegal_o)
 	);	
@@ -553,7 +567,7 @@ module core (
 	assign retire_preg_i		= rob2fl_tag_o; // !! Told from rob
 	assign rc_head_i			= rc_fl_head_o;
 
-	free_list free_list0(
+	free_list free_list (
 		.clk					(clk),
 		.rst					(rst), //|From where|
 
@@ -578,6 +592,7 @@ module core (
 	assign rs2fu_dest_tag_i		= rs_iss_dest_tag_o; //  why we need here?
 	assign rs2fu_IR_i			= rs_iss_IR_o; //  why we need here?
 	assign rs2fu_sel_i			= rs_iss_fu_sel_o;
+	assign rs2fu_iss_vld_i		= rs_iss_vld_o;
 
 	fu_main fu_main (
 		.clk				(clk),
@@ -590,6 +605,7 @@ module core (
 		.rs2fu_dest_tag_i	(rs2fu_dest_tag_i),
 		.rs2fu_IR_i			(rs2fu_IR_i),
 		.rs2fu_sel_i		(rs2fu_sel_i),
+		.rs2fu_iss_vld_i	(rs2fu_iss_vld_i),
 
 		.fu2preg_wr_en_o	(fu2preg_wr_en_o),
 		.fu2preg_wr_idx_o	(fu2preg_wr_idx_o),

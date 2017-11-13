@@ -18,6 +18,7 @@ module Icache (
 		input			[3:0]							Imem2proc_tag_i,
 
 		input			[63:0]							if2Icache_addr_i,
+		input											if2Icache_req_i,
 		input											if2Icache_flush_i,
 
 		output			[63:0]							proc2Imem_addr_o,
@@ -99,6 +100,7 @@ module Icache (
 		.cachemem_hit_i		(cache_rd_hit		),
 
 		.if2Icache_addr_i		(if2Icache_addr_i		),
+		.if2Icache_req_i		(if2Icache_req_i		),
 		.if2Icache_flush_i		(if2Icache_flush_i		), // wrong BP
 
 		.pfetch2Ictrl_hit_i		(pfetch2Ictrl_hit		),
@@ -130,6 +132,7 @@ module Icache (
 		.cachemem_hit_i			(cache_rd_hit		), // fetch hit on cache
 		.Icache2pfetch_hit_i	(cache_pf_hit		), // pfetch hit on cache
 
+		.if2Icache_req_i		(if2Icache_req_i		),
 		.if2pfetch_flush_i		(if2Icache_flush_i		),
 
 		.Ictrl2pfetch_addr_i	(Ictrl2pfetch_addr		),
