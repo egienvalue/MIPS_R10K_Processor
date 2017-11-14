@@ -29,6 +29,7 @@ module if_stage(
 				  output logic	[63:0]	if_PC_o,			// PC of instruction.
 				  output logic	[63:0]	if_target_PC_o,
 				  output logic	[31:0]	if_IR_o,			// fetched instruction out
+				  output logic			if_pred_bit_o,
 				  output logic			if_valid_inst_o	    // when low, instruction is garbage
                );
 
@@ -55,13 +56,16 @@ module if_stage(
 		.if_insn_i(if_IR_in),
 		.if_PC_i(PC_reg),
 		.if_target_PC_i(next_PC),
+		.bp2if_pred_bit_i(bp2if_predict_i),
 		.flush_en_i(br_flush_en_i),
 		.decode_en_i(id_request_i),
+
 		.ifb_2if_full_o(ifb2if_full),
 		.ifb_2id_empty_o(ifb2if_empty),
 		.ifb_insn_o(if_IR_o),
 		.ifb_PC_o(ifb2if_PC_reg),
-		.ifb_target_PC_o(if_target_PC_o)
+		.ifb_target_PC_o(if_target_PC_o),
+		.ifb_pred_bit_o(if2id_pred_bit_o)
 
 	);
 
