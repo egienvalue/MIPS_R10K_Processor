@@ -92,7 +92,14 @@
 `define			EX_CYCLES_STORE		2
 `define			EX_CYCLES_MULT		4
 
-`define			BR_MASK_W		5
+`define			BR_MASK_W			5
+
+`define			SQ_ENT_NUM			8
+`define			SQ_IDX_W			$clog2(`SQ_ENT_NUM)
+`define			LQ_ENT_NUM			8
+`define			LQ_IDX_W			$clog2(`LQ_ENT_NUM)
+
+`define			ADDR_W				64
 
 // Shijing
 `define IFB_SIZE 8

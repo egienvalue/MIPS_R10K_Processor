@@ -128,8 +128,8 @@ module core (
 	logic						cdb_vld_i;
 	logic						stall_dp_i;
 	logic	[`BR_MASK_W-1:0]	bmg_br_mask_i;
-	logic						rob_br_pred_correct_i;
-	logic						rob_br_recovery_i;
+	logic						rob2rs_pred_correct_i;
+	logic						rob2rs_br_recovery_i;
 	logic	[`BR_MASK_W-1:0]	br_stack_tag_fix_i;
 
 	logic						rs_iss_vld_o;
@@ -165,8 +165,13 @@ module core (
 	logic	[`ROB_IDX_W-1:0]	fu2rob_idx_i;//tag sent from
 	logic						fu2rob_done_signal_i;//done 
 	logic						fu2rob_br_taken_i;//branck t
-	logic	[63:0]				fu2rob_br_target_i;
+	//logic	[63:0]				fu2rob_br_target_i;
 
+	logic						br_recovery_taken_i;
+	logic	[63:0]				br_recovery_target_i;
+	logic	[`ROB_IDX_W-1:0]	br_recovery_idx_i;
+	logic						br_recovery_done_i;
+	
 	logic	[`ROB_IDX_W-1:0]	rs2rob_rd_idx_i;
 	logic	[63:0]				rob2fu_rd_NPC_o;
 
@@ -239,8 +244,8 @@ module core (
 	logic						st_dp_en_i;
 
 	logic	[`BR_MASK_W-1:0]	rs2fu_br_mask_i;
-	logic						rob_br_pred_correct_i;
-	logic						rob_br_recovery_i;
+	logic						rob2fu_pred_correct_i;
+	logic						rob2fu_br_recovery_i;
 	logic	[`BR_MASK_W-1:0]	rob_br_tag_fix_i;
 
 	logic						Dcache_hit_i;
@@ -255,7 +260,14 @@ module core (
 	logic						fu2rob_done_o;
 	logic	[`ROB_IDX_W-1:0]	fu2rob_idx_o;
 	logic						fu2rob_br_taken_o;
-	logic	[63:0]				fu2rob_br_target_o;
+
+	//logic	[63:0]				fu2rob_br_target_o;
+	logic						fu2rob_br_recovery_taken_o;
+	logic	[63:0]				fu2rob_br_recovery_target_o;
+	logic	[`ROB_IDX_W-1:0]	fu2rob_br_recovery_idx_o;
+	logic						fu2rob_br_recovery_done_o;
+
+
 	logic 	[`PRF_IDX_W-1:0]	fu_cdb_broad_o;
 	logic						fu_cdb_vld_o;
 
@@ -350,7 +362,7 @@ module core (
 	//===============================================================
 	assign bp2if_predict_i			= 1'b0; // bp not added, always non-taken
 	assign br_predict_target_PC_i	= 64'h0; // bp not added
-	assign br_flush_target_PC_i		= fu2rob_br_target_o;
+	assign br_flush_target_PC_i		= fu2rob_br_recovery_target_o;
 	assign Imem2proc_data			= Icache2if_data_o;
 	assign Imem_valid				= Icache2if_vld_o;
 	assign br_flush_en_i			= br_recovery_rdy_o; // from rob
@@ -450,10 +462,11 @@ module core (
 	assign rob_idx_i			= rob2rs_tail_idx_o;
 	assign cdb_tag_i			= fu_cdb_broad_o;
 	assign cdb_vld_i			= fu_cdb_vld_o;
+	assign lsq_sq_tail_i		= 0;
 	assign stall_dp_i			= ~dispatch_en;
 	assign bmg_br_mask_i		= br_mask_o;
-	assign rob_br_pred_correct_i= br_right_o;
-	assign rob_br_recovery_i	= br_recovery_rdy_o;
+	assign rob2rs_pred_correct_i= br_right_o;
+	assign rob2rs_br_recovery_i	= br_recovery_rdy_o;
 	assign rob_br_tag_fix_i		= br_bit_o; // from branch stack
 
 	rs rs (
@@ -471,10 +484,11 @@ module core (
 			.rob_idx_i				(rob_idx_i),
 			.cdb_tag_i				(cdb_tag_i),
 			.cdb_vld_i				(cdb_vld_i),
+			.lsq_sq_tail_i			(lsq_sq_tail_i),
 			.stall_dp_i				(stall_dp_i),
 			.bmg_br_mask_i			(bmg_br_mask_i), //	branch recovery latter
-			.rob_br_pred_correct_i	(rob_br_pred_correct_i),
-			.rob_br_recovery_i		(rob_br_recovery_i),
+			.rob_br_pred_correct_i	(rob2rs_pred_correct_i),
+			.rob_br_recovery_i		(rob2rs_br_recovery_i),
 			.rob_br_tag_fix_i		(rob_br_tag_fix_i),
 
 			.rs_iss_vld_o			(rs_iss_vld_o),
@@ -509,7 +523,13 @@ module core (
 	assign fu2rob_idx_i				= fu2rob_idx_o;
 	assign fu2rob_done_signal_i		= fu2rob_done_o;
 	assign fu2rob_br_taken_i		= fu2rob_br_taken_o;
-	assign fu2rob_br_target_i		= fu2rob_br_target_o;
+	//assign fu2rob_br_target_i		= fu2rob_br_recovery_taken_o;
+	
+	assign br_recovery_taken_i		= fu2rob_br_recovery_taken_o;
+	assign br_recovery_target_i		= fu2rob_br_recovery_target_o;
+	assign br_recovery_idx_i		= fu2rob_br_recovery_idx_o;
+	assign br_recovery_done_i		= fu2rob_br_recovery_done_o;
+	
 	assign rs2rob_rd_idx_i			= rs_iss_rob_idx_o;
 
 	rob rob (
@@ -535,7 +555,12 @@ module core (
 		.fu2rob_idx_i				(fu2rob_idx_i),
 		.fu2rob_done_signal_i		(fu2rob_done_signal_i),
 		.fu2rob_br_taken_i			(fu2rob_br_taken_i),
-		.fu2rob_br_target_i			(fu2rob_br_target_i),
+		//.fu2rob_br_target_i			(fu2rob_br_target_i),
+		
+		.br_recovery_taken_i		(br_recovery_taken_i),
+		.br_recovery_target_i		(br_recovery_target_i),
+		.br_recovery_idx_i			(br_recovery_idx_i),
+		.br_recovery_done_i			(br_recovery_done_i),
 
 		.rs2rob_rd_idx_i			(rs2rob_rd_idx_i),
 		.rob2fu_rd_NPC_o			(rob2fu_rd_NPC_o),
@@ -628,8 +653,8 @@ module core (
 	assign st_dp_en_i				= 0;
 
 	assign rs2fu_br_mask_i			= rs_iss_br_mask_o;
-	assign rob_br_pred_correct_i	= br_right_o;
-	assign rob_br_recovery_i		= br_recovery_rdy_o;
+	assign rob2fu_pred_correct_i	= br_right_o;
+	assign rob2fu_br_recovery_i		= br_recovery_rdy_o;
 	assign br_stack_tag_fix_i		= br_bit_o; // from br_stack
 
 	assign Dcache_hit_i				= 0;
@@ -657,8 +682,8 @@ module core (
 		.st_dp_en_i				(st_dp_en_i),
 
 		.rs2fu_br_mask_i		(rs2fu_br_mask_i),
-		.rob_br_pred_correct_i	(rob_br_pred_correct_i),
-		.rob_br_recovery_i		(rob_br_recovery_i),
+		.rob_br_pred_correct_i	(rob2fu_pred_correct_i),
+		.rob_br_recovery_i		(rob2fu_br_recovery_i),
 		.rob_br_tag_fix_i		(br_stack_tag_fix_i), // from br_stack
         
 		.Dcache_hit_i			(Dcache_hit_i),
@@ -673,7 +698,12 @@ module core (
 		.fu2rob_done_o			(fu2rob_done_o),
 		.fu2rob_idx_o			(fu2rob_idx_o),
 		.fu2rob_br_taken_o		(fu2rob_br_taken_o),
-		.fu2rob_br_target_o		(fu2rob_br_target_o),
+
+		//.fu2rob_br_target_o		(fu2rob_br_target_o),
+		.fu2rob_br_recovery_taken_o	(fu2rob_br_recovery_taken_o),
+		.fu2rob_br_recovery_target_o(fu2rob_br_recovery_target_o),
+		.fu2rob_br_recovery_idx_o	(fu2rob_br_recovery_idx_o),
+		.fu2rob_br_recovery_done_o	(fu2rob_br_recovery_done_o),
 
 		.fu_cdb_broad_o			(fu_cdb_broad_o),
 		.fu_cdb_vld_o			(fu_cdb_vld_o),

@@ -63,8 +63,8 @@ module fu_ldst(
 				.rob_st_retire_en_i		(rob_st_retire_en_i),
 				.dp_en_i				(dp_en_i),
 
-				.ld_rob_idx_i			(rob_idx_i),
-				.ld_dest_tag_i			(dest_tag_i),
+				.rob_idx_i				(rob_idx_i),
+				.dest_tag_i				(dest_tag_i),
 				.ld_vld_i				(ld_vld_i),
 				.rs_ld_position_i		(rs_ld_position_i),
 				.ex_ld_position_i		(ex_ld_position_i),

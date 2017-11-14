@@ -38,11 +38,16 @@ module fu_br (
 		input		[`ROB_IDX_W-1:0]rob_idx_i,
 		input						br_mask_i,
 
-		output	logic				done_o,
-		output	logic	[63:0]		br_target_o,
-		output	logic				br_result_o,
-		output	logic	[`ROB_IDX_W-1:0]	rob_idx_o,
-        output  logic   [63:0]      br_pc_o
+		output	logic					done_o,
+		//output	logic	[63:0]		br_target_o,
+		output	logic					br_result_o,
+		output	logic	[`ROB_IDX_W-1:0]rob_idx_o,
+        output  logic   [63:0]      	br_pc_o,
+
+		output	logic					br_recovery_taken_o,
+		output	logic	[63:0]			br_recovery_target_o,
+		output	logic					br2rob_done_o,
+		output	logic	[`ROB_IDX_W-1:0]br2rob_recovery_idx_o
 	
 		);
 		logic	[63:0]	br_disp;
@@ -53,6 +58,12 @@ module fu_br (
 		logic			brcond_result;
 		//logic	[`ROB_IDX_W-1:0]	rob_idx_r;
 		logic	[`ROB_IDX_W-1:0]	rob_idx_nxt;
+
+		assign br_recovery_target_o = br_target_nxt;
+		assign br_recovery_taken_o	= br_result_nxt;
+		assign br2rob_done_o 		= start_i;
+		assign br2rob_recovery_idx_o= rob_idx_nxt;
+
 
 		assign br_disp = { {41{inst_i[20]}}, inst_i[20:0], 2'b00 };
 		assign br_result_nxt = (~cond_br) ? 1 : brcond_result;
@@ -97,13 +108,13 @@ module fu_br (
 		if(rst) begin
 			done_o 		<= `SD 0;
 			br_result_o <= `SD 0;
-			br_target_o <= `SD 0;
+			//br_target_o <= `SD 0;
 			rob_idx_o	<= `SD 0;
             br_pc_o     <= `SD 0;
 		end else begin
 			done_o 		<= `SD start_i;
 			br_result_o <= `SD br_result_nxt;
-			br_target_o <= `SD br_target_nxt;
+			//br_target_o <= `SD br_target_nxt;
 			rob_idx_o	<= `SD rob_idx_nxt;
             br_pc_o     <= `SD npc_i;
 		end

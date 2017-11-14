@@ -42,8 +42,13 @@ module	rob (
 		input		[`ROB_IDX_W-1:0]		fu2rob_idx_i,//tag sent from functional unit to know which entry's done register needed to be set 
 		input								fu2rob_done_signal_i,//done signal from functional unit 
 		input								fu2rob_br_taken_i,//branck taken result sent from functional unit
-        input       [63:0]                  fu2rob_br_target_i,//br_target sent from fu
-        
+        //input       [63:0]                  fu2rob_br_target_i,//br_target sent from fu
+
+		input								br_recovery_taken_i,
+		input		[63:0]					br_recovery_target_i,
+		input		[`ROB_IDX_W-1:0]		br_recovery_idx_i,
+		input								br_recovery_done_i,
+
         input       [`ROB_IDX_W-1:0]        rs2rob_rd_idx_i,// rs sent read index to rob for reading NPC
         output      [63:0]                  rob2fu_rd_NPC_o,//!!!rob sent the NPC data to fu
 
@@ -161,8 +166,8 @@ module	rob (
 	logic						fu_done_r_nxt;
 
 	wire dispatch_en					= rob_dispatch_en_i;
-	wire br_predict_wrong				= (br_pretaken_r[fu2rob_idx_i]!=fu2rob_br_taken_i) |
-										  (fu2rob_br_target_i!=br_target_r[fu2rob_idx_i]);
+	wire br_predict_wrong				= (br_pretaken_r[br_recovery_idx_i] != br_recovery_taken_i) |
+										  (br_recovery_target_i != br_target_r[br_recovery_idx_i]);
 
 	assign rob2rs_tail_idx_o			= tail_r[`HT_W-1:0];
 	assign rob2fl_tag_o					= rob_head_retire_rdy_o ? old_dest_tag_r[head_r[`HT_W-1:0]]	: 0;
@@ -173,20 +178,20 @@ module	rob (
     assign rob_halt_o                   = halt_r[head_r[`HT_W-1:0]];
     assign rob_illegal_o                = illegal_r[head_r[`HT_W-1:0]];
 	assign head_r_nxt					= rob_head_retire_rdy_o ? (head_r+1) : head_r;
-	assign tail_r_nxt 					= br_recovery_rdy_o ? (fu2rob_idx_i+1) : dispatch_en ? (tail_r+1) : tail_r;
+	assign tail_r_nxt 					= br_recovery_rdy_o ? (br_recovery_idx_i+1) : dispatch_en ? (tail_r+1) : tail_r;
 
     assign rob2fu_rd_NPC_o              = PC_r[rs2rob_rd_idx_i]+4; //sent the NPC to branch alu to calculate the branch target
 
 	always_comb begin
-		if(br_flag_r[fu2rob_idx_i]&fu2rob_done_signal_i)
+		if(br_flag_r[br_recovery_idx_i]&br_recovery_done_i)
 			if(br_predict_wrong) begin
                 br_right_o          = 0;
-				br_recovery_mask_o  = br_mask_r[fu2rob_idx_i];
-                rob2fl_recover_head_o = fl_cur_head_r[fu2rob_idx_i];
+				br_recovery_mask_o  = br_mask_r[br_recovery_idx_i];
+                rob2fl_recover_head_o = fl_cur_head_r[br_recovery_idx_i];
 				br_recovery_rdy_o   = 1;
 			end else begin
                 br_right_o          = 1;
-				br_recovery_mask_o  = br_mask_r[fu2rob_idx_i];
+				br_recovery_mask_o  = br_mask_r[br_recovery_idx_i];
                 rob2fl_recover_head_o = 0;
 				br_recovery_rdy_o   = 0;
 			end

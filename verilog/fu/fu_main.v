@@ -10,6 +10,7 @@ module fu_main(
 		input		[`PRF_IDX_W-1:0]		rs2fu_dest_tag_i,
 		input		[31:0]					rs2fu_IR_i,
 		input		[`FU_SEL_W-1:0]			rs2fu_sel_i,
+		input								rs2fu_iss_vld_i,
 
 		input		[`SQ_IDX_W-1:0]			rs2lsq_sq_idx_i,
 		input		[`SQ_IDX_W-1:0]			rs_ld_position_i,
@@ -35,7 +36,11 @@ module fu_main(
 		output	logic						fu2rob_done_o,
 		output	logic	[`ROB_IDX_W-1:0]	fu2rob_idx_o,
 		output	logic						fu2rob_br_taken_o,
-		output	logic	[63:0]				fu2rob_br_target_o,
+
+		output	logic						fu2rob_br_recovery_taken_o,
+		output	logic	[63:0]				fu2rob_br_recovery_target_o,
+		output	logic	[`ROB_IDX_W-1:0]	fu2rob_br_recovery_idx_o,
+		output	logic						fu2rob_br_recovery_done_o,
         //outputlogic	[63:0]              fu2br_pre_br_pc_o,//branch address to branch predictor 
 		output 	logic	[`PRF_IDX_W-1:0]	fu_cdb_broad_o,
         output  logic	                    fu_cdb_vld_o,
@@ -48,8 +53,8 @@ module fu_main(
 		output	logic						lsq_sq_full_o
 	);
 
-    logic                           cdb_vld_r, cdb_vld_r_nxt;
-	logic		[`PRF_IDX_W-1:0]	cdb_tag_r, cdb_tag_r_nxt;
+    logic                           cdb_vld;// cdb_vld_r_nxt;
+	logic		[`PRF_IDX_W-1:0]	cdb_tag;// cdb_tag_r_nxt;
 	logic		[`BR_MASK_W-1:0]	cdb_br_mask_r, cdb_br_mask_r_nxt;
 	logic		[63:0]				fu2preg_wr_value;
 	logic		[`EX_UNIT_W-1:0]	ex_unit_en;
@@ -60,8 +65,9 @@ module fu_main(
 	logic		[`ROB_IDX_W-1:0]	alu_rob_idx;
 	logic		[`BR_MASK_W-1:0]	alu_br_mask;
 	
+	logic							br2rob_done;
 	logic							br_done;
-	logic		[63:0]				br_target;
+	//logic		[63:0]				br_target;
 	logic							br_taken;
 	logic		[`ROB_IDX_W-1:0] 	br_rob_idx;
     logic       [63:0]              br_pc;
@@ -83,50 +89,49 @@ module fu_main(
 	//wire [63:0] mem_disp = { {48{rs2fu_IR_i[15]}}, rs2fu_IR_i[15:0] };
 	//wire [63:0] br_disp  = { {41{rs2fu_IR_i[20]}}, rs2fu_IR_i[20:0], 2'b00 };
 
-	assign fu2rob_done_o 		= alu_done | br_done | mult_done | st_done | ld_done;	
+	assign fu2rob_br_recovery_done_o = br2rob_done;
+
+	assign fu2rob_done_o 		= alu_done | br_done | mult_done | st_done | ld_done; // lsq	
 	assign fu2rob_idx_o			= br_done ? br_rob_idx : 
-								  mult_done ? mult_rob_idx : 
 	   							  alu_done ? alu_rob_idx :
+								  mult_done ? mult_rob_idx : 
 								  (ld_done | st_done) ? ldst_rob_idx : 0;
-	assign fu2rob_br_taken_o	= br_done ? br_taken : 0;
-	assign fu2rob_br_target_o	= br_done ? br_target : 0;
+	assign fu2rob_br_taken_o	= br2rob_done ? br_taken : 0;
+	//assign fu2rob_br_target_o	= br2rob_done ? br_target : 0;
     //assign fu2br_pre_br_pc_o    = br_alu_done ? br_pc : 0;
-	assign fu_cdb_broad_o		= cdb_tag_r;
-    assign fu_cdb_vld_o         = cdb_vld_r & ~rob_br_recovery_i;
-    assign fu2preg_wr_en_o      = cdb_vld_r & ~rob_br_recovery_i;
-	assign fu2preg_wr_idx_o		= cdb_tag_r;
+	assign fu_cdb_broad_o		= cdb_tag;
+    assign fu_cdb_vld_o         = cdb_vld & ~rob_br_recovery_i;
+    assign fu2preg_wr_en_o      = cdb_vld & ~rob_br_recovery_i;
+	assign fu2preg_wr_idx_o		= cdb_tag;
 
 	assign lsq_lq_com_rdy_o		= lsq_lq_com_rdy;
 
 	always_comb begin
-		if (rob_br_recovery_i && ((cdb_br_mask_r & rob_br_tag_fix_i) != 0)) begin
-			cdb_tag_r_nxt		= `ZERO_REG;
-			cdb_vld_r_nxt		= 0;
-			cdb_br_mask_r_nxt	= 0;
-			fu2_preg_wr_value	= 0;
-		end else if (rob_br_recovery_i) begin
-			cdb_tag_r_nxt		= cdb_tag_r;
-			cdb_vld_r_nxt		= cdb_vld_r;
-			cdb_br_mask_r_nxt	= cdb_br_mask_r;
-			fu2_preg_wr_value	= fu2_preg_wr_value_o;
-        end else if (alu_done) begin
-			cdb_tag_r_nxt		= alu_dest_tag;
-            cdb_vld_r_nxt       = 1;
-			cdb_br_mask_r_nxt	= rob_br_pred_correct_i ? (alu_br_mask ^ rob_br_tag_fix_i) : alu_br_mask;
-            fu2_preg_wr_value	= alu_result;
+//		if (rob_br_recovery_i && ((cdb_br_mask_r & rob_br_tag_fix_i) != 0)) begin
+//			cdb_tag_r_nxt		= `ZERO_REG;
+//			cdb_vld_r_nxt		= 0;
+//			cdb_br_mask_r_nxt	= 0;
+//			fu2preg_wr_value	= 0;
+//		end else if (rob_br_recovery_i) begin
+//			cdb_tag_r_nxt		= cdb_tag_r;
+//			cdb_vld_r_nxt		= cdb_vld_r;
+//			cdb_br_mask_r_nxt	= cdb_br_mask_r;
+//			fu2preg_wr_value	= fu2preg_wr_value_o;
+        if (alu_done) begin
+			cdb_tag				= alu_dest_tag;
+            cdb_vld       		= 1;
+            fu2preg_wr_value	= alu_result;
         end else if (mult_done) begin
-			cdb_tag_r_nxt		= mult_dest_tag;
-            cdb_vld_r_nxt       = 1;
-			cdb_br_mask_r_nxt	= rob_br_pred_correct_i ? (mult_br_mask ^ rob_br_tag_fix_i) : mult_br_mask;
+			cdb_tag				= mult_dest_tag;
+            cdb_vld       		= 1;
             fu2preg_wr_value	= mult_result;
 		end else if (ld_done) begin
-			cdb_tag_r_nxt		= ld_dest_tag;
-			cdb_vld_r_nxt		= 1;
-			cdb_br_mask_r_nxt	= rob_br_pred_correct_i ? (ld_br_mask ^ rob_br_tag_fix_i) : ld_br_mask;
+			cdb_tag				= ld_dest_tag;
+			cdb_vld				= 1;
 			fu2preg_wr_value	= ld_result;
         end else begin
-			cdb_tag_r_nxt		= `ZERO_REG;
-            cdb_vld_r_nxt       = 0;
+			cdb_tag				= `ZERO_REG;
+            cdb_vld       		= 0;
             fu2preg_wr_value	= 0;
         end
 	end
@@ -148,17 +153,17 @@ module fu_main(
 		end
 	end		
 	
-	always_ff @(posedge clk) begin
-        if (rst) begin
-			cdb_tag_r   		<= `SD `ZERO_REG;
-            cdb_vld_r   		<= `SD 0;
-            fu2preg_wr_value_o	<= `SD 0;
-        end else begin
-			cdb_tag_r   		<= `SD cdb_tag_r_nxt;
-            cdb_vld_r   		<= `SD cdb_vld_r_nxt;
-            fu2preg_wr_value_o	<= `SD fu2preg_wr_value;
-        end    
-	end
+//	always_ff @(posedge clk) begin
+//        if (rst) begin
+//			cdb_tag_r   		<= `SD `ZERO_REG;
+//            cdb_vld_r   		<= `SD 0;
+//            fu2preg_wr_value_o	<= `SD 0;
+//        end else begin
+//			cdb_tag_r   		<= `SD cdb_tag_r_nxt;
+//            cdb_vld_r   		<= `SD cdb_vld_r_nxt;
+//            fu2preg_wr_value_o	<= `SD fu2preg_wr_value;
+//        end    
+//	end
 
 	fu_alu fu_alu (
 			.clk					(clk),
@@ -190,10 +195,15 @@ module fu_main(
 			.inst_i					(rs2fu_IR_i),
 			.rob_idx_i				(rs2fu_rob_idx_i),
 			.done_o					(br_done),
-			.br_target_o			(br_target),
+			//.br_target_o			(br_target),
 			.br_result_o			(br_taken),
 			.rob_idx_o				(br_rob_idx),
-            .br_pc_o				(br_pc)
+            .br_pc_o				(br_pc),
+
+			.br_recovery_taken_o	(fu2rob_br_recovery_taken_o),
+			.br_recovery_target_o	(fu2rob_br_recovery_target_o),
+			.br2rob_done_o			(br2rob_done),
+			.br2rob_recovery_idx_o	(fu2rob_br_recovery_idx_o)
 	);
 	
 	fu_mult fu_mult (
@@ -213,7 +223,7 @@ module fu_main(
 			.rob_idx_o				(mult_rob_idx),
             .dest_tag_o				(mult_dest_tag),
 			.br_mask_o				(mult_br_mask),
-			.done					(mult_done)	
+			.done					(mult_done)
 	);
 
 	fu_ldst fu_ldst (

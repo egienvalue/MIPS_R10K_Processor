@@ -174,11 +174,11 @@ module core_tb;
 		$fdisplay(rs_fileno, "@@@ Status of schedule vector: %b", core_0.rs.exunit_schedule_r);
 		$fdisplay(rs_fileno, "@@@ CDB status: valid = %b, tag = %d", core_0.rs.cdb_vld_i, core_0.rs.cdb_tag_i);
 		$fdisplay(rs_fileno, "@@@ rs_full_o = %b", core_0.rs.rs_full_o);
-		if (core_0.rs.rs_iss_vld_o) begin
+		if (core_0.rs.rs_iss_vld) begin
 			$fdisplay(rs_fileno, "@@@ #Issue# RS: %d | instr: %s", core_0.rs.iss_idx, rs_instr_str[core_0.rs.iss_idx]);
 			$fdisplay(rs_fileno, "@@@ opa_tag = %d, opb_tag = %d, dest_tag = %d, fu_sel = %d, IR = %h, rob_idx = %d, br_mask = %b",
-				core_0.rs.rs_iss_opa_tag_o, core_0.rs.rs_iss_opb_tag_o, core_0.rs.rs_iss_dest_tag_o, 
-				core_0.rs.rs_iss_fu_sel_o, core_0.rs.rs_iss_IR_o, core_0.rs.rs_iss_rob_idx_o, core_0.rs.rs_iss_br_mask_o);
+				core_0.rs.rs_iss_opa_tag, core_0.rs.rs_iss_opb_tag, core_0.rs.rs_iss_dest_tag, 
+				core_0.rs.rs_iss_fu_sel, core_0.rs.rs_iss_IR, core_0.rs.rs_iss_rob_idx, core_0.rs.rs_iss_br_mask);
 			$fdisplay(rs_fileno, "@@@ Schedule vector of issued instr: %b", core_0.rs.rs_ent_schedule_vec[core_0.rs.iss_idx]);
 		end else
 			$fdisplay(rs_fileno, "@@@ #None# No instructions can be issued this cycle");
@@ -301,7 +301,7 @@ module core_tb;
 
 	
 	initial begin // for step by step debug
-		for (int i = 0; i < 100; i++) begin
+		for (int i = 0; i < 500; i++) begin
 			@(negedge clk);
 		end
 		$display("@@@\n@@");
