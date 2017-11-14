@@ -1,79 +1,133 @@
 
 module fu_main(
-		input 							clk,
-		input 							rst,
-		
-		input		[63:0]				rob2fu_NPC_i,
-		input 		[`ROB_IDX_W-1:0]	rs2fu_rob_idx_i,
-		input 		[63:0]				rs2fu_ra_value_i,
-		input		[63:0]				rs2fu_rb_value_i,
-		input		[`PRF_IDX_W-1:0]	rs2fu_dest_tag_i,
-		input		[31:0]				rs2fu_IR_i,
-		input		[`FU_SEL_W-1:0]		rs2fu_sel_i,
-		input							rs2fu_iss_vld_i,
+		input 								clk,
+		input 								rst,
+		                                	
+		input		[63:0]					rob2fu_NPC_i,
+		input 		[`ROB_IDX_W-1:0]		rs2fu_rob_idx_i,
+		input 		[63:0]					prf2fu_ra_value_i,
+		input		[63:0]					prf2fu_rb_value_i,
+		input		[`PRF_IDX_W-1:0]		rs2fu_dest_tag_i,
+		input		[31:0]					rs2fu_IR_i,
+		input		[`FU_SEL_W-1:0]			rs2fu_sel_i,
 
-		output							fu2preg_wr_en_o,
-		output 		[`PRF_IDX_W-1:0]	fu2preg_wr_idx_o,
-		output 		[63:0]				fu2preg_wr_value_o,
-		output							fu2rob_done_o,
-		output		[`ROB_IDX_W-1:0]	fu2rob_idx_o,
-		output							fu2rob_br_taken_o,
-		output		[63:0]				fu2rob_br_target_o,
-        //output      [63:0]              fu2br_pre_br_pc_o,//branch address to branch predictor 
-		output 		[`PRF_IDX_W-1:0]	fu_cdb_broad_o,
-        output                          fu_cdb_vld_o
+		input		[`SQ_IDX_W-1:0]			rs2lsq_sq_idx_i,
+		input		[`SQ_IDX_W-1:0]			rs_ld_position_i,
+		input		[`SQ_IDX_W-1:0]			rs_iss_ld_position_i,
+		input								rob2lsq_st_retire_en_i,
+		input								st_dp_en_i,
+
+		input		[`BR_MASK_W-1:0]		rs2fu_br_mask_i,
+		input								rob_br_pred_correct_i,
+		input								rob_br_recovery_i,
+		input		[`BR_MASK_W-1:0]		rob_br_tag_fix_i,
+                                        	
+		input								Dcache_hit_i,
+		input		[63:0]					Dcache_data_i,
+		input		[63:0]					Dcache_mshr_addr_i,
+		input								Dcache_mshr_vld_i,
+		input								Dcache_mshr_stall_i,
+
+		// ------------------ Output -----------------------
+		output	logic						fu2preg_wr_en_o,
+		output 	logic	[`PRF_IDX_W-1:0]	fu2preg_wr_idx_o,
+		output 	logic	[63:0]				fu2preg_wr_value_o,
+		output	logic						fu2rob_done_o,
+		output	logic	[`ROB_IDX_W-1:0]	fu2rob_idx_o,
+		output	logic						fu2rob_br_taken_o,
+		output	logic	[63:0]				fu2rob_br_target_o,
+        //outputlogic	[63:0]              fu2br_pre_br_pc_o,//branch address to branch predictor 
+		output 	logic	[`PRF_IDX_W-1:0]	fu_cdb_broad_o,
+        output  logic	                    fu_cdb_vld_o,
+
+		output	logic	[`SQ_IDX_W-1:0]		lsq_sq_tail_o,
+		output	logic						lsq_ld_iss_en_o,
+		output	logic						lsq2Dcache_ld_addr_o,
+		output	logic						lsq2Dcache_ld_en_o,
+		output	logic						lsq_lq_com_rdy_o,
+		output	logic						lsq_sq_full_o
 	);
 
     logic                           cdb_vld_r, cdb_vld_r_nxt;
-	logic		[`PRF_IDX_W-1:0]	cdb_tag_r,cdb_tag_r_nxt;
-    logic       [63:0]              cdb_value_r, cdb_value_r_nxt;
+	logic		[`PRF_IDX_W-1:0]	cdb_tag_r, cdb_tag_r_nxt;
+	logic		[`BR_MASK_W-1:0]	cdb_br_mask_r, cdb_br_mask_r_nxt;
+	logic		[63:0]				fu2preg_wr_value;
 	logic		[`EX_UNIT_W-1:0]	ex_unit_en;
 	
-	logic		[63:0]				int_alu_result;
-	logic							int_alu_done;
-	logic		[`PRF_IDX_W-1:0]	int_alu_dest_tag;
-	logic		[`HT_W-1:0]			int_alu_rob_idx;
+	logic		[63:0]				alu_result;
+	logic							alu_done;
+	logic		[`PRF_IDX_W-1:0]	alu_dest_tag;
+	logic		[`ROB_IDX_W-1:0]	alu_rob_idx;
+	logic		[`BR_MASK_W-1:0]	alu_br_mask;
 	
-	logic							br_alu_done;
+	logic							br_done;
 	logic		[63:0]				br_target;
 	logic							br_taken;
-	logic		[`HT_W-1:0] 		br_rob_idx;
+	logic		[`ROB_IDX_W-1:0] 	br_rob_idx;
     logic       [63:0]              br_pc;
 	
 	logic		[63:0]				mult_result;
 	logic							mult_done;
-	logic		[`HT_W-1:0]			mult_rob_idx;
+	logic		[`ROB_IDX_W-1:0]	mult_rob_idx;
 	logic		[`PRF_IDX_W-1:0]	mult_dest_tag;
+	logic		[`BR_MASK_W-1:0]	mult_br_mask;
+
+	logic		[63:0]				ld_result;
+	logic							ld_done;
+	logic							st_done;
+	logic		[`ROB_IDX_W-1:0]	ldst_rob_idx;
+	logic		[`PRF_IDX_W-1:0]	ld_dest_tag;
+	logic							lsq_lq_com_rdy;
+	logic		[`BR_MASK_W-1:0]	ld_br_mask;
 	
 	//wire [63:0] mem_disp = { {48{rs2fu_IR_i[15]}}, rs2fu_IR_i[15:0] };
 	//wire [63:0] br_disp  = { {41{rs2fu_IR_i[20]}}, rs2fu_IR_i[20:0], 2'b00 };
 
-	assign fu2rob_done_o 		= int_alu_done | br_alu_done | mult_done;	
-	assign fu2rob_idx_o			= br_alu_done ? br_rob_idx : 
+	assign fu2rob_done_o 		= alu_done | br_done | mult_done | st_done | ld_done;	
+	assign fu2rob_idx_o			= br_done ? br_rob_idx : 
 								  mult_done ? mult_rob_idx : 
-	   							  int_alu_done ? int_alu_rob_idx : 0;
-	assign fu2rob_br_taken_o	= br_alu_done ? br_taken : 0;
-	assign fu2rob_br_target_o	= br_alu_done ? br_target : 0;
+	   							  alu_done ? alu_rob_idx :
+								  (ld_done | st_done) ? ldst_rob_idx : 0;
+	assign fu2rob_br_taken_o	= br_done ? br_taken : 0;
+	assign fu2rob_br_target_o	= br_done ? br_target : 0;
     //assign fu2br_pre_br_pc_o    = br_alu_done ? br_pc : 0;
 	assign fu_cdb_broad_o		= cdb_tag_r;
-    assign fu_cdb_vld_o         = cdb_vld_r;
-    assign fu2preg_wr_en_o      = cdb_vld_r;
+    assign fu_cdb_vld_o         = cdb_vld_r & ~rob_br_recovery_i;
+    assign fu2preg_wr_en_o      = cdb_vld_r & ~rob_br_recovery_i;
 	assign fu2preg_wr_idx_o		= cdb_tag_r;
-	assign fu2preg_wr_value_o	= cdb_value_r;
+
+	assign lsq_lq_com_rdy_o		= lsq_lq_com_rdy;
 
 	always_comb begin
-        if (int_alu_done) begin
-			cdb_tag_r_nxt		= int_alu_dest_tag;
+		if (rob_br_recovery_i && ((cdb_br_mask_r & rob_br_tag_fix_i) != 0)) begin
+			cdb_tag_r_nxt		= `ZERO_REG;
+			cdb_vld_r_nxt		= 0;
+			cdb_br_mask_r_nxt	= 0;
+			fu2_preg_wr_value	= 0;
+		end else if (rob_br_recovery_i) begin
+			cdb_tag_r_nxt		= cdb_tag_r;
+			cdb_vld_r_nxt		= cdb_vld_r;
+			cdb_br_mask_r_nxt	= cdb_br_mask_r;
+			fu2_preg_wr_value	= fu2_preg_wr_value_o;
+        end else if (alu_done) begin
+			cdb_tag_r_nxt		= alu_dest_tag;
             cdb_vld_r_nxt       = 1;
-            cdb_value_r_nxt     = int_alu_result;
+			cdb_br_mask_r_nxt	= rob_br_pred_correct_i ? (alu_br_mask ^ rob_br_tag_fix_i) : alu_br_mask;
+            fu2_preg_wr_value	= alu_result;
         end else if (mult_done) begin
 			cdb_tag_r_nxt		= mult_dest_tag;
             cdb_vld_r_nxt       = 1;
-            cdb_value_r_nxt     = mult_result;
+			cdb_br_mask_r_nxt	= rob_br_pred_correct_i ? (mult_br_mask ^ rob_br_tag_fix_i) : mult_br_mask;
+            fu2preg_wr_value	= mult_result;
+		end else if (ld_done) begin
+			cdb_tag_r_nxt		= ld_dest_tag;
+			cdb_vld_r_nxt		= 1;
+			cdb_br_mask_r_nxt	= rob_br_pred_correct_i ? (ld_br_mask ^ rob_br_tag_fix_i) : ld_br_mask;
+			fu2preg_wr_value	= ld_result;
         end else begin
 			cdb_tag_r_nxt		= `ZERO_REG;
             cdb_vld_r_nxt       = 0;
-            cdb_value_r_nxt     = 0;
+            fu2preg_wr_value	= 0;
         end
 	end
 	
@@ -96,61 +150,103 @@ module fu_main(
 	
 	always_ff @(posedge clk) begin
         if (rst) begin
-			cdb_tag_r   <= `SD `ZERO_REG;
-            cdb_vld_r   <= `SD 0;
-            cdb_value_r <= `SD 0;
+			cdb_tag_r   		<= `SD `ZERO_REG;
+            cdb_vld_r   		<= `SD 0;
+            fu2preg_wr_value_o	<= `SD 0;
         end else begin
-			cdb_tag_r   <= `SD cdb_tag_r_nxt;
-            cdb_vld_r   <= `SD cdb_vld_r_nxt;
-            cdb_value_r <= `SD cdb_value_r_nxt;
+			cdb_tag_r   		<= `SD cdb_tag_r_nxt;
+            cdb_vld_r   		<= `SD cdb_vld_r_nxt;
+            fu2preg_wr_value_o	<= `SD fu2preg_wr_value;
         end    
 	end
 
-	int_alu int_alu1 (
-			.clk(clk),
-			.rst(rst),
-			.start_i(ex_unit_en[0]),
-			.opa_i(rs2fu_ra_value_i),
-			.opb_i(rs2fu_rb_value_i),
-			.inst_i(rs2fu_IR_i),
-			.dest_tag_i(rs2fu_dest_tag_i),
-			.rob_idx_i(rs2fu_rob_idx_i),
-			.result_o(int_alu_result),
-			.dest_tag_o(int_alu_dest_tag),
-			.rob_idx_o(int_alu_rob_idx),
-			.done_o(int_alu_done)
+	fu_alu fu_alu (
+			.clk					(clk),
+			.rst					(rst),
+			.start_i				(ex_unit_en[0]),
+			.opa_i					(rs2fu_ra_value_i),
+			.opb_i					(rs2fu_rb_value_i),
+			.inst_i					(rs2fu_IR_i),
+			.dest_tag_i				(rs2fu_dest_tag_i),
+			.rob_idx_i				(rs2fu_rob_idx_i),
+			.br_mask_i				(rs2fu_br_mask_i),
+			.rob_br_recovery_i		(rob_br_recovery_i),
+			.rob_br_pred_correct_i	(rob_br_pred_correct_i),
+			.rob_br_tag_fix_i		(rob_br_tag_fix_i),
+			.result_o				(alu_result),
+			.dest_tag_o				(alu_dest_tag),
+			.rob_idx_o				(alu_rob_idx),
+			.br_mask_o				(alu_br_mask),
+			.done_o					(alu_done)
 	);
 	
 	
-	br_alu br_alu1 (
-			.clk(clk),
-			.rst(rst),
-			.start_i(ex_unit_en[1]),
-			.npc_i(rob2fu_NPC_i),
-			.opa_i(rs2fu_ra_value_i),
-			.inst_i(rs2fu_IR_i),
-			.rob_idx_i(rs2fu_rob_idx_i),
-			.done_o(br_alu_done),
-			.br_target_o(br_target),
-			.br_result_o(br_taken),
-			.rob_idx_o(br_rob_idx),
-            .br_pc_o(br_pc)
-			);
-	
-	mult mult1 (	
-			.clk(clk),
-			.rst(rst),
-			.start_i(ex_unit_en[2]),
-			.opa_i(rs2fu_ra_value_i),
-			.opb_i(rs2fu_rb_value_i),
-			.inst_i(rs2fu_IR_i),
-			.rob_idx_i(rs2fu_rob_idx_i),
-			.dest_tag_i(rs2fu_dest_tag_i),
-			.product(mult_result),
-			.rob_idx_o(mult_rob_idx),
-            .dest_tag_o(mult_dest_tag),
-			.done(mult_done)	
+	fu_br fu_br (
+			.clk					(clk),
+			.rst					(rst),
+			.start_i				(ex_unit_en[1]),
+			.npc_i					(rob2fu_NPC_i),
+			.opa_i					(rs2fu_ra_value_i),
+			.inst_i					(rs2fu_IR_i),
+			.rob_idx_i				(rs2fu_rob_idx_i),
+			.done_o					(br_done),
+			.br_target_o			(br_target),
+			.br_result_o			(br_taken),
+			.rob_idx_o				(br_rob_idx),
+            .br_pc_o				(br_pc)
 	);
 	
+	fu_mult fu_mult (
+			.clk					(clk),
+			.rst					(rst),
+			.start_i				(ex_unit_en[2]),
+			.opa_i					(rs2fu_ra_value_i),
+			.opb_i					(rs2fu_rb_value_i),
+			.inst_i					(rs2fu_IR_i),
+			.rob_idx_i				(rs2fu_rob_idx_i),
+			.dest_tag_i				(rs2fu_dest_tag_i),
+			.br_mask_i				(rs2fu_br_mask_i),
+			.rob_br_recovery_i		(rob_br_recovery_i),
+			.rob_br_pred_correct_i	(rob_br_pred_correct_i),
+			.rob_br_tag_fix_i		(rob_br_tag_fix_i),
+			.product				(mult_result),
+			.rob_idx_o				(mult_rob_idx),
+            .dest_tag_o				(mult_dest_tag),
+			.br_mask_o				(mult_br_mask),
+			.done					(mult_done)	
+	);
+
+	fu_ldst fu_ldst (
+			.clk					(clk),
+			.rst					(rst),
+			.opa_i					(prf2fu_ra_value_i),
+			.opb_i					(prf2fu_rb_value_i),
+			.inst_i					(rs2fu_IR_i),
+			.dest_tag_i				(rs2fu_dest_tag_i),
+			.rob_idx_i				(rs2fu_rob_idx_i),
+			.st_vld_i				(ex_unit_en[4]),
+			.ld_vld_i				(ex_unit_en[3]),
+			.sq_idx_i				(rs2lsq_sq_idx_i),
+			.rob_st_retire_en_i		(rob2lsq_st_retire_en_i),
+			.dp_en_i				(st_dp_en_i),
+			.rs_ld_position_i		(rs_ld_position_i),
+			.ex_ld_position_i		(rs_iss_ld_position_i),
+			.Dcache_hit_i			(Dcache_hit_i),
+			.Dcache_data_i			(Dcache_data_i),
+			.Dcache_mshr_addr_i		(Dcache_mshr_addr_i),
+			.Dcache_mshr_vld_i		(Dcache_mshr_vld_i),
+			.Dcache_mshr_stall_i	(Dcache_mshr_stall_i),
+			.result_o				(ld_result),
+			.dest_tag_o				(ld_dest_tag),
+			.rob_idx_o				(ldst_rob_idx),
+			.lsq_sq_tail_o			(lsq_sq_tail_o),
+			.lsq_ld_iss_en_o		(lsq_ld_iss_en_o),
+			.lsq2Dcache_ld_addr_o	(lsq2Dcache_ld_addr_o),
+			.lsq2Dcache_ld_en_o		(lsq2Dcache_ld_en_o),
+			.lsq_lq_com_rdy_o		(lsq_lq_com_rdy),
+			.lsq_sq_full_o			(lsq_sq_full_o),
+			.st_done_o				(st_done),
+			.ld_done_o				(ld_done)
+	);
 	
 endmodule	  

@@ -6,6 +6,7 @@
 // 10/25/2017 - initially created, with scheduler at issue to avoid conflicts 
 // 		during completion
 // 10/28/2017 - added branch recovery function
+// 11/12/2017 - added register output
 // intial creation: 10/25/2017
 // ***************************************************************************
 //
@@ -15,7 +16,7 @@
 `define		SCHEDULE_VEC_LOAD	1 << (`EX_CYCLES_MAX - `EX_CYCLES_LOAD)
 `define		SCHEDULE_VEC_STORE	1 << (`EX_CYCLES_MAX - `EX_CYCLES_STORE)
 `define		SCHEDULE_VEC_MULT	1 << (`EX_CYCLES_MAX - `EX_CYCLES_MULT)
-`define		DEBUG
+//`define		DEBUG
 
 module rs (
 		input			clk,
@@ -35,6 +36,8 @@ module rs (
 	
 		input		[`PRF_IDX_W-1:0]	cdb_tag_i,
 		input					cdb_vld_i,
+
+		input					lsq_sq_tail_i,
 
 		input					stall_dp_i,
 
@@ -79,17 +82,61 @@ module rs (
 	logic	[`RS_ENT_NUM-1:0] [`EX_CYCLES_MAX-1:0]	rs_ent_schedule_vec;
 	logic	[`RS_ENT_NUM-1:0]			allow_schedule_vec;
 	logic	[`RS_ENT_NUM-1:0]			rdy_vec_scheduled;
+	logic						br_recovery_flush;
 	logic	[`RS_IDX_W-1:0]				iss_idx;
+	logic						rs_iss_vld;
+	logic	[`PRF_IDX_W-1:0]			rs_iss_opa_tag;
+	logic	[`PRF_IDX_W-1:0]			rs_iss_opb_tag;
+	logic	[`PRF_IDX_W-1:0]			rs_iss_dest_tag;
+	logic	[`FU_SEL_W-1:0]				rs_iss_fu_sel;
+	logic	[31:0]					rs_iss_IR;
+	logic	[`ROB_IDX_W-1:0]			rs_iss_rob_idx;
+	logic	[`BR_MASK_W-1:0]			rs_iss_br_mask;
 
-	assign	rs_iss_vld_o		= |iss_vec;
-	assign	rs_iss_opa_tag_o	= opa_tag_vec[iss_idx];
-	assign	rs_iss_opb_tag_o	= opb_tag_vec[iss_idx];
-	assign	rs_iss_dest_tag_o	= dest_tag_vec[iss_idx];
-	assign	rs_iss_fu_sel_o		= fu_sel_vec[iss_idx];
-	assign	rs_iss_IR_o			= IR_vec[iss_idx];
-	assign	rs_iss_rob_idx_o	= rob_idx_vec[iss_idx];
-	assign	rs_iss_br_mask_o	= br_mask_vec[iss_idx];
-	assign	rs_full_o			= ~(|avail_vec);
+	assign	rs_iss_vld		= |iss_vec;
+	assign	rs_iss_opa_tag		= opa_tag_vec[iss_idx];
+	assign	rs_iss_opb_tag		= opb_tag_vec[iss_idx];
+	assign	rs_iss_dest_tag		= dest_tag_vec[iss_idx];
+	assign	rs_iss_fu_sel		= fu_sel_vec[iss_idx];
+	assign	rs_iss_IR		= IR_vec[iss_idx];
+	assign	rs_iss_rob_idx		= rob_idx_vec[iss_idx];
+	assign	rs_iss_br_mask		= br_mask_vec[iss_idx];
+	assign	rs_full_o		= ~(|avail_vec);
+
+	assign	br_recovery_flush	= rob_br_recovery_i && ((rs_iss_br_mask_o & rob_br_tag_fix_i) != 0);
+
+	// register output
+	// synopsys sync_set_reset "rst"
+	always_ff @(posedge clk) begin
+		if (rst) begin
+			rs_iss_vld_o		<= `SD 1'b0;
+			rs_iss_opa_tag_o	<= `SD 0;
+			rs_iss_opb_tag_o	<= `SD 0;
+			rs_iss_dest_tag_o	<= `SD 0;
+			rs_iss_fu_sel_o		<= `SD `FU_SEL_NONE;
+			rs_iss_IR_o		<= `SD 0;
+			rs_iss_rob_idx_o	<= `SD 0;
+			rs_iss_br_mask_o	<= `SD 0;
+		end else if (br_recovery_flush) begin
+			rs_iss_vld_o		<= `SD 1'b0;
+			rs_iss_opa_tag_o	<= `SD 0;
+			rs_iss_opb_tag_o	<= `SD 0;
+			rs_iss_dest_tag_o	<= `SD 0;
+			rs_iss_fu_sel_o		<= `SD `FU_SEL_NONE;
+			rs_iss_IR_o		<= `SD 0;
+			rs_iss_rob_idx_o	<= `SD 0;
+			rs_iss_br_mask_o	<= `SD 0;
+		end else if (~rob_br_recovery_i) begin
+			rs_iss_vld_o		<= `SD rs_iss_vld;
+			rs_iss_opa_tag_o	<= `SD rs_iss_opa_tag;
+			rs_iss_opb_tag_o	<= `SD rs_iss_opb_tag;
+			rs_iss_dest_tag_o	<= `SD rs_iss_dest_tag;
+			rs_iss_fu_sel_o		<= `SD rs_iss_fu_sel;
+			rs_iss_IR_o		<= `SD rs_iss_IR;
+			rs_iss_rob_idx_o	<= `SD rs_iss_rob_idx;
+			rs_iss_br_mask_o	<= `SD rs_iss_br_mask;
+		end
+	end
 
 	// Instantiate reservation station entries
 	genvar i;

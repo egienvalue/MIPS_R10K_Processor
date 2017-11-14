@@ -1,5 +1,5 @@
 // ****************************************************************************
-// Filename: br_alu.v
+// Filename: fu_br.v
 // Discription: alu for branch condition calculation
 // Author: Shijing
 // Version History:
@@ -27,7 +27,7 @@ module brcond(// Inputs
 	end
 endmodule // brcond
 
-module br_alu (
+module fu_br (
 
 		input						clk,
 		input						rst,
@@ -36,6 +36,7 @@ module br_alu (
 		input		[63:0]  		opa_i,//reg A value
 		input		[31:0]  		inst_i,
 		input		[`ROB_IDX_W-1:0]rob_idx_i,
+		input						br_mask_i,
 
 		output	logic				done_o,
 		output	logic	[63:0]		br_target_o,

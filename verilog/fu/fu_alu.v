@@ -1,12 +1,12 @@
 // ****************************************************************************
-// Filename: alu2.v
+// Filename: fu_alu.v
 // Discription: alu for integer calculation but not for branch
 // Author: Jun
 // Version History:
 // 	intial creation: 10/26/2017
 // 	***************************************************************************
 //
-module int_alu (
+module fu_alu (
 
 		input				clk,
 		input				rst,
@@ -17,10 +17,15 @@ module int_alu (
 		input		[31:0]				inst_i,
 		input		[`PRF_IDX_W-1:0]	dest_tag_i,
 		input		[`ROB_IDX_W-1:0]	rob_idx_i,
+		input		[`BR_MASK_W-1:0]	br_mask_i,
+		input							rob_br_recovery_i,
+		input							rob_br_pred_correct_i,
+		input		[`BR_MASK_W-1:0]	rob_br_tag_fix_i,
 
 		output	logic	[63:0]			result_o,
 		output	logic	[`PRF_IDX_W-1:0]dest_tag_o,
 		output	logic	[`ROB_IDX_W-1:0]rob_idx_o,
+		output	logic	[`BR_MASK_W-1:0]br_mask_o,
 		output	logic					done_o
 	
 		);	
@@ -74,11 +79,19 @@ always_ff @(posedge clk) begin
 		result_o	<= `SD 0;
 		dest_tag_o	<= `SD 0;
 		rob_idx_o	<= `SD 0;
-	end else begin
+		br_mask_o	<= `SD 0;
+	end else if (rob_br_recovery_i && ((br_mask_o & rob_br_tag_fix_i) != 0)) begin
+		done_o		<= `SD 0;		
+		result_o	<= `SD 0;
+		dest_tag_o	<= `SD 0;
+		rob_idx_o	<= `SD 0;
+		br_mask_o	<= `SD 0;
+	end else if (~rob_br_recovery_i) begin
 		done_o		<= `SD start_i;	
 		result_o	<= `SD result_o_nxt;
 		dest_tag_o	<= `SD dest_tag_i;
-		rob_idx_o	<= `SD rob_idx_i;	
+		rob_idx_o	<= `SD rob_idx_i;
+		br_mask_o	<= `SD rob_br_pred_correct_i ? (br_mask_i ^ rob_br_tag_fix_i) : br_mask_i;	
 	end
 end
 

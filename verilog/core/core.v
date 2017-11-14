@@ -130,7 +130,7 @@ module core (
 	logic	[`BR_MASK_W-1:0]	bmg_br_mask_i;
 	logic						rob_br_pred_correct_i;
 	logic						rob_br_recovery_i;
-	logic	[`BR_MASK_W-1:0]	rob_br_tag_fix_i;
+	logic	[`BR_MASK_W-1:0]	br_stack_tag_fix_i;
 
 	logic						rs_iss_vld_o;
 	logic	[`PRF_IDX_W-1:0]	rs_iss_opa_tag_o;
@@ -225,12 +225,29 @@ module core (
 	//---------------------------------------------------------------
 	logic	[63:0]				rob2fu_NPC_i;
 	logic	[`ROB_IDX_W-1:0]	rs2fu_rob_idx_i;
-	logic	[63:0]				rs2fu_ra_value_i;
-	logic	[63:0]				rs2fu_rb_value_i;
+	logic	[63:0]				prf2fu_ra_value_i;
+	logic	[63:0]				prf2fu_rb_value_i;
 	logic	[`PRF_IDX_W-1:0]	rs2fu_dest_tag_i;
 	logic	[31:0]				rs2fu_IR_i;
 	logic	[`FU_SEL_W-1:0]		rs2fu_sel_i;
 	logic						rs2fu_iss_vld_i;
+
+	logic	[`SQ_IDX_W-1:0]		rs2lsq_sq_idx_i;
+	logic	[`SQ_IDX_W-1:0]		rs_ld_position_i;
+	logic	[`SQ_IDX_W-1:0]		rs_iss_ld_position_i;
+	logic						rob2lsq_st_retire_en_i;
+	logic						st_dp_en_i;
+
+	logic	[`BR_MASK_W-1:0]	rs2fu_br_mask_i;
+	logic						rob_br_pred_correct_i;
+	logic						rob_br_recovery_i;
+	logic	[`BR_MASK_W-1:0]	rob_br_tag_fix_i;
+
+	logic						Dcache_hit_i;
+	logic	[63:0]				Dcache_data_i;
+	logic	[63:0]				Dcache_mshr_addr_i;
+	logic						Dcache_mshr_vld_i;
+	logic						Dcache_mshr_stall_i;
 
 	logic						fu2preg_wr_en_o;
 	logic 	[`PRF_IDX_W-1:0]	fu2preg_wr_idx_o;
@@ -241,6 +258,13 @@ module core (
 	logic	[63:0]				fu2rob_br_target_o;
 	logic 	[`PRF_IDX_W-1:0]	fu_cdb_broad_o;
 	logic						fu_cdb_vld_o;
+
+	logic	[`SQ_IDX_W-1:0]		lsq_sq_tail_o;
+	logic						lsq_ld_iss_en_o;
+	logic						lsq2Dcache_ld_addr_o;
+	logic						lsq2Dcache_ld_en_o;
+	logic						lsq_lq_com_rdy_o;
+	logic						lsq_sq_full_o;
 
 	//---------------------------------------------------------------
 	// signals for preg file
@@ -587,36 +611,77 @@ module core (
 	//===============================================================
 	assign rob2fu_NPC_i			= rob2fu_rd_NPC_o; // !!!
 	assign rs2fu_rob_idx_i		= rs_iss_rob_idx_o;
-	assign rs2fu_ra_value_i		= rda_data_o; // !! from preg_file
+	assign prf2fu_ra_value_i	= rda_data_o; // !! from preg_file
 	assign rs2fu_rb_value_i		= rdb_data_o; // !!
 	assign rs2fu_dest_tag_i		= rs_iss_dest_tag_o; //  why we need here?
 	assign rs2fu_IR_i			= rs_iss_IR_o; //  why we need here?
 	assign rs2fu_sel_i			= rs_iss_fu_sel_o;
 	assign rs2fu_iss_vld_i		= rs_iss_vld_o;
 
+	assign rs2lsq_sq_idx_i			= 0;
+	assign rs_ld_position_i			= 0;
+	assign rs_iss_ld_position_i		= 0;
+	assign rob2lsq_st_retire_en_i	= 0;
+	assign st_dp_en_i				= 0;
+
+	assign rs2fu_br_mask_i			= rs_iss_br_mask_o;
+	assign rob_br_pred_correct_i	= br_right_o;
+	assign rob_br_recovery_i		= br_recovery_rdy_o;
+	assign br_stack_tag_fix_i		= br_bit_o; // from br_stack
+
+	assign Dcache_hit_i				= 0;
+	assign Dcache_data_i			= 0;	
+	assign Dcache_mshr_addr_i		= 0;
+	assign Dcache_mshr_vld_i		= 0;
+
 	fu_main fu_main (
-		.clk				(clk),
-		.rst				(rst),
+		.clk					(clk),
+		.rst					(rst),
 		
-		.rob2fu_NPC_i		(rob2fu_NPC_i),
-		.rs2fu_rob_idx_i	(rs2fu_rob_idx_i),
-		.rs2fu_ra_value_i	(rs2fu_ra_value_i),
-		.rs2fu_rb_value_i	(rs2fu_rb_value_i),
-		.rs2fu_dest_tag_i	(rs2fu_dest_tag_i),
-		.rs2fu_IR_i			(rs2fu_IR_i),
-		.rs2fu_sel_i		(rs2fu_sel_i),
-		.rs2fu_iss_vld_i	(rs2fu_iss_vld_i),
+		.rob2fu_NPC_i			(rob2fu_NPC_i),
+		.rs2fu_rob_idx_i		(rs2fu_rob_idx_i),
+		.prf2fu_ra_value_i		(prf2fu_ra_value_i),
+		.prf2fu_rb_value_i		(prf2fu_rb_value_i),
+		.rs2fu_dest_tag_i		(rs2fu_dest_tag_i),
+		.rs2fu_IR_i				(rs2fu_IR_i),
+		.rs2fu_sel_i			(rs2fu_sel_i),
+		.rs2fu_iss_vld_i		(rs2fu_iss_vld_i),
 
-		.fu2preg_wr_en_o	(fu2preg_wr_en_o),
-		.fu2preg_wr_idx_o	(fu2preg_wr_idx_o),
-		.fu2preg_wr_value_o	(fu2preg_wr_value_o),
-		.fu2rob_done_o		(fu2rob_done_o),
-		.fu2rob_idx_o		(fu2rob_idx_o),
-		.fu2rob_br_taken_o	(fu2rob_br_taken_o),
-		.fu2rob_br_target_o	(fu2rob_br_target_o),
+		.rs2lsq_sq_idx_i		(rs2lsq_sq_idx_i),
+		.rs_ld_position_i		(rs_ld_position_i),
+		.rs_iss_ld_position_i	(rs_iss_ld_position_i),
+		.rob2lsq_st_retire_en_i	(rob2lsq_st_retire_en_i),
+		.st_dp_en_i				(st_dp_en_i),
 
-		.fu_cdb_broad_o		(fu_cdb_broad_o),
-		.fu_cdb_vld_o		(fu_cdb_vld_o)
+		.rs2fu_br_mask_i		(rs2fu_br_mask_i),
+		.rob_br_pred_correct_i	(rob_br_pred_correct_i),
+		.rob_br_recovery_i		(rob_br_recovery_i),
+		.rob_br_tag_fix_i		(br_stack_tag_fix_i), // from br_stack
+        
+		.Dcache_hit_i			(Dcache_hit_i),
+		.Dcache_data_i			(Dcache_data_i),
+		.Dcache_mshr_addr_i		(Dcache_mshr_addr_i),
+		.Dcache_mshr_vld_i		(Dcache_mshr_vld_i),
+		.Dcache_mshr_stall_i	(Dcache_mshr_stall_i),
+
+		.fu2preg_wr_en_o		(fu2preg_wr_en_o),
+		.fu2preg_wr_idx_o		(fu2preg_wr_idx_o),
+		.fu2preg_wr_value_o		(fu2preg_wr_value_o),
+		.fu2rob_done_o			(fu2rob_done_o),
+		.fu2rob_idx_o			(fu2rob_idx_o),
+		.fu2rob_br_taken_o		(fu2rob_br_taken_o),
+		.fu2rob_br_target_o		(fu2rob_br_target_o),
+
+		.fu_cdb_broad_o			(fu_cdb_broad_o),
+		.fu_cdb_vld_o			(fu_cdb_vld_o),
+
+		.lsq_sq_tail_o			(lsq_sq_tail_o),
+		.lsq_ld_iss_en_o		(lsq_ld_iss_en_o),
+		.lsq2Dcache_ld_addr_o	(lsq2Dcache_ld_addr_o),
+		.lsq2Dcache_ld_en_o		(lsq2Dcache_ld_en_o),
+		.lsq_lq_com_rdy_o		(lsq_lq_com_rdy_o),
+		.lsq_sq_full_o			(lsq_sq_full_o)
+
 	);
 
 	//===============================================================

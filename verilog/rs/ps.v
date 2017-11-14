@@ -9,8 +9,7 @@
 //
 
 module ps #(parameter NUM_BITS = 8)(req, en, gnt, req_up);
-//synopsys template
-
+	// synopsys template
   input  [NUM_BITS-1:0] req;
   input                 en;
 

@@ -5,7 +5,7 @@
 //
 
 module pe #(parameter OUT_WIDTH=4)(gnt,enc);
-        //synopsys template
+	// synopsys template
         parameter IN_WIDTH=1<<OUT_WIDTH;
 
 	input   [IN_WIDTH-1:0] gnt;
