@@ -215,8 +215,9 @@ module rs (
 	end
 
 	assign rdy_vec_scheduled	= rdy_vec & allow_schedule_vec;
-	assign exunit_schedule_r_nxt	= rs_iss_vld_o ? ({exunit_schedule_r[`EX_CYCLES_MAX-2:0], 1'b0} | rs_ent_schedule_vec[iss_idx]) :
-							 {exunit_schedule_r[`EX_CYCLES_MAX-2:0], 1'b0};
+	assign exunit_schedule_r_nxt	= rob_br_recovery_i ? exunit_schedule_r :
+					  rs_iss_vld ? ({exunit_schedule_r[`EX_CYCLES_MAX-2:0], 1'b0} | rs_ent_schedule_vec[iss_idx]) :
+					               {exunit_schedule_r[`EX_CYCLES_MAX-2:0], 1'b0};
 
 	ps # (
 		.NUM_BITS	(`RS_ENT_NUM)
