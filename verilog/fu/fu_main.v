@@ -103,6 +103,7 @@ module fu_main(
     assign fu_cdb_vld_o         = cdb_vld & ~rob_br_recovery_i;
     assign fu2preg_wr_en_o      = cdb_vld & ~rob_br_recovery_i;
 	assign fu2preg_wr_idx_o		= cdb_tag;
+	assign fu2preg_wr_value_o	= fu2preg_wr_value;
 
 	assign lsq_lq_com_rdy_o		= lsq_lq_com_rdy;
 
@@ -169,8 +170,8 @@ module fu_main(
 			.clk					(clk),
 			.rst					(rst),
 			.start_i				(ex_unit_en[0]),
-			.opa_i					(rs2fu_ra_value_i),
-			.opb_i					(rs2fu_rb_value_i),
+			.opa_i					(prf2fu_ra_value_i),
+			.opb_i					(prf2fu_rb_value_i),
 			.inst_i					(rs2fu_IR_i),
 			.dest_tag_i				(rs2fu_dest_tag_i),
 			.rob_idx_i				(rs2fu_rob_idx_i),
@@ -191,7 +192,7 @@ module fu_main(
 			.rst					(rst),
 			.start_i				(ex_unit_en[1]),
 			.npc_i					(rob2fu_NPC_i),
-			.opa_i					(rs2fu_ra_value_i),
+			.opa_i					(prf2fu_ra_value_i),
 			.inst_i					(rs2fu_IR_i),
 			.rob_idx_i				(rs2fu_rob_idx_i),
 			.done_o					(br_done),
@@ -210,8 +211,8 @@ module fu_main(
 			.clk					(clk),
 			.rst					(rst),
 			.start_i				(ex_unit_en[2]),
-			.opa_i					(rs2fu_ra_value_i),
-			.opb_i					(rs2fu_rb_value_i),
+			.opa_i					(prf2fu_ra_value_i),
+			.opb_i					(prf2fu_rb_value_i),
 			.inst_i					(rs2fu_IR_i),
 			.rob_idx_i				(rs2fu_rob_idx_i),
 			.dest_tag_i				(rs2fu_dest_tag_i),

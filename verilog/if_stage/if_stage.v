@@ -65,7 +65,7 @@ module if_stage(
 		.ifb_insn_o(if_IR_o),
 		.ifb_PC_o(ifb2if_PC_reg),
 		.ifb_target_PC_o(if_target_PC_o),
-		.ifb_pred_bit_o(if2id_pred_bit_o)
+		.ifb_pred_bit_o(if_pred_bit_o)
 
 	);
 

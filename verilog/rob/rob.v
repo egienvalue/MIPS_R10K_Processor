@@ -166,8 +166,10 @@ module	rob (
 	logic						fu_done_r_nxt;
 
 	wire dispatch_en					= rob_dispatch_en_i;
+	// <11/14>
 	wire br_predict_wrong				= (br_pretaken_r[br_recovery_idx_i] != br_recovery_taken_i) |
-										  (br_recovery_target_i != br_target_r[br_recovery_idx_i]);
+										  (br_recovery_taken_i && br_pretaken_r[br_recovery_idx_i] &&
+										   br_recovery_target_i != br_target_r[br_recovery_idx_i]);
 
 	assign rob2rs_tail_idx_o			= tail_r[`HT_W-1:0];
 	assign rob2fl_tag_o					= rob_head_retire_rdy_o ? old_dest_tag_r[head_r[`HT_W-1:0]]	: 0;
@@ -180,7 +182,7 @@ module	rob (
 	assign head_r_nxt					= rob_head_retire_rdy_o ? (head_r+1) : head_r;
 	assign tail_r_nxt 					= br_recovery_rdy_o ? (br_recovery_idx_i+1) : dispatch_en ? (tail_r+1) : tail_r;
 
-    assign rob2fu_rd_NPC_o              = PC_r[rs2rob_rd_idx_i]+4; //sent the NPC to branch alu to calculate the branch target
+    assign rob2fu_rd_NPC_o              = PC_r[br_recovery_idx_i]+4; //sent the NPC to branch alu to calculate the branch target
 
 	always_comb begin
 		if(br_flag_r[br_recovery_idx_i]&br_recovery_done_i)

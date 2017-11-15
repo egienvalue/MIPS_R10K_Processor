@@ -3,7 +3,7 @@ module preg_file(
 		input						rst,
 		input						wr_en_i,
 		input	[`PRF_IDX_W-1:0]	rda_idx_i,rdb_idx_i, wr_idx_i,
-		input						wr_data_i,
+		input	[63:0]				wr_data_i,
 
 
 		output	logic	[63:0]		rda_data_o, rdb_data_o
@@ -36,7 +36,7 @@ module preg_file(
 
 	always_ff @(posedge clk) begin
 		if(rst)
-			reg_data_r <= `SD 0;
+			reg_data_r <= `SD {`PRF_NUM{64'h0}};
 		else if (wr_en_i)
 			reg_data_r[wr_idx_i] <= `SD wr_data_i;
 	end

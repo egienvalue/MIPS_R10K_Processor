@@ -19,6 +19,8 @@
 // Author: Chuan Cen
 // Version History:
 // 	intial creation: 11/04/2017
+// 	<11/14> ready bit in check point should update along with map table,
+// 	according to cdb_tag
 // 	***************************************************************************
 
 
@@ -28,15 +30,17 @@ module br_stack_ent(
 		input								clk,
 		input								rst,
 		input								mask_bit_i,
+		input								cdb_vld_i,
+		input	[`PRF_IDX_W-1:0]			cdb_tag_i,
 		input	[`MT_NUM-1:0][`PRF_IDX_W:0]	bak_mp_next_data_i,	//[Map Table]	Back up data from map table.
-		input	[`LRF_IDX_W-1:0]			bak_fl_head_i,		//[Free List]	Back up head of free list.
+		input	[`FL_PTR_W:0]				bak_fl_head_i,		//[Free List]	Back up head of free list.
 
 		output	[`MT_NUM-1:0][`PRF_IDX_W:0]	rc_mt_all_data_o,	//[Map Table]	Recovery data for map table.
-		output	[`LRF_IDX_W-1:0]			rc_fl_head_o		//[Free List]	Recovery head value for free list.
+		output	[`FL_PTR_W:0]				rc_fl_head_o		//[Free List]	Recovery head value for free list.
 	);
 
 	logic	[`MT_NUM-1:0][`PRF_IDX_W:0]		map_table_stack, fixed_nxt_mts;			// Branch Stack
-	logic	[`LRF_IDX_W-1:0]				fl_head_stack, fixed_nxt_fhs;
+	logic	[`FL_PTR_W:0]					fl_head_stack, fixed_nxt_fhs;
 
 	assign rc_mt_all_data_o = map_table_stack; 
 	assign rc_fl_head_o		= fl_head_stack; 
@@ -49,11 +53,13 @@ module br_stack_ent(
 			map_table_stack	<= `SD 0;
 			fl_head_stack	<= `SD 0;
 		end else if (mask_bit_i == 1'b0) begin
-			map_table_stack <= `SD bak_mp_next_data_i;
+			map_table_stack	<= `SD bak_mp_next_data_i;
 			fl_head_stack	<= `SD bak_fl_head_i;
-		end else begin
-			map_table_stack <= `SD fixed_nxt_mts;
-        	fl_head_stack	<= `SD fixed_nxt_fhs;
+		end else if (cdb_vld_i) begin // if fixed, update matched tag's rdy bit
+			for (int i = 0; i < `MT_NUM; i++) begin
+				if (cdb_tag_i == map_table_stack[i][`PRF_IDX_W-1:0])
+					map_table_stack[i][`PRF_IDX_W] <= `SD 1'b1;
+			end
 		end
 	end
 

@@ -218,11 +218,11 @@ module core (
 	logic						retire_en_i;			//[ROB]			
 	logic	[5:0]				retire_preg_i;			//[ROB]			
 	//logic	[`BR_STATE_W-1:0]	branch_state_i;			//[ROB]			
-	logic	[4:0]				rc_head_i;				//[Br_stack]
+	logic	[`FL_PTR_W:0]		rc_head_i;				//[Br_stack]
 	
 	logic						free_preg_vld_o;		//[ROB, Map Table, RS]	
 	logic	[5:0]				free_preg_o;			//[ROB, Map Table, Rs]	
-	logic	[4:0]				free_preg_cur_head_o;	//[ROB]	
+	logic	[`FL_PTR_W:0]		free_preg_cur_head_o;	//[ROB]	
 
 
 	//---------------------------------------------------------------
@@ -283,7 +283,7 @@ module core (
 	//---------------------------------------------------------------
 	logic						wr_en_i;
 	logic	[`PRF_IDX_W-1:0]	rda_idx_i,rdb_idx_i, wr_idx_i;
-	logic						wr_data_i;
+	logic	[63:0]				wr_data_i;
 
 	logic	[63:0]				rda_data_o, rdb_data_o;
 
@@ -296,12 +296,12 @@ module core (
 	logic	[`BR_STATE_W-1:0]	br_state_i;			//[ROB]			
 	logic	[`BR_MASK_W-1:0]	br_dep_mask_i;		//[ROB]			
 	logic	[31:0][6:0]			bak_mp_next_data_i;		//[Map Table]	
-	logic	[4:0]				bak_fl_head_i;			//[Free List]
+	logic	[`FL_PTR_W:0]		bak_fl_head_i;			//[Free List]
 
 	logic	[`BR_MASK_W-1:0]	br_mask_o;			//[ROB]			
 	logic	[`BR_MASK_W-1:0]	br_bit_o;			//[RS]			
 	logic	[31:0][6:0]			rc_mt_all_data_o;		//[Map Table]
-	logic	[4:0]				rc_fl_head_o;			//[Free List]
+	logic	[`FL_PTR_W:0]		rc_fl_head_o;			//[Free List]
 	logic						br_stack_full_o;
 
 	//---------------------------------------------------------------
@@ -324,9 +324,9 @@ module core (
 	//===============================================================
 	// outputs for core_tb.v
 	//===============================================================
-	assign core_retired_instrs	= {3'b0,rob_head_retire_rdy_o};
-	assign core_error_status	= rob_illegal_o ? `HALTED_ON_ILLEGAL : 
-								  rob_halt_o ? `HALTED_ON_HALT : `NO_ERROR;
+	assign core_retired_instrs	= {3'b0,(rob_head_retire_rdy_o | rob_halt_o)};
+	assign core_error_status	= (rob_illegal_o) ? `HALTED_ON_ILLEGAL : 
+								  (rob_halt_o) ? `HALTED_ON_HALT : `NO_ERROR;
 
 	//===============================================================
 	// Icache instantiation
@@ -415,9 +415,11 @@ module core (
 	assign dispatch_st_en		= ~(dispatch_rs_stall | dispatch_rob_stall | dispatch_sq_stall) && 
 									id_wr_mem_o && ~br_recovery_rdy_o;
 
-	assign dispatch_en			= (id_cond_branch_o | id_uncond_branch_o) ? dispatch_br_en :
+	assign dispatch_en			= //(id_illegal_o) ? 1'b0 :
+								  (id_cond_branch_o | id_uncond_branch_o) ? dispatch_br_en :
 								  (id_rd_mem_o) ? dispatch_ld_en : 
 								  (id_wr_mem_o) ? dispatch_st_en : dispatch_norm_en;
+
 	assign dispatch_fl_en		= dispatch_en && (id_dest_idx_o != `ZERO_REG);
 
 	assign if_id_IR_i			= if_IR_o;
@@ -506,7 +508,7 @@ module core (
 	//rob instantiation
 	//===============================================================
 	assign fl2rob_tag_i				= free_preg_o; // Tnew
-	assign fl2rob_cur_head_i		= free_preg_cur_head_o;
+	assign fl2rob_cur_head_i		= free_preg_cur_head_o[`FL_PTR_W-1:0];
 	assign map2rob_tag_i			= dest_old_preg_o; // Told
 	assign decode2rob_logic_dest_i	= id_dest_idx_o;
 	assign decode2rob_PC_i			= if_PC_o;
@@ -640,7 +642,7 @@ module core (
 	assign rob2fu_NPC_i			= rob2fu_rd_NPC_o; // !!!
 	assign rs2fu_rob_idx_i		= rs_iss_rob_idx_o;
 	assign prf2fu_ra_value_i	= rda_data_o; // !! from preg_file
-	assign rs2fu_rb_value_i		= rdb_data_o; // !!
+	assign prf2fu_rb_value_i	= rdb_data_o; // !!
 	assign rs2fu_dest_tag_i		= rs_iss_dest_tag_o; //  why we need here?
 	assign rs2fu_IR_i			= rs_iss_IR_o; //  why we need here?
 	assign rs2fu_sel_i			= rs_iss_fu_sel_o;
@@ -763,6 +765,10 @@ module core (
 		.br_dep_mask_i		(br_dep_mask_i),
 		.bak_mp_next_data_i	(bak_mp_next_data_i),	
 		.bak_fl_head_i		(bak_fl_head_i),
+
+		// <11/14>
+		.cdb_vld_i			(fu_cdb_vld_o),
+		.cdb_tag_i			(fu_cdb_broad_o),
 
 		.br_mask_o			(br_mask_o),
 		.br_bit_o			(br_bit_o),

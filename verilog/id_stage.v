@@ -185,7 +185,7 @@ module decoder(// Inputs
 				   
 				6'h30, 6'h38:
 				begin
-					opa_select = `ALU_OPA_IS_NPC;
+					opa_select = `ALU_OPA_IS_REGA;
 					opb_select = `ALU_OPB_IS_BR_DISP;
 					alu_func = `ALU_ADDQ;
 					case (inst[31:26])

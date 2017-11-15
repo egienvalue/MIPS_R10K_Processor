@@ -59,6 +59,7 @@
 `define			LRF_IDX_W		($clog2(`LRF_NUM))
 `define			MT_NUM			`LRF_NUM
 `define			FL_NUM			`PRF_NUM - `MT_NUM
+`define			FL_PTR_W		$clog2(`FL_NUM)
 `define			PC_IDX_W		5
 `define			BHT_NUM			2**`PC_IDX_W
 `define			BHT_W			5

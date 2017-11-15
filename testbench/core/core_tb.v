@@ -34,8 +34,8 @@ module core_tb;
 	int				rob_fileno;
 
 	// instr string
-	logic	[`RS_ENT_NUM-1:0][8*7:0]	rs_instr_str;
-	logic	[`ROB_W-1:0][8*7:0]			rob_instr_str;
+	logic	[`RS_ENT_NUM-1:0][8*8:0]	rs_instr_str;
+	logic	[`ROB_W-1:0][8*8:0]			rob_instr_str;
 
 	// DUT
 	core core_0	(
@@ -83,9 +83,9 @@ module core_tb;
 		real cpi;
 
 		begin
-			cpi = (clock_count + 1.0) / instr_count;
+			cpi = (clock_count + 1.0) / (instr_count + 1); // halt insn
 			$display("@@  %0d cycles / %0d instrs = %f CPI\n@@",
-			clock_count+1, instr_count, cpi);
+			clock_count+1, instr_count+1, cpi);
 			$display("@@  %4.2f ns total time to execute\n@@\n",
 			clock_count*`VIRTUAL_CLOCK_PERIOD);
 		end
@@ -189,15 +189,29 @@ module core_tb;
 		$fdisplay(rob_fileno, "@@@");
 		$fdisplay(rob_fileno, "@@@ At cycle%-1d:", clock_count);
 		$fdisplay(rob_fileno, "@@@ The content of ROB is:");
-		$fdisplay(rob_fileno, "@@@    Tnew | Told | dest | Done | rd_wr | br | br p&t |        PC        |      t-PC        | br_mask |    IR     |  Instr ");
+		$fdisplay(rob_fileno, "@@@     Tnew | Told | dest | Done | rd_wr | br | br p&t |        PC        |      t-PC        | br_mask |    IR     |  Instr ");
 		// print whole rob
 		if (`PRINT_ROB_WHOLE == 1) begin
 			for (int i = 0; i < `ROB_W; i++) begin
-				$fdisplay(rob_fileno, "@@@ %-2d: p%d |  p%d |  r%d |   %b  |  %b %b  |  %b |   %b%b   | %h | %h |  %b  | %h  |  %-0s ", i, 
-					core_0.rob.dest_tag_r[i], core_0.rob.old_dest_tag_r[i], core_0.rob.logic_dest_r[i], 
-					core_0.rob.done_r[i], core_0.rob.rd_mem_r[i], core_0.rob.wr_mem_r[i], core_0.rob.br_flag_r[i],
-					core_0.rob.br_pretaken_r[i], core_0.rob.br_taken_r[i], core_0.rob.PC_r[i], core_0.rob.br_target_r[i], 
-					core_0.rob.br_mask_r[i],core_0.rob.IR_r[i],rob_instr_str[i]);
+				if (i == core_0.rob.head_r[`HT_W-1:0]) begin
+					$fdisplay(rob_fileno, "@@@ h%-2d: p%d |  p%d |  r%d |   %b  |  %b %b  |  %b |   %b%b   | %h | %h |  %b  | %h  |  %-0s ", i, 
+						core_0.rob.dest_tag_r[i], core_0.rob.old_dest_tag_r[i], core_0.rob.logic_dest_r[i], 
+						core_0.rob.done_r[i], core_0.rob.rd_mem_r[i], core_0.rob.wr_mem_r[i], core_0.rob.br_flag_r[i],
+						core_0.rob.br_pretaken_r[i], core_0.rob.br_taken_r[i], core_0.rob.PC_r[i], core_0.rob.br_target_r[i], 
+						core_0.rob.br_mask_r[i],core_0.rob.IR_r[i],rob_instr_str[i]);
+				end else if (i == core_0.rob.tail_r[`HT_W-1:0]) begin
+					$fdisplay(rob_fileno, "@@@ t%-2d: p%d |  p%d |  r%d |   %b  |  %b %b  |  %b |   %b%b   | %h | %h |  %b  | %h  |  %-0s ", i, 
+						core_0.rob.dest_tag_r[i], core_0.rob.old_dest_tag_r[i], core_0.rob.logic_dest_r[i], 
+						core_0.rob.done_r[i], core_0.rob.rd_mem_r[i], core_0.rob.wr_mem_r[i], core_0.rob.br_flag_r[i],
+						core_0.rob.br_pretaken_r[i], core_0.rob.br_taken_r[i], core_0.rob.PC_r[i], core_0.rob.br_target_r[i], 
+						core_0.rob.br_mask_r[i],core_0.rob.IR_r[i],rob_instr_str[i]);
+				end else begin
+					$fdisplay(rob_fileno, "@@@  %-2d: p%d |  p%d |  r%d |   %b  |  %b %b  |  %b |   %b%b   | %h | %h |  %b  | %h  |  %-0s ", i, 
+						core_0.rob.dest_tag_r[i], core_0.rob.old_dest_tag_r[i], core_0.rob.logic_dest_r[i], 
+						core_0.rob.done_r[i], core_0.rob.rd_mem_r[i], core_0.rob.wr_mem_r[i], core_0.rob.br_flag_r[i],
+						core_0.rob.br_pretaken_r[i], core_0.rob.br_taken_r[i], core_0.rob.PC_r[i], core_0.rob.br_target_r[i], 
+						core_0.rob.br_mask_r[i],core_0.rob.IR_r[i],rob_instr_str[i]);
+				end
 			end
 		end else begin // print valid rob
 			for (int i = core_0.rob.head_r[`HT_W-1:0]; i!=core_0.rob.tail_r[`HT_W-1:0]; i++) begin
@@ -263,10 +277,14 @@ module core_tb;
 					$fdisplay(	wb_fileno, "PC=%x, REG[%d]=%x",
 								core_0.rob.PC_r[core_0.rob.head_r[`HT_W-1:0]],
 								core_0.rob.logic_dest_r[core_0.rob.head_r[`HT_W-1:0]],
-								core_0.preg_file.reg_data_r[core_0.rob.logic_dest_r[core_0.rob.head_r[`HT_W-1:0]]]);
+								core_0.preg_file.reg_data_r[core_0.rob.dest_tag_r[core_0.rob.head_r[`HT_W-1:0]]]);
 				else
 					$fdisplay(wb_fileno, "PC=%x, ---",core_0.rob.PC_r[core_0.rob.head_r[`HT_W-1:0]]);
 			end
+
+			//if (core_0.rob.rob_halt_o) begin
+			//		$fdisplay(wb_fileno, "PC=%x, ---",core_0.rob.PC_r[core_0.rob.head_r[`HT_W-1:0]]);
+			//end
 
 			// deal with any halting conditions
 			if(core_error_status!=`NO_ERROR)
@@ -301,15 +319,15 @@ module core_tb;
 
 	
 	initial begin // for step by step debug
-		for (int i = 0; i < 500; i++) begin
+		for (int i = 0; i < 2000; i++) begin
 			@(negedge clk);
 		end
 		$display("@@@\n@@");
 		show_clk_count;
 		//print_close(); // close the pipe_print output file
-		$fclose(wb_fileno);
-		$fclose(rs_fileno);
-		$fclose(rob_fileno);
+		//$fclose(wb_fileno);
+		//$fclose(rs_fileno);
+		//$fclose(rob_fileno);
 		#100 $finish;
 	end
 
@@ -325,7 +343,7 @@ module core_tb;
 	end
 
 	// function to get instr string
-	function [8*7:0] get_instr_string;
+	function [8*8:0] get_instr_string;
 	input [31:0] IR;
 	input        instr_valid;
 	begin
