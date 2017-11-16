@@ -54,6 +54,8 @@ module branch_stack(
 
 	// This is a Selector. Select one stack data out when predict wrong.
 	always_comb begin
+		rc_mt_all_data_o =	0;
+        rc_fl_head_o	 =	0;
 		if (br_state_i == `BR_PR_WRONG) begin
 			for (int i=0;i<`BR_MASK_W;i++) begin
 				if (br_bit_o[i] == 1) begin
