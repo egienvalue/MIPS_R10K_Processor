@@ -16,7 +16,7 @@
 #
 #t
 
-VCS = vcs -sverilog +vc -Mupdate -line -full64
+VCS = SW_VCS=2015.09 vcs -sverilog +vc -Mupdate -line -full64
 LIB = /afs/umich.edu/class/eecs470/lib/verilog/lec25dscc25.v
 
 
@@ -88,7 +88,7 @@ all:	simv
 	./simv | tee program.out
 
 simv:	$(HEADERS) $(SIMFILES) $(TESTBENCH)
-	$(VCS) $^	-o simv
+	$(VCS) $(HEADERS) $(TESTBENCH) $(SIMFILES)	-o simv
 
 dve:	$(HEADERS) $(SIMFILES) $(TESTBENCH)
 	$(VCS) +memcbk $(HEADERS) $(TESTBENCH) $(SIMFILES) -o dve -R -gui
@@ -105,7 +105,7 @@ rsyn:	nuke $(SIMFILES) $(SYN_DIR)/$(MODULE)_syn.tcl
 	cd $(SYN_DIR)/ && dc_shell-t -f ./$(MODULE)_syn.tcl | tee $(MODULE)_synth.out
 
 syn_dve:	$(HEADERS) $(SYNFILES) $(TESTBENCH)
-	$(VCS) +memcbk $(HEADERS) $(TESTBENCH) $(SYNFILES) -o dve -R -gui
+	$(VCS) +memcbk $(HEADERS) $(TESTBENCH) $(SYNFILES) $(LIB) -o dve -R -gui
 .PHONY:	syn_dve
 
 clean:

@@ -309,9 +309,9 @@ module core_tb;
 				$display("@@@\n@@");
 				show_clk_count;
 				//print_close(); // close the pipe_print output file
-				$fclose(wb_fileno);
-				$fclose(rs_fileno);
-				$fclose(rob_fileno);
+				//$fclose(wb_fileno);
+				//$fclose(rs_fileno);
+				//$fclose(rob_fileno);
 				#100 $finish;
 			end
 		end  // if(rst)
@@ -319,7 +319,7 @@ module core_tb;
 
 	
 	initial begin // for step by step debug
-		for (int i = 0; i < 2000; i++) begin
+		for (int i = 0; i < 1000; i++) begin
 			@(negedge clk);
 		end
 		$display("@@@\n@@");

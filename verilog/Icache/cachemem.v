@@ -57,6 +57,8 @@ module cachemem (
 	assign main_rd_hit = vld_r[rd_idx_i] && (tag_r[rd_idx_i]==rd_tag_i);
 
 	// victim cache signals
+	// <11/15> vt_rd_hit initiation has glitches
+	// 		   can use vt_rd_hit = |vt_match[3:0]
 	always_comb begin
 		vt_rd_hit		= 1'b0;
 		vt_data_line	= `ICACHE_LINE_IN_BITS'b0;

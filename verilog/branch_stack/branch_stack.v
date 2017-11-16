@@ -59,7 +59,7 @@ module branch_stack(
 				if (br_bit_o[i] == 1) begin
 					rc_mt_all_data_o = unslctd_mt_data[i];
 					rc_fl_head_o	 = unslctd_fl_data[i];
-					break;
+					//break;
 				end
 			end
 		end else begin
