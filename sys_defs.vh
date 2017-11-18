@@ -63,7 +63,7 @@
 `define			PC_IDX_W		5
 `define			BHT_NUM			2**`PC_IDX_W
 `define			BHT_W			5
-`define			PHT_NUM			2**`BHR_W
+`define			PHT_NUM			2**`BHT_W
 
 `define			BTB_TAG_W		10		//BTB
 `define			BTB_VAL_W		12
