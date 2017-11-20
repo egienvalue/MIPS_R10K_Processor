@@ -33,6 +33,33 @@
 `define		ICACHE_TAG_W			(`IMEM_ADDR_W-`ICACHE_IDX_W-$clog2(`ICACHE_LINE_IN_BYTES))
 `define		ICACHE_BLK_OFFSET_W		($clog2(`ICACHE_LINE_IN_BITS/8))
 
+//*********************************************************************//
+// defines for Dcache												   //
+//*********************************************************************//
+`define		TWO_WAY
+`define		DCACHE_SIZE_IN_BYTES	256
+`define		DCACHE_SIZE_IN_BITS		256*8
+`define		DCACHE_LINE_IN_BITS		64
+`define		DCACHE_LINE_IN_BYTES	`DCACHE_LINE_IN_BITS/8
+`define		DCACHE_WORD_IN_BITS		64
+`define		DCACHE_WORD_IN_BYTES	`DCACHE_WORD_IN_BITS/8
+`define		DCACHE_WAY_NUM			2
+`define		DCACHE_LINE_NUM			`DCACHE_SIZE_IN_BYTES/`DCACHE_LINE_IN_BYTES
+`define		DCACHE_SET_NUM			`DCACHE_LINE_NUM/`DCACHE_WAY_NUM
+`define		DCACHE_BYTE_OFFSET		$clog2(`DCACHE_WORD_IN_BYTES)
+`define		DCACHE_IDX_W			$clog2(`DCACHE_SET_NUM)
+`define		DCACHE_TAG_W			64-`DCACHE_IDX_W-`DCACHE_BYTE_OFFSET
+
+`define		MSHR_NUM				4
+`define		MSHR_IDX_W				$clog2(`MSHR_PTR_W)
+
+typedef enum logic[1:0] {
+	GET_S	= 2'h0,
+	GET_M	= 2'h1,
+	PUT_M	= 2'h2,
+	NONE	= 2'h3
+} message_t;
+
 `define		MEM_TAG_W				4
 
 `define		PFETCH_NUM				4
