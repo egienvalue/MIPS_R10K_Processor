@@ -1,18 +1,9 @@
-typedef enum {
-  STRONG_T	= 2'b11,
-  WEAK_T	= 2'b10,
-  WEAK_NT   = 2'b01,
-  STRONG_NT = 2'b00
-} P_STATE;
 
-  
 
 module PAg_DIRP(
 	input						clk,
     input						rst,
 	input	[63:0]				if_pc_i,			//[IF]
-    //input						btb_is_cond_br_i,	//[BTB] 
-    //input	[`BR_STATE_W-1:0]	ex_reslv_i,			//[EX]
     input						ex_is_br_i,			//[EX]
 	input						ex_is_cond_i,	//[EX]
 	input						ex_is_taken_i,		//[EX]
@@ -21,7 +12,7 @@ module PAg_DIRP(
     output						pred_o
 	);
 	
-	P_STATE	PHT [`PHT_NUM-1:0];	// Use bimodal/saturation counter.	
+	logic	[`PHT_NUM-1:0][1:0]	 PHT;	// Use bimodal/saturation counter.	
 	logic	[`BHT_NUM-1:0][`BHT_W-1:0]	BHT;
 	logic	[`BHT_NUM-1:0][`BHT_W-1:0]	next_BHT;
 	logic	[`PC_IDX_W-1:0] if_pc_idx, ex_pc_idx;
@@ -34,7 +25,7 @@ module PAg_DIRP(
 	always_comb begin
 		next_BHT = BHT;
 		if (ex_is_cond_i) begin
-			next_BHT[if_pc_idx] = {BHT[if_pec_idx][`BHT_W-2:0], ex_is_taken_i};
+			next_BHT[ex_pc_idx] = {BHT[ex_pc_idx][`BHT_W-2:0], ex_is_taken_i};
 		end	
 	end
 
@@ -52,19 +43,19 @@ module PAg_DIRP(
 		if (rst) begin
 			PHT <=`SD 0;
 		end else if (ex_is_br_i && ex_is_cond_i) begin
-			if (ex_is_taken) begin
+			if (ex_is_taken_i) begin
 				case(PHT[ex_pc_idx]) 
-					STRONG_T :   PHT[ex_pc_idx] <= `SD STRONG_T;  
-			        WEAK_T   :   PHT[ex_pc_idx] <= `SD STRONG_T
-			        WEAK_NT  :   PHT[ex_pc_idx] <= `SD WEAK_T;
-			        STRONG_NT:   PHT[ex_pc_idx] <= `SD WEAK_NT;
+					2'b11 :   PHT[ex_pc_idx] <= `SD 2'b11;  
+			        2'b10   :   PHT[ex_pc_idx] <= `SD 2'b11;
+			        2'b01  :   PHT[ex_pc_idx] <= `SD 2'b10;
+			        2'b00:   PHT[ex_pc_idx] <= `SD 2'b01;
 				endcase
 			end else begin
 				case(PHT[ex_pc_idx]) 
-            		STRONG_T :   PHT[ex_pc_idx] <= `SD WEAK_T;  
-                    WEAK_T   :   PHT[ex_pc_idx] <= `SD WEAK_NT
-                    WEAK_NT  :   PHT[ex_pc_idx] <= `SD STRONG_NT;
-                    STRONG_NT:   PHT[ex_pc_idx] <= `SD STRONG_NT;
+            		2'b11 :   PHT[ex_pc_idx] <= `SD 2'b10;  
+                    2'b10   :   PHT[ex_pc_idx] <= `SD 2'b01;
+                    2'b01  :   PHT[ex_pc_idx] <= `SD 2'b00;
+                    2'b00:   PHT[ex_pc_idx] <= `SD 2'b00;
 				endcase
 			end
 		end else begin
