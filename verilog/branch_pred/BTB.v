@@ -1,4 +1,4 @@
-
+`define	DEBUG
 module BTB(
 	input			clk,
 	input			rst,
@@ -10,10 +10,16 @@ module BTB(
 	input	[63:0]	ex_br_target_i, // [EX] Target address computed out in EX stage. Non-zero only if taken!
 	output	logic	is_hit_o,		// [DIRP] Tell DIRP if this pc is a branch or not.
 	output	logic	is_cond_o,		// [IF] Used to select prediction results.
-	output	logic	[63:0]	target_pc_o		// [IF]	Prediction of target pc.
+	output	logic	[63:0]	target_pc_o,		// [IF]	Prediction of target pc.
+
+	`ifdef DEBUG
+		output	logic	[`BTB_NUM-1:0][`BTB_TAG_W-1:0]	TAGS_o, VALS_o,
+		output	logic	[`BTB_NUM-1:0]					CONDS_o
+	`endif
 	);
 
-	logic	[`BTB_NUM-1:0][`BTB_TAG_W-1:0]	TAGS, VALS, CONDS;
+	logic	[`BTB_NUM-1:0][`BTB_TAG_W-1:0]	TAGS, VALS;
+	logic	[`BTB_NUM-1:0]					CONDS;
 
 	logic	[`BTB_SEL_W-1:0]	if_pc_sel, ex_pc_sel;
 	logic	[`BTB_TAG_W-1:0]	if_pc_tag, ex_pc_tag;
@@ -29,6 +35,11 @@ module BTB(
 	
 	assign ex_target_val = ex_br_target_i[`BTB_VAL_W+1:2];
 
+	`ifdef DEBUG
+		assign TAGS_o = TAGS;
+		assign VALS_o = VALS;
+		assign CONDS_o = CONDS;
+	`endif
 	// Comb assign is_hit_buffer and target_pc_buffer.
 	always_comb begin
 		if((TAGS[if_pc_sel] == if_pc_tag)) begin

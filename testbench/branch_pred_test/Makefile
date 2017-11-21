@@ -25,7 +25,7 @@ SIMFILES = ../../verilog/branch_pred/BTB.v
 SYNFILES = BTB.vg
 LIB = /afs/umich.edu/class/eecs470/lib/verilog/lec25dscc25.v
 
-CAM.vg:	BTB.v BTB.tcl 
+$(SYNFILES):	$(SIMFILES) BTB.tcl 
 	dc_shell-t -f BTB.tcl | tee synth.out
 
 #####

@@ -35,6 +35,10 @@ module BTB_test_p;
 	assign if_pc_tag = if_pc_i[`BTB_TAG_W+1+`BTB_SEL_W:`BTB_SEL_W+2];
 	assign ex_pc_tag = ex_pc_i[`BTB_TAG_W+1+`BTB_SEL_W:`BTB_SEL_W+2];
 	
+	logic	[`BTB_NUM-1:0][`BTB_TAG_W-1:0]	TAGS_o, VALS_o;
+	logic	[`BTB_NUM-1:0]					CONDS_o;
+
+
 
 	BTB btb0(
 		.clk,
@@ -47,7 +51,11 @@ module BTB_test_p;
 		.ex_br_target_i,	// [EX] Target address computed out in EX stage. Non-zero only if taken!
 		.is_hit_o,			// [btb] Tell btb if this pc is a branch or not.
 		.is_cond_o,			// [IF] Used to select prediction results.
-		.target_pc_o		// [IF]	Prediction of target pc.
+		.target_pc_o,		// [IF]	Prediction of target pc.
+		.TAGS_o,
+		.VALS_o,
+		.CONDS_o
+
 	);
 
 	task clear_inputs;
@@ -166,8 +174,9 @@ module BTB_test_p;
 
 		$fdisplay(btb_fileno, "@@@ The content of BTB is:");
 		$fdisplay(btb_fileno, "@@@ |		Index	|    TAGS		|	VALS		|	CONDS|");
+	
 		for (int i = 0; i < `BTB_NUM; i = i + 1) begin
-			$fdisplay(btb_fileno, "@@@	|%d	|	%b	|	%b	|	%1b	|", i, btb0.TAGS[i], btb0.VALS[i], btb0.CONDS[i]);
+			$fdisplay(btb_fileno, "@@@	|%d	|	%b	|	%b	|	%1b	|", i, TAGS_o[i], VALS_o[i], CONDS_o[i]);
 		end
 		$fdisplay(btb_fileno, "@@@");
 		
