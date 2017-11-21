@@ -63,7 +63,7 @@
 `define			PC_IDX_W		5
 `define			BHT_NUM			2**`PC_IDX_W
 `define			BHT_W			5
-`define			PHT_NUM			2**`BHR_W
+`define			PHT_NUM			2**`BHT_W
 
 `define			BTB_TAG_W		10		//BTB
 `define			BTB_VAL_W		12
@@ -130,7 +130,7 @@
 `define MEM_64BIT_LINES        (`MEM_SIZE_IN_BYTES/8)
 
 // probably not a good idea to change this second one
-`define VIRTUAL_CLOCK_PERIOD   30.0 // Clock period from dc_shell
+`define VIRTUAL_CLOCK_PERIOD   7.0 // Clock period from dc_shell
 `define VERILOG_CLOCK_PERIOD   10.0 // Clock period from test bench
 
 `ifndef CLOCK_PERIOD

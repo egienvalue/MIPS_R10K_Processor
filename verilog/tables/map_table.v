@@ -134,7 +134,7 @@ module map_table(
 					if (MAP[i] == cdb_set_rdy_bit_preg_i) begin
 						cdb_match_index = i;
 						cdb_match_found = 1;
-						break;
+						//break;
 					end
 				end
 			end

@@ -22,6 +22,7 @@ module Icache_tb;
 	logic	[3:0]		Imem2proc_tag_i;
 
 	logic	[63:0]		if2Icache_addr_i;
+	logic				if2Icache_req_i;
 	logic				if2Icache_flush_i;
 
 	// outputs
@@ -31,10 +32,10 @@ module Icache_tb;
 	wire				Icache2if_vld_o;
 	wire	[63:0]		Icache2if_data_o;
 
-	mem mem0 (
+	mem memory (
 		.clk(clk),              // Memory clock
 		.proc2mem_addr(proc2Imem_addr_o),    // address for current command
-		.proc2mem_data(),    // address for current command
+		.proc2mem_data(),    // 
 		.proc2mem_command(proc2Imem_command_o), // `BUS_NONE `BUS_LOAD or `BUS_STORE
 
 		.mem2proc_response(Imem2proc_response_i), // 0 = can't accept, other=tag of transaction
@@ -51,6 +52,7 @@ module Icache_tb;
 		.Imem2proc_tag_i(Imem2proc_tag_i),
 
 		.if2Icache_addr_i(if2Icache_addr_i),
+		.if2Icache_req_i(if2Icache_req_i),
 		.if2Icache_flush_i(if2Icache_flush_i),
 
 		.proc2Imem_addr_o(proc2Imem_addr_o),
@@ -74,10 +76,21 @@ module Icache_tb;
 	endtask
 
 	initial begin
-		$readmemh("../../program.mem", mem0.unified_memory);
+		`ifdef DUMP
+		  $vcdplusdeltacycleon;
+		  $vcdpluson();
+		  $vcdplusmemon(memory.unified_memory);
+		`endif
+
 		clk = 1'b0;
 		rst = 1'b1;
+
+		`SD
+		$readmemh("../../program.mem", memory.unified_memory);
+
 		if2Icache_flush_i = 0;
+		if2Icache_addr_i = 0;
+		if2Icache_req_i	= 1;		
 		@(negedge clk);
 		@(negedge clk);
 		rst = 1'b0;
@@ -129,6 +142,14 @@ module Icache_tb;
 			@(negedge clk);
 		end
 		
+		$finish;
+	end
+
+	initial begin
+		for (int i = 0; i < 100; i++) begin
+			@(negedge clk);
+		end
+		#10
 		$finish;
 	end
 
