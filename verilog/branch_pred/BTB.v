@@ -75,9 +75,9 @@ module BTB(
 				VALS[ex_pc_sel] <= `SD ex_target_val;
 				CONDS[ex_pc_sel] <= `SD ex_is_cond_i;
 			end else begin
-				TAGS[ex_pc_sel] <= `SD 0;
-        		VALS[ex_pc_sel] <= `SD 0;
-				CONDS[ex_pc_sel] <= `SD 0;
+				TAGS[ex_pc_sel]	<= `SD 	TAGS[ex_pc_sel];	
+        		VALS[ex_pc_sel]	<= `SD  VALS[ex_pc_sel];
+				CONDS[ex_pc_sel]<= `SD  CONDS[ex_pc_sel];
 			end
 		end else begin
 			TAGS <= `SD TAGS;
