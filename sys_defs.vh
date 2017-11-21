@@ -67,7 +67,7 @@
 
 `define			BTB_TAG_W		10		//BTB
 `define			BTB_VAL_W		12
-`define			BTB_SEL_W		8
+`define			BTB_SEL_W		5
 `define			BTB_NUM			2**`BTB_SEL_W
 
 

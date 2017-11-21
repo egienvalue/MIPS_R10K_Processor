@@ -20,13 +20,13 @@ all:    simv
 # Modify starting here
 #####
 
-TESTBENCH = ../../sys_defs.vh PAg_DIRP_test_p.v
-SIMFILES = ../../verilog/branch_pred/PAg_DIRP.v 	
-SYNFILES = PAg_DIRP.vg
+TESTBENCH = ../../sys_defs.vh BTB_test_p.v
+SIMFILES = ../../verilog/branch_pred/BTB.v 	
+SYNFILES = BTB.vg
 LIB = /afs/umich.edu/class/eecs470/lib/verilog/lec25dscc25.v
 
-CAM.vg:	PAg_DIRP.v PAg_DIRP.tcl 
-	dc_shell-t -f PAg_DIRP.tcl | tee synth.out
+CAM.vg:	BTB.v BTB.tcl 
+	dc_shell-t -f BTB.tcl | tee synth.out
 
 #####
 # Should be no need to modify after here

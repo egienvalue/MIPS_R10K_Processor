@@ -8,9 +8,9 @@ module BTB(
 	input			ex_is_taken_i,	// [EX] 1 is taken, 0 not taken.
 	input	[63:0]	ex_pc_i,		// [EX] Branch PC from EX stage. If taken, add entry or maintain. If not-taken, remove entry or maintain empty.  	
 	input	[63:0]	ex_br_target_i, // [EX] Target address computed out in EX stage. Non-zero only if taken!
-	output			is_hit_o,		// [DIRP] Tell DIRP if this pc is a branch or not.
-	output			is_cond_o,		// [IF] Used to select prediction results.
-	output	[63:0]	target_pc_o		// [IF]	Prediction of target pc.
+	output	logic	is_hit_o,		// [DIRP] Tell DIRP if this pc is a branch or not.
+	output	logic	is_cond_o,		// [IF] Used to select prediction results.
+	output	logic	[63:0]	target_pc_o		// [IF]	Prediction of target pc.
 	);
 
 	logic	[`BTB_NUM-1:0][`BTB_TAG_W-1:0]	TAGS, VALS, CONDS;
@@ -45,8 +45,8 @@ module BTB(
 	// Comb assign is_hit_o and target_pc_o.
 	always_comb begin
 		if (ex_is_br_i && (if_pc_i == ex_pc_i)) begin
-			if( ex_is_taken_i) begin 
-				is_hit_o	=  1;	// If 0 then the DIRP is disabled and PC+4(not taken) is automatically chosen.	
+			if(ex_is_taken_i) begin 
+				is_hit_o	=  1'b1;	// If 0 then the DIRP is disabled and PC+4(not taken) is automatically chosen.	
 				target_pc_o =  ex_br_target_i;
 				is_cond_o   =  ex_is_cond_i;
 			end else begin
@@ -69,16 +69,10 @@ module BTB(
 			TAGS <= `SD 0;
 			VALS <= `SD 0;
 			CONDS <= `SD 0;
-		end else if (ex_is_br_i) begin
-			if (ex_is_taken_i) begin
-				TAGS[ex_pc_sel] <= `SD ex_pc_tag;
-				VALS[ex_pc_sel] <= `SD ex_target_val;
-				CONDS[ex_pc_sel] <= `SD ex_is_cond_i;
-			end else begin
-				TAGS[ex_pc_sel]	<= `SD 	TAGS[ex_pc_sel];	
-        		VALS[ex_pc_sel]	<= `SD  VALS[ex_pc_sel];
-				CONDS[ex_pc_sel]<= `SD  CONDS[ex_pc_sel];
-			end
+		end else if (ex_is_br_i && ex_is_taken_i) begin
+			TAGS[ex_pc_sel] <= `SD ex_pc_tag;
+			VALS[ex_pc_sel] <= `SD ex_target_val;
+			CONDS[ex_pc_sel] <= `SD ex_is_cond_i;
 		end else begin
 			TAGS <= `SD TAGS;
 			VALS <= `SD VALS;
