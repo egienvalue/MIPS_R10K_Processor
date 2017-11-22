@@ -62,7 +62,7 @@ module core (
 	logic						if_pred_bit_o;
 	logic [31:0]				if_IR_o;
 	logic       				if_valid_inst_o;	
-	
+	logic [63:0]				if2bp_pc_o;
 	//---------------------------------------------------------------
 	// signals for branch predictor
 	//---------------------------------------------------------------
@@ -400,7 +400,8 @@ module core (
 			.if_target_PC_o			(if_target_PC_o),	
 			.if_IR_o				(if_IR_o),
 			.if_pred_bit_o			(if_pred_bit_o),
-			.if_valid_inst_o		(if_valid_inst_o)
+			.if_valid_inst_o		(if_valid_inst_o),
+			.if2bp_pc_o				(if2bp_pc_o)
 			//output logic		  if2id_empty_o
 	);
 
@@ -410,11 +411,11 @@ module core (
 	//===============================================================
 	// branch predictor instantiation
 	//===============================================================i
-	assign	if_pc_i			= 	proc2Imem_addr;	
-	assign	ex_is_br_i		=	bp_br_done_o;
+	assign	if_pc_i			= 	if2bp_pc_o;	
+	assign	ex_is_br_i		=	fu2rob_br_recovery_done_o;
 	assign	ex_is_cond_i	=	bp_br_cond_o;	
 	assign	ex_is_taken_i	=	fu2rob_br_recovery_taken_o;	
-	assign	ex_pc_i			=   bp_br_pc_o;	
+	assign	ex_pc_i			=   rob2fu_rd_NPC_o-4;	
 	assign	ex_br_target_i	=	fu2rob_br_recovery_target_o;
 	
 	branch_pred bp (

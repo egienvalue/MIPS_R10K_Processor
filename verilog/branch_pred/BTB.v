@@ -17,7 +17,8 @@ module BTB(
 //	`endif
 	);
 
-	logic	[`BTB_NUM-1:0][`BTB_TAG_W-1:0]	TAGS, VALS;
+	logic	[`BTB_NUM-1:0][`BTB_TAG_W-1:0]	TAGS;
+	logic	[`BTB_NUM-1:0][`BTB_VAL_W-1:0]	VALS;
 	logic	[`BTB_NUM-1:0]					VALIDS, CONDS;
 
 	logic	[`BTB_SEL_W-1:0]	if_pc_sel, ex_pc_sel;
@@ -43,7 +44,7 @@ module BTB(
 	always_comb begin
 		if((TAGS[if_pc_sel] == if_pc_tag)) begin
 			is_hit_buffer	 = VALIDS[if_pc_sel];
-			target_pc_buffer = {if_pc_i[63:`BTB_VAL_W+2], VALS[if_pc_sel], if_pc_tag[1:0]};
+			target_pc_buffer = {if_pc_i[63:`BTB_VAL_W+2], VALS[if_pc_sel], if_pc_i[1:0]};
 			is_cond_buffer	 = CONDS[if_pc_sel];
 		end else begin
 			is_hit_buffer	 = 0;

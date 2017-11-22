@@ -30,7 +30,8 @@ module if_stage(
 				  output logic	[63:0]	if_target_PC_o,
 				  output logic	[31:0]	if_IR_o,			// fetched instruction out
 				  output logic			if_pred_bit_o,
-				  output logic			if_valid_inst_o	    // when low, instruction is garbage
+				  output logic			if_valid_inst_o,	    // when low, instruction is garbage
+				  output logic	[63:0]	if2bp_pc_o
                );
 
 	logic    [63:0] PC_reg;               // PC we are currently fetching
@@ -68,6 +69,8 @@ module if_stage(
 		.ifb_pred_bit_o(if_pred_bit_o)
 
 	);
+
+	assign if2bp_pc_o = PC_reg;
 
 	assign proc2Imem_addr = {PC_reg[63:3], 3'b0};
 	assign if2Icache_req_o= ~ifb2if_full | ~Imem_valid;
