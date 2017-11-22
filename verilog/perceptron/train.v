@@ -19,14 +19,18 @@ module train (
 	logic	signed	[`WEIGHT_W-1:0]	y_out[`PT_W-1:0];
 	logic	signed	[`WEIGHT_W-1:0]	y_out_nxt;
 	logic	[`BHR_W:0]	x;	
+	logic	traning_stop;
 	assign tr2pt_wr_en_o	= training_en_i;
 	assign y_out_nxt		= (y_vld_i) ? y_out_i : y_out[if_br_PC_i[`PT_IDX_W-1:0]];
 	assign tr2pt_wr_idx_o	= fu_br_PC_i[`PT_W-1:0];
-	assign	x	= {BHR_i,1'b1};
+	assign	x	= {1'b1,BHR_i};
+	assign training_stop = ((y_out[fu_br_PC_i[`PT_IDX_W-1:0]]>`THRESHOLD) || (-y_out[fu_br_PC_i[`PT_IDX_W-1:0]]>`THRESHOLD));
 	always_comb begin
 		for (int i=0;i<=`BHR_W;i++) begin
-			new_weight_o[i] = (~training_en_i) ? 0 :
+			new_weight_o[i] = (~training_en_i) ? 0 : 
+							  (training_stop) ? sel_weight_i[i] : 
 							  (br_outcome_i==x[i])? (sel_weight_i[i]+1) : (sel_weight_i[i]-1);
+							  //(sel_weight_i[i]==0)? (sel_weight_i[i]) : (sel_weight_i[i]-1);
 		end
 	end
 	// synopsys sync_set_reset "rst"
