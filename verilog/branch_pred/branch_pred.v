@@ -10,14 +10,13 @@ module branch_pred(
     input	[63:0]	ex_br_target_i,
     //output			is_hit_o,		
     //output			is_cond_o,		
-	output	[63:0]	btb_target_o,
-    output			pred_o
+	output	logic	[63:0]	btb_target_o,
+    output	logic			pred_o
 	);
 
 	logic	is_hit;
 	logic	is_cond;
 	logic	dirp_pred;
-	logic	[63:0]	btb_target_pc;
 	logic	PCp_four = if_pc_i + 4;
 
 	// comb assign to btb_target_o, pred_o
@@ -33,7 +32,6 @@ module branch_pred(
 		end
 	end
 
-	assign	btb_target_o = btb_target_pc;
 
 	PAg_DIRP dirp0(
 		.clk,
@@ -57,7 +55,7 @@ module branch_pred(
     	.ex_br_target_i, 
     	.is_hit_o(is_hit),		
     	.is_cond_o(is_cond),		
-    	.btb_target_o(btb_target_pc)
+    	.btb_target_o(btb_target_o)
 	);
 
 endmodule

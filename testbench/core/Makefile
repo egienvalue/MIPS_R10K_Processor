@@ -51,7 +51,11 @@ SIMFILES =	$(SOURCE_DIR)/$(MODULE).v	\
 			$(SOURCE_DIR)/../branch_stack/br_stack_ent.v	\
 			$(SOURCE_DIR)/../branch_stack/br_mask_ctrl.v	\
 			$(SOURCE_DIR)/../branch_stack/branch_stack.v	\
-			$(SOURCE_DIR)/../lsq/lsq.v
+			$(SOURCE_DIR)/../lsq/lsq.v	\
+			$(SOURCE_DIR)/../branch_pred/BTB.v	\
+			$(SOURCE_DIR)/../branch_pred/PAg_DIRP.v	\
+			$(SOURCE_DIR)/../branch_pred/branch_pred.v		
+
 SOURCE_FILES= $(SOURCE_DIR)/$(MODULE).v	\
 			$(SOURCE_DIR)/../Icache/Icache.v	\
 			$(SOURCE_DIR)/../Icache/Icache_ctrl.v	\
@@ -77,7 +81,10 @@ SOURCE_FILES= $(SOURCE_DIR)/$(MODULE).v	\
 			$(SOURCE_DIR)/../branch_stack/br_stack_ent.v	\
 			$(SOURCE_DIR)/../branch_stack/br_mask_ctrl.v	\
 			$(SOURCE_DIR)/../branch_stack/branch_stack.v	\
-			$(SOURCE_DIR)/../lsq/lsq.v
+			$(SOURCE_DIR)/../lsq/lsq.v	\
+			$(SOURCE_DIR)/../branch_pred/BTB.v	\
+			$(SOURCE_DIR)/../branch_pred/PAg_DIRP.v	\
+			$(SOURCE_DIR)/../branch_pred/branch_pred.v		
 HEADERS = ../../sys_defs.vh
 TESTBENCH = $(MODULE)_tb.v	\
 			../mem.v
