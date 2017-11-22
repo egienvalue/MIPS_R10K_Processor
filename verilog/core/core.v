@@ -75,7 +75,10 @@ module core (
     logic	[63:0]	ex_br_target_i;
 	logic	[63:0]	btb_target_o;
     logic			pred_o;
-	
+
+	`ifdef PERCEPTRON
+		logic	if_PC_vld_i;
+	`endif	
 
 
 	//---------------------------------------------------------------
@@ -410,7 +413,7 @@ module core (
 
 	//===============================================================
 	// branch predictor instantiation
-	//===============================================================i
+	//===============================================================
 	assign	if_pc_i			= 	if2bp_pc_o;	
 	assign	ex_is_br_i		=	fu2rob_br_recovery_done_o;
 	assign	ex_is_cond_i	=	bp_br_cond_o;	
@@ -418,19 +421,40 @@ module core (
 	assign	ex_pc_i			=   rob2fu_rd_NPC_o-4;	
 	assign	ex_br_target_i	=	fu2rob_br_recovery_target_o;
 	
-	branch_pred bp (
-		.clk,
-		.rst,
-		.if_pc_i,		
-		.ex_is_br_i,		
-		.ex_is_cond_i,	
-		.ex_is_taken_i,	
-		.ex_pc_i,		
-		.ex_br_target_i,
-		.btb_target_o,
-		.pred_o
-	);
-                    
+	`ifdef PERCEPTRON
+		assign if_PC_vld_i	=	1;//I am not sure whether to add this signal or not, set it to 1,the perceptron will always be enabled
+		
+		perceptron_bp perceptron_bp (
+			.clk(clk),
+    		.rst(rst),
+    		.if2bp_PC_i(if_pc_i),
+			.if2bp_PC_vld_i(if_PC_vld_i),	
+			.fu2bp_br_cond_i(ex_is_cond_i),
+    		.fu2bp_br_taken_i(ex_is_taken_i),		
+    		.fu2bp_br_PC_i(ex_pc_i),	
+    		.fu2bp_br_target_i(ex_br_target_i),
+			.fu2bp_br_done_i(ex_is_br_i),
+
+			.btb_target_o(btb_target_o),
+    		.bp_pred_o(pred_o)	
+		);
+		
+	`else
+		branch_pred bp (
+			.clk,
+			.rst,
+			.if_pc_i,		
+			.ex_is_br_i,		
+			.ex_is_cond_i,	
+			.ex_is_taken_i,	
+			.ex_pc_i,		
+			.ex_br_target_i,
+			.btb_target_o,
+			.pred_o
+		);
+
+	`endif      
+
 	//===============================================================
 	// dispatch instantiation
 	//===============================================================

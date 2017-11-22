@@ -51,6 +51,7 @@
 `define         PT_IDX_W        ($clog2(`PT_W))
 `define         THRESHOLD       32
 `define         WEIGHT_W        ($clog2(`THRESHOLD)+1)
+`define			PERCEPTRON
 
 // Chuan
 `define			PRF_NUM			64
