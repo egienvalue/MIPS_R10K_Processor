@@ -7,10 +7,10 @@ module perceptron (
 	input	[63:0]	if2pt_PC_i,
 	input			fu2pt_br_taken_i,
 	input	[63:0]	fu2pt_br_PC_i,
-	input			btb2pt_cond_br_i,
-	input			fu2pt_done_i,
+	input			fu2pt_br_cond_i,
+	input			fu2pt_br_done_i,
 
-	output			prediction_o
+	output			pt_pred_o
 	
 	
 	);
@@ -51,8 +51,8 @@ module perceptron (
 
 
 	always_comb begin
-		if (fu2pt_done_i) begin
-			if (btb2pt_cond_br_i) begin
+		if (fu2pt_br_done_i) begin
+			if (fu2pt_br_cond_i) begin
 			  	BHR_nxt	= BHR << 1;	
 				BHR_nxt[0] = fu2pt_br_taken_i;
 			end else
@@ -62,7 +62,7 @@ module perceptron (
 		end
 	end
 
-	assign prediction_o	= predict_result_o;
+	assign pt_pred_o	= predict_result_o;
 
 	//instantiation 
 	
@@ -71,7 +71,7 @@ module perceptron (
 	assign fu_br_PC_i	= fu2pt_br_PC_i;
 	assign y_vld_i		= if2pt_PC_vld_i; 
 	assign y_out_i		= sum_o;
-	assign training_en_i= fu2pt_done_i&btb2pt_cond_br_i;
+	assign training_en_i= fu2pt_br_done_i&fu2pt_br_cond_i;
 	assign BHR_i		= BHR;
 	assign sel_weight_i	= pt_rd2_weight_o;	
 	train train (
