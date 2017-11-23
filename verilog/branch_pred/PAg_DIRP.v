@@ -44,18 +44,18 @@ module PAg_DIRP(
 			PHT <=`SD 0;
 		end else if (ex_is_br_i && ex_is_cond_i) begin
 			if (ex_is_taken_i) begin
-				case(PHT[ex_pc_idx]) 
-					2'b11 :   PHT[ex_pc_idx] <= `SD 2'b11;  
-			        2'b10   :   PHT[ex_pc_idx] <= `SD 2'b11;
-			        2'b01  :   PHT[ex_pc_idx] <= `SD 2'b10;
-			        2'b00:   PHT[ex_pc_idx] <= `SD 2'b01;
+				case(PHT[BHT[ex_pc_idx]]) 
+					2'b11 :   PHT[BHT[ex_pc_idx]] <= `SD 2'b11;  
+			        2'b10   :   PHT[BHT[ex_pc_idx]] <= `SD 2'b11;
+			        2'b01  :   PHT[BHT[ex_pc_idx]] <= `SD 2'b10;
+			        2'b00:   PHT[BHT[ex_pc_idx]] <= `SD 2'b01;
 				endcase
 			end else begin
-				case(PHT[ex_pc_idx]) 
-            		2'b11 :   PHT[ex_pc_idx] <= `SD 2'b10;  
-                    2'b10   :   PHT[ex_pc_idx] <= `SD 2'b01;
-                    2'b01  :   PHT[ex_pc_idx] <= `SD 2'b00;
-                    2'b00:   PHT[ex_pc_idx] <= `SD 2'b00;
+				case(PHT[BHT[ex_pc_idx]]) 
+            		2'b11 :   PHT[BHT[ex_pc_idx]] <= `SD 2'b10;  
+                    2'b10   :   PHT[BHT[ex_pc_idx]] <= `SD 2'b01;
+                    2'b01  :   PHT[BHT[ex_pc_idx]] <= `SD 2'b00;
+                    2'b00:   PHT[BHT[ex_pc_idx]] <= `SD 2'b00;
 				endcase
 			end
 		end else begin

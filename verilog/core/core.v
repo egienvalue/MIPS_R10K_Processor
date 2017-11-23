@@ -58,13 +58,27 @@ module core (
 	logic [63:0]				proc2Imem_addr;
 	logic						if2Icache_req_o;
 	logic [63:0]				if_PC_o;			
-	logic [63:0]				if_target_PC_o;			
+	logic [63:0]				if_target_PC_o;	
+	logic						if_pred_bit_o;
 	logic [31:0]				if_IR_o;
 	logic       				if_valid_inst_o;	
-	
+	logic [63:0]				if2bp_pc_o;
 	//---------------------------------------------------------------
 	// signals for branch predictor
 	//---------------------------------------------------------------
+	//TODO: add pred here.
+	logic	[63:0]	if_pc_i;		
+    logic			ex_is_br_i;		
+    logic			ex_is_cond_i;	
+    logic			ex_is_taken_i;	
+    logic	[63:0]	ex_pc_i;	
+    logic	[63:0]	ex_br_target_i;
+	logic	[63:0]	btb_target_o;
+    logic			pred_o;
+
+	`ifdef PERCEPTRON
+		logic	if_PC_vld_i;
+	`endif	
 
 
 	//---------------------------------------------------------------
@@ -278,6 +292,9 @@ module core (
 	logic						lsq_lq_com_rdy_o;
 	logic						lsq_sq_full_o;
 
+	logic						bp_br_done_o;
+	logic	[63:0]				bp_br_pc_o;
+	logic						bp_br_cond_o;
 	//---------------------------------------------------------------
 	// signals for preg file
 	//---------------------------------------------------------------
@@ -360,8 +377,8 @@ module core (
 	//===============================================================
 	// if_stage instantiation
 	//===============================================================
-	assign bp2if_predict_i			= 1'b0; // bp not added, always non-taken
-	assign br_predict_target_PC_i	= 64'h0; // bp not added
+	assign bp2if_predict_i			= pred_o;//1'b0; // bp not added, always non-taken
+	assign br_predict_target_PC_i	= btb_target_o;//64'b0;//btb_target_o; // bp not added
 	assign br_flush_target_PC_i		= fu2rob_br_recovery_target_o;
 	assign Imem2proc_data			= Icache2if_data_o;
 	assign Imem_valid				= Icache2if_vld_o;
@@ -386,16 +403,58 @@ module core (
 			.if_target_PC_o			(if_target_PC_o),	
 			.if_IR_o				(if_IR_o),
 			.if_pred_bit_o			(if_pred_bit_o),
-			.if_valid_inst_o		(if_valid_inst_o)
+			.if_valid_inst_o		(if_valid_inst_o),
+			.if2bp_pc_o				(if2bp_pc_o)
 			//output logic		  if2id_empty_o
 	);
+
+	
 
 
 	//===============================================================
 	// branch predictor instantiation
 	//===============================================================
-	                
-                    
+	assign	if_pc_i			= 	if2bp_pc_o;	
+	assign	ex_is_br_i		=	fu2rob_br_recovery_done_o;
+	assign	ex_is_cond_i	=	bp_br_cond_o;	
+	assign	ex_is_taken_i	=	fu2rob_br_recovery_taken_o;	
+	assign	ex_pc_i			=   rob2fu_rd_NPC_o-4;	
+	assign	ex_br_target_i	=	fu2rob_br_recovery_target_o;
+	
+	`ifdef PERCEPTRON
+		assign if_PC_vld_i	=	1;//I am not sure whether to add this signal or not, set it to 1,the perceptron will always be enabled
+		
+		perceptron_bp perceptron_bp (
+			.clk(clk),
+    		.rst(rst),
+    		.if2bp_PC_i(if_pc_i),
+			.if2bp_PC_vld_i(if_PC_vld_i),	
+			.fu2bp_br_cond_i(ex_is_cond_i),
+    		.fu2bp_br_taken_i(ex_is_taken_i),		
+    		.fu2bp_br_PC_i(ex_pc_i),	
+    		.fu2bp_br_target_i(ex_br_target_i),
+			.fu2bp_br_done_i(ex_is_br_i),
+
+			.btb_target_o(btb_target_o),
+    		.bp_pred_o(pred_o)	
+		);
+		
+	`else
+		branch_pred bp (
+			.clk,
+			.rst,
+			.if_pc_i,		
+			.ex_is_br_i,		
+			.ex_is_cond_i,	
+			.ex_is_taken_i,	
+			.ex_pc_i,		
+			.ex_br_target_i,
+			.btb_target_o,
+			.pred_o
+		);
+
+	`endif      
+
 	//===============================================================
 	// dispatch instantiation
 	//===============================================================
@@ -715,8 +774,10 @@ module core (
 		.lsq2Dcache_ld_addr_o	(lsq2Dcache_ld_addr_o),
 		.lsq2Dcache_ld_en_o		(lsq2Dcache_ld_en_o),
 		.lsq_lq_com_rdy_o		(lsq_lq_com_rdy_o),
-		.lsq_sq_full_o			(lsq_sq_full_o)
-
+		.lsq_sq_full_o			(lsq_sq_full_o),
+		.bp_br_done_o			(bp_br_done_o),
+		.bp_br_pc_o				(bp_br_pc_o),
+		.bp_br_cond_o			(bp_br_cond_o)
 	);
 
 	//===============================================================
