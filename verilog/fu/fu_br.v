@@ -62,7 +62,7 @@ module fu_br (
 
 		assign bp_br_cond_o			= cond_br;
 
-		assign br_recovery_target_o = br_target_nxt;
+		assign br_recovery_target_o = br_result_nxt ? br_target_nxt : npc_i;//!!the recovery target should be npc_i if the branch is not taken edited by Jun. 
 		assign br_recovery_taken_o	= br_result_nxt;
 		assign br2rob_done_o 		= start_i;
 		assign br2rob_recovery_idx_o= rob_idx_nxt;
