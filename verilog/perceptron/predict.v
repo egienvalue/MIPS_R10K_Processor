@@ -14,7 +14,7 @@ module predict (
 	logic	signed	[`WEIGHT_W-1:0]				result;
 	assign x		= {1'b1,BHR_i};
 	assign sum_o	= predict_en_i ? result : 0 ;
-	assign predict_result_o	= predict_en_i ? (result>0) : 0;
+	assign predict_result_o	= (result>=0);
 	always_comb begin
 		for(int i=0;i<=`BHR_W;i++) begin
 				temp_weight[i]= (~predict_en_i) ? 0: 
