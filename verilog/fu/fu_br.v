@@ -47,8 +47,9 @@ module fu_br (
 		output	logic					br_recovery_taken_o,
 		output	logic	[63:0]			br_recovery_target_o,
 		output	logic					br2rob_done_o,
-		output	logic	[`ROB_IDX_W-1:0]br2rob_recovery_idx_o
-	
+		output	logic	[`ROB_IDX_W-1:0]br2rob_recovery_idx_o,
+		
+		output	logic					bp_br_cond_o
 		);
 		logic	[63:0]	br_disp;
 		logic			done_nxt;
@@ -59,7 +60,9 @@ module fu_br (
 		//logic	[`ROB_IDX_W-1:0]	rob_idx_r;
 		logic	[`ROB_IDX_W-1:0]	rob_idx_nxt;
 
-		assign br_recovery_target_o = br_target_nxt;
+		assign bp_br_cond_o			= cond_br;
+
+		assign br_recovery_target_o = br_result_nxt ? br_target_nxt : npc_i;//!!the recovery target should be npc_i if the branch is not taken edited by Jun. 
 		assign br_recovery_taken_o	= br_result_nxt;
 		assign br2rob_done_o 		= start_i;
 		assign br2rob_recovery_idx_o= rob_idx_nxt;

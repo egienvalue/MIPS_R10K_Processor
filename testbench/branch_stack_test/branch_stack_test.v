@@ -25,8 +25,10 @@ module testbench;
 	logic	[`BR_STATE_W-1:0]			br_state_i;			
 	logic	[`BR_MASK_W-1:0]			br_dep_mask_i;		
 	logic	[`MT_NUM-1:0][`PRF_IDX_W:0]	bak_mp_next_data_i;	
-	logic	[`LRF_IDX_W-1:0]				bak_fl_head_i;	
-                                                            
+	logic	[`LRF_IDX_W-1:0]			bak_fl_head_i;	
+	logic								cdb_vld_i;                     
+	logic	[`PRF_IDX_W-1:0]			cdb_tag_i;
+
     logic	[`BR_MASK_W-1:0]			br_mask_o;			
     logic	[`BR_MASK_W-1:0]			br_bit_o;			
     logic								full_o;			
@@ -47,6 +49,8 @@ module testbench;
 		.br_dep_mask_i,			//[ROB]			The mask of currently resolved branch.
 		.bak_mp_next_data_i,	//[Map Table]	Back up data from map table.
 		.bak_fl_head_i,			//[Free List]	Back up head of free list.
+		.cdb_vld_i,
+		.cdb_tag_i,
 		.br_mask_o,				//[ROB]			Send current mask value to ROB to save in an ROB entry.
 		.br_bit_o,				//[RS]			Output corresponding branch bit immediately after knowing wrong or correct. 
 		.full_o,				//[ROB]			Tell ROB that stack is full and no further branch dispatch is allowed. 
@@ -72,6 +76,8 @@ module testbench;
             br_dep_mask_i	= 0; 
             bak_mp_next_data_i = 0; 
             bak_fl_head_i	=0;
+			cdb_vld_i	= 0;
+			cdb_tag_i	= 0;
 		end
 	endtask
 	

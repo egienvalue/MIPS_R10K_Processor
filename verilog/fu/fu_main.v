@@ -50,7 +50,10 @@ module fu_main(
 		output	logic						lsq2Dcache_ld_addr_o,
 		output	logic						lsq2Dcache_ld_en_o,
 		output	logic						lsq_lq_com_rdy_o,
-		output	logic						lsq_sq_full_o
+		output	logic						lsq_sq_full_o,
+		output	logic						bp_br_done_o,
+		output	logic	[63:0]				bp_br_pc_o,
+		output	logic						bp_br_cond_o
 	);
 
     logic                           cdb_vld;// cdb_vld_r_nxt;
@@ -85,7 +88,9 @@ module fu_main(
 	logic		[`PRF_IDX_W-1:0]	ld_dest_tag;
 	logic							lsq_lq_com_rdy;
 	logic		[`BR_MASK_W-1:0]	ld_br_mask;
-	
+
+	assign bp_br_pc_o	= br_pc;
+	assign bp_br_done_o = br_done;
 	//wire [63:0] mem_disp = { {48{rs2fu_IR_i[15]}}, rs2fu_IR_i[15:0] };
 	//wire [63:0] br_disp  = { {41{rs2fu_IR_i[20]}}, rs2fu_IR_i[20:0], 2'b00 };
 
@@ -204,7 +209,8 @@ module fu_main(
 			.br_recovery_taken_o	(fu2rob_br_recovery_taken_o),
 			.br_recovery_target_o	(fu2rob_br_recovery_target_o),
 			.br2rob_done_o			(br2rob_done),
-			.br2rob_recovery_idx_o	(fu2rob_br_recovery_idx_o)
+			.br2rob_recovery_idx_o	(fu2rob_br_recovery_idx_o),
+			.bp_br_cond_o			(bp_br_cond_o)
 	);
 	
 	fu_mult fu_mult (

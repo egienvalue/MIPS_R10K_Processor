@@ -46,11 +46,12 @@
 `define			BR_PR_CORRECT		2'b10
 `define			BR_NONE			2'b00
 `define			BR_STATE_W		2
-`define         BHR_W           16
+`define         BHR_W           8
 `define         PT_W            32
 `define         PT_IDX_W        ($clog2(`PT_W))
 `define         THRESHOLD       32
 `define         WEIGHT_W        ($clog2(`THRESHOLD)+1)
+`define			PERCEPTRON
 
 // Chuan
 `define			PRF_NUM			64
@@ -63,11 +64,11 @@
 `define			PC_IDX_W		5
 `define			BHT_NUM			2**`PC_IDX_W
 `define			BHT_W			5
-`define			PHT_NUM			2**`BHR_W
+`define			PHT_NUM			2**`BHT_W
 
 `define			BTB_TAG_W		10		//BTB
 `define			BTB_VAL_W		12
-`define			BTB_SEL_W		8
+`define			BTB_SEL_W		5
 `define			BTB_NUM			2**`BTB_SEL_W
 
 
@@ -130,7 +131,7 @@
 `define MEM_64BIT_LINES        (`MEM_SIZE_IN_BYTES/8)
 
 // probably not a good idea to change this second one
-`define VIRTUAL_CLOCK_PERIOD   30.0 // Clock period from dc_shell
+`define VIRTUAL_CLOCK_PERIOD   7.0 // Clock period from dc_shell
 `define VERILOG_CLOCK_PERIOD   10.0 // Clock period from test bench
 
 `ifndef CLOCK_PERIOD

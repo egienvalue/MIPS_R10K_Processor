@@ -16,7 +16,7 @@
 #
 #t
 
-VCS = vcs -sverilog +vc -Mupdate -line -full64
+VCS = SW_VCS=2015.09 vcs -sverilog +vc -Mupdate -line -full64
 LIB = /afs/umich.edu/class/eecs470/lib/verilog/lec25dscc25.v
 
 
@@ -30,8 +30,7 @@ SIMFILES =	$(SOURCE_DIR)/$(MODULE).v	\
 			$(SOURCE_DIR)/cachemem.v	\
 			$(SOURCE_DIR)/Icache_ctrl.v	\
 			$(SOURCE_DIR)/rps4.v	\
-			$(SOURCE_DIR)/prefetch.v	\
-			../mem.v
+			$(SOURCE_DIR)/prefetch.v
 SOURCE_FILES= $(SOURCE_DIR)/$(MODULE).v	\
 			$(SOURCE_DIR)/cachemem.v	\
 			$(SOURCE_DIR)/Icache_ctrl.v	\
@@ -60,11 +59,11 @@ simv_syn:	$(HEADERS) $(SYNFILES) $(TESTBENCH)
 syn:	$(SOURCE_FILES) $(SYN_DIR)/$(MODULE)_syn.tcl
 	cd $(SYN_DIR)/ && dc_shell-t -f ./$(MODULE)_syn.tcl | tee $(MODULE)_synth.out
 
-rsyn:	nuke $(SIMFILES) $(SYN_DIR)/$(MODULE)_syn.tcl
+rsyn:	nuke $(SOURCE_FILES) $(SYN_DIR)/$(MODULE)_syn.tcl
 	cd $(SYN_DIR)/ && dc_shell-t -f ./$(MODULE)_syn.tcl | tee $(MODULE)_synth.out
 
 syn_dve:	$(HEADERS) $(SYNFILES) $(TESTBENCH)
-	$(VCS) +memcbk $(HEADERS) $(TESTBENCH) $(SYNFILES) -o dve -R -gui
+	$(VCS) +memcbk $(HEADERS) $(TESTBENCH) $(SYNFILES) $(LIB) -o dve -R -gui
 .PHONY:	syn_dve
 
 clean:

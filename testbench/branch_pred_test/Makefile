@@ -20,13 +20,13 @@ all:    simv
 # Modify starting here
 #####
 
-TESTBENCH = ../../sys_defs.vh branch_stack_test.v
-SIMFILES = ../../verilog/branch_stack/branch_stack.v ../../verilog/branch_stack/br_mask_ctrl.v ../../verilog/branch_stack/br_stack_ent.v	
-SYNFILES = branch_stack.vg
+TESTBENCH = ../../sys_defs.vh BTB_test_p.v
+SIMFILES = ../../verilog/branch_pred/BTB.v 	
+SYNFILES = BTB.vg
 LIB = /afs/umich.edu/class/eecs470/lib/verilog/lec25dscc25.v
 
-$(SYNFILES):	$(SIMFILES) branch_stack.tcl 
-	dc_shell-t -f branch_stack.tcl | tee synth.out
+$(SYNFILES):	$(SIMFILES) BTB.tcl 
+	dc_shell-t -f BTB.tcl | tee synth.out
 
 #####
 # Should be no need to modify after here
