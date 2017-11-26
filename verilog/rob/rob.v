@@ -39,20 +39,20 @@ module	rob (
 		//----------------------------------------------------------------------
 		//Functional Unit Signal Input
 		//----------------------------------------------------------------------
-		input		[`ROB_IDX_W-1:0]		fu2rob_idx_i,//tag sent from functional unit to know which entry's done register needed to be set 
+		input		[`ROB_IDX_W:0]			fu2rob_idx_i,//tag sent from functional unit to know which entry's done register needed to be set 
 		input								fu2rob_done_signal_i,//done signal from functional unit 
 		input								fu2rob_br_taken_i,//branck taken result sent from functional unit
         //input       [63:0]                  fu2rob_br_target_i,//br_target sent from fu
 
 		input								br_recovery_taken_i,
 		input		[63:0]					br_recovery_target_i,
-		input		[`ROB_IDX_W-1:0]		br_recovery_idx_i,
+		input		[`ROB_IDX_W:0]			br_recovery_idx_i,
 		input								br_recovery_done_i,
 
-        input       [`ROB_IDX_W-1:0]        rs2rob_rd_idx_i,// rs sent read index to rob for reading NPC
+        input       [`ROB_IDX_W:0]        	rs2rob_rd_idx_i,// rs sent read index to rob for reading NPC
         output      [63:0]                  rob2fu_rd_NPC_o,//!!!rob sent the NPC data to fu
 
-		output		[`HT_W-1:0]				rob2rs_tail_idx_o,//tail # sent to rs to record which entry the instruction is 
+		output		[`HT_W:0]				rob2rs_tail_idx_o,//tail # sent to rs to record which entry the instruction is 
 		output		[`PRF_IDX_W-1:0]		rob2fl_tag_o,//tag from ROB to freelist for returning the old tag to freelist 
 		output		[`PRF_IDX_W-1:0]		rob2arch_map_tag_o,//tag from ROB to Arch map
 		output		[`PRF_IDX_W-2:0]		rob2arch_map_logic_dest_o,//logic dest from ROB to Arch map
@@ -167,11 +167,11 @@ module	rob (
 
 	wire dispatch_en					= rob_dispatch_en_i;
 	// <11/14>
-	wire br_predict_wrong				= (br_pretaken_r[br_recovery_idx_i] != br_recovery_taken_i) |
-										  (br_recovery_taken_i && br_pretaken_r[br_recovery_idx_i] &&
-										   br_recovery_target_i != br_target_r[br_recovery_idx_i]);
+	wire br_predict_wrong				= (br_pretaken_r[br_recovery_idx_i[`ROB_IDX_W-1:0]] != br_recovery_taken_i) |
+										  (br_recovery_taken_i && br_pretaken_r[br_recovery_idx_i[`ROB_IDX_W-1:0]] &&
+										   br_recovery_target_i != br_target_r[br_recovery_idx_i[`ROB_IDX_W-1:0]]);
 
-	assign rob2rs_tail_idx_o			= tail_r[`HT_W-1:0];
+	assign rob2rs_tail_idx_o			= tail_r;
 	assign rob2fl_tag_o					= rob_head_retire_rdy_o ? old_dest_tag_r[head_r[`HT_W-1:0]]	: 0;
 	assign rob2arch_map_tag_o			= rob_head_retire_rdy_o ? dest_tag_r[head_r[`HT_W-1:0]]	: 0;
 	assign rob2arch_map_logic_dest_o	= rob_head_retire_rdy_o ? logic_dest_r[head_r[`HT_W-1:0]] : 0;
@@ -182,18 +182,18 @@ module	rob (
 	assign head_r_nxt					= rob_head_retire_rdy_o ? (head_r+1) : head_r;
 	assign tail_r_nxt 					= br_recovery_rdy_o ? (br_recovery_idx_i+1) : dispatch_en ? (tail_r+1) : tail_r;
 
-    assign rob2fu_rd_NPC_o              = PC_r[br_recovery_idx_i]+4; //sent the NPC to branch alu to calculate the branch target
+    assign rob2fu_rd_NPC_o              = PC_r[rs2rob_rd_idx_i[`ROB_IDX_W-1:0]]+4; //sent the NPC to branch alu to calculate the branch target
 
 	always_comb begin
-		if(br_flag_r[br_recovery_idx_i]&br_recovery_done_i)
+		if(br_flag_r[br_recovery_idx_i[`ROB_IDX_W-1:0]]&br_recovery_done_i)
 			if(br_predict_wrong) begin
                 br_right_o          = 0;
-				br_recovery_mask_o  = br_mask_r[br_recovery_idx_i];
-                rob2fl_recover_head_o = fl_cur_head_r[br_recovery_idx_i];
+				br_recovery_mask_o  = br_mask_r[br_recovery_idx_i[`ROB_IDX_W-1:0]];
+                rob2fl_recover_head_o = fl_cur_head_r[br_recovery_idx_i[`ROB_IDX_W-1:0]];
 				br_recovery_rdy_o   = 1;
 			end else begin
                 br_right_o          = 1;
-				br_recovery_mask_o  = br_mask_r[br_recovery_idx_i];
+				br_recovery_mask_o  = br_mask_r[br_recovery_idx_i[`ROB_IDX_W-1:0]];
                 rob2fl_recover_head_o = 0;
 				br_recovery_rdy_o   = 0;
 			end
@@ -322,12 +322,12 @@ module	rob (
 		if(fu2rob_done_signal_i) begin
 			fu_done_r_nxt				= 1;
             fu_br_taken_r_nxt			= fu2rob_br_taken_i;
-		end else if(fu2rob_idx_i==head_r[`HT_W-1:0]) begin
+		end else if(fu2rob_idx_i[`ROB_IDX_W-1:0]==head_r[`HT_W-1:0]) begin
 			fu_done_r_nxt				= h_done_r_nxt;
 			fu_br_taken_r_nxt			= h_br_taken_r_nxt;
 		end else begin
-			fu_done_r_nxt				= done_r[fu2rob_idx_i];
-			fu_br_taken_r_nxt			= br_taken_r[fu2rob_idx_i];
+			fu_done_r_nxt				= done_r[fu2rob_idx_i[`ROB_IDX_W-1:0]];
+			fu_br_taken_r_nxt			= br_taken_r[fu2rob_idx_i[`ROB_IDX_W-1:0]];
 		end
 	end
 
@@ -413,8 +413,8 @@ module	rob (
 			IR_r[tail_r[`HT_W-1:0]]				<= `SD t_IR_r_nxt;
 			vld_r[tail_r[`HT_W-1:0]]			<= `SD t_vld_r_nxt;
 			
-			br_taken_r[fu2rob_idx_i]			<= `SD fu_br_taken_r_nxt;
-			done_r[fu2rob_idx_i]				<= `SD fu_done_r_nxt;
+			br_taken_r[fu2rob_idx_i[`HT_W-1:0]]	<= `SD fu_br_taken_r_nxt;
+			done_r[fu2rob_idx_i[`HT_W-1:0]]		<= `SD fu_done_r_nxt;
 			
 		end 
 	end	

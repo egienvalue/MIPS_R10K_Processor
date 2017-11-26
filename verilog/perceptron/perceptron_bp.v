@@ -5,7 +5,7 @@ module perceptron_bp (
 	input					if2bp_PC_vld_i,	
 	input					fu2bp_br_cond_i,
     input					fu2bp_br_taken_i,		
-    input					fu2bp_br_PC_i,	
+    input			[63:0]	fu2bp_br_PC_i,	
     input			[63:0]	fu2bp_br_target_i,
 	input					fu2bp_br_done_i,
 	
@@ -36,18 +36,18 @@ module perceptron_bp (
 			.pt_pred_o(pt_pred_o)
 	);
 
-	BTB BTB(
-			.clk,
-			.rst,
-			.if_pc_i(if2bp_PC_i),				// [IF] PC from IF stage to see if it's a branch. Read only, never write. 
-			.ex_is_br_i(fu2bp_br_done_i),		// [EX] If in the last cycle at the EX stage there's a branch insn, then at this cycle BTB must do something.
-			.ex_is_cond_i(fu2bp_br_cond_i),		// [EX] Save whether it's a conditional branch.
-			.ex_is_taken_i(fu2bp_br_taken_i),	// [EX] 1 is taken, 0 not taken.
-			.ex_pc_i(fu2bp_br_PC_i),			// [EX] Branch PC from EX stage. If taken, add entry or maintain. If not-taken, remove entry or maintain empty.  	
-			.ex_br_target_i(fu2bp_br_target_i), // [EX] Target address computed out in EX stage. Non-zero only if taken!
-			.is_hit_o(btb_is_hit_o),			// [DIRP] Tell DIRP if this pc is a branch or not.
-			.is_cond_o(btb_is_cond_o),			// [IF] Used to select prediction results.
-			.btb_target_o(btb_target_pc_o)		// [IF]	Prediction of target pc.
+	BTB btb0(
+		.clk,
+    	.rst,
+    	.if_pc_i(if2bp_PC_i),		
+    	.ex_is_br_i(fu2bp_br_done_i),		
+    	.ex_is_cond_i(fu2bp_br_cond_i),	
+    	.ex_is_taken_i(fu2bp_br_taken_i),	
+    	.ex_pc_i(fu2bp_br_PC_i),		
+    	.ex_br_target_i(fu2bp_br_target_i), 
+    	.is_hit_o(btb_is_hit_o),		
+    	.is_cond_o(btb_is_cond_o),		
+    	.btb_target_o(btb_target_pc_o)
 	);
 
 	assign 	btb_target_o = btb_target_pc_o;

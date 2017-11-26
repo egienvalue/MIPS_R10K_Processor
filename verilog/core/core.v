@@ -176,20 +176,20 @@ module core (
 	logic						id2rob_illegal_i;
 	logic	[31:0]				id2rob_IR_i;
 
-	logic	[`ROB_IDX_W-1:0]	fu2rob_idx_i;//tag sent from
+	logic	[`ROB_IDX_W:0]		fu2rob_idx_i;//tag sent from
 	logic						fu2rob_done_signal_i;//done 
 	logic						fu2rob_br_taken_i;//branck t
 	//logic	[63:0]				fu2rob_br_target_i;
 
 	logic						br_recovery_taken_i;
 	logic	[63:0]				br_recovery_target_i;
-	logic	[`ROB_IDX_W-1:0]	br_recovery_idx_i;
+	logic	[`ROB_IDX_W:0]		br_recovery_idx_i;
 	logic						br_recovery_done_i;
 	
-	logic	[`ROB_IDX_W-1:0]	rs2rob_rd_idx_i;
+	logic	[`ROB_IDX_W:0]		rs2rob_rd_idx_i;
 	logic	[63:0]				rob2fu_rd_NPC_o;
 
-	logic	[`HT_W-1:0]			rob2rs_tail_idx_o;//tail # s
+	logic	[`HT_W:0]			rob2rs_tail_idx_o;//tail # s
 	logic	[`PRF_IDX_W-1:0]	rob2fl_tag_o;//tag from ROB 
 	logic	[`PRF_IDX_W-1:0]	rob2arch_map_tag_o;//tag fro
 	logic	[`PRF_IDX_W-2:0]	rob2arch_map_logic_dest_o;//

@@ -19,8 +19,8 @@ module pt_table (
 	logic	signed	[`WEIGHT_W-1:0]	pt_weight_r_nxt[`BHR_W:0];
 
 	assign	pt_weight_r_nxt = (pt_wr_en_i) ? pt_wr_weight_i : pt_weight_r[pt_wr_idx_i];
-	assign	pt_rd2_weight_o	= pt_weight_r[pt_rd1_idx_i];
-	assign	pt_rd1_weight_o = pt_weight_r[pt_rd2_idx_i];
+	assign	pt_rd2_weight_o	= pt_weight_r[pt_rd2_idx_i];
+	assign	pt_rd1_weight_o = pt_weight_r[pt_rd1_idx_i];
 
 	// synopsys sync_set_reset "rst"
 	always_ff @(posedge clk) begin
