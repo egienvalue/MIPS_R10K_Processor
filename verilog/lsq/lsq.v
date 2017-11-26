@@ -53,14 +53,16 @@ module lsq(
 	logic	[`SQ_IDX_W-1:0]						sq_tail_r;
 	logic										sq_head_msb_r;
 	logic										sq_tail_msb_r;
-	logic	[`SQ_IDX_W:0]						sq_sq_head_q_r;
-	logic	[`SQ_IDX_W:0]						sq_sq_tail_q_r;
+	logic	[`SQ_IDX_W:0]						sq_head_q_r;
+	logic	[`SQ_IDX_W:0]						sq_tail_q_r;
 
 	// load queue registers
 	logic	[`LQ_IDX_W-1:0]						lq_head_r;
 	logic	[`LQ_IDX_W-1:0]						lq_tail_r;
 	logic										lq_head_msb_r;
 	logic										lq_tail_msb_r;
+	logic	[`LQ_IDX_W:0]						lq_head_q_r;
+	logic	[`LQ_IDX_W:0]						lq_tail_q_r;
 	logic	[`LQ_ENT_NUM-1:0][`ADDR_W-1:0]		lq_addr_r;
 	logic	[`LQ_ENT_NUM-1:0][63:0]				lq_data_r;
 	logic	[`LQ_ENT_NUM-1:0]					lq_rdy_r;
@@ -70,7 +72,7 @@ module lsq(
 	// store queue signals
 	logic	[`SQ_IDX_W:0]						sq_head_q_r_nxt;
 	logic	[`SQ_IDX_W:0]						sq_tail_q_r_nxt;
-	logic	[`SQ_IDX_W-1:0]						st_addr_vld_r_nxt;
+	logic	[`SQ_ENT_NUM-1:0]					st_addr_vld_r_nxt;
 	logic	[63:0]								st2ld_forward_data;
 	logic	[63:0]								st2ld_forward_data1;
 	logic	[63:0]								st2ld_forward_data2;
@@ -80,9 +82,6 @@ module lsq(
 	logic										ld_iss_en;
 
 	// load queue signals
-	logic	[`LQ_IDX_W:0]						lq_head_q_w;
-	logic	[`LQ_IDX_W:0]						lq_tail_q_w;
-
 	logic	[`LQ_IDX_W:0]						lq_head_q_r_nxt;
 	logic	[`LQ_IDX_W:0]						lq_tail_q_r_nxt;
 	logic										lq_head_match;
@@ -90,15 +89,21 @@ module lsq(
 	logic										ld_miss;
 
 	// --------------------- Store Queue ------------------------------
-	assign sq_head_q_r_nxt = rob_st_retire_en_i ? ({sq_head_msb_r,sq_head_r} + 1) : {sq_head_msb_r,sq_head_r};
+	assign sq_head_msb_r = sq_head_q_r[`SQ_IDX_W];
+	assign sq_head_r = sq_head_q_r[`SQ_IDX_W-1:0];
+	assign sq_tail_msb_r = sq_tail_q_r[`SQ_IDX_W];
+	assign sq_tail_r = sq_tail_q_r[`SQ_IDX_W-1:0];
 
-	assign sq_tail_q_r_nxt = dp_en_i ? ({sq_tail_msb_r,sq_tail_r} + 1) : {sq_tail_msb_r,sq_tail_r};
+	assign sq_head_q_r_nxt = rob_st_retire_en_i ? (sq_head_q_r + 1) : sq_head_q_r;
+
+	assign sq_tail_q_r_nxt = dp_en_i ? (sq_tail_q_r + 1) : sq_tail_q_r;
 
 	assign lsq_sq_tail_o = sq_tail_r;
 
 	assign lsq_ld_iss_en_o = ld_iss_en & ~lq_full & ~Dcache_mshr_stall_i;
 
 	assign lsq_sq_full_o = ((sq_head_r == sq_tail_r) && (sq_head_msb_r != sq_tail_msb_r));
+
 
 	always_comb begin
 		st_addr_vld_r_nxt = st_addr_vld_r;
@@ -119,15 +124,13 @@ module lsq(
 	// synopsys sync_set_reset "rst"
 	always_ff @(posedge clk) begin
 		if (rst) begin
-			sq_head_r		<= `SD 0;
-			sq_head_msb_r	<= `SD 0;
-			sq_tail_r		<= `SD 0;
-			sq_tail_msb_r	<= `SD 0;
+			sq_head_q_r		<= `SD 0;
+			sq_tail_q_r		<= `SD 0;
 			st_addr_vld_r	<= `SD 0;
 		end else begin
-			{sq_head_msb_r,sq_head_r}	<= `SD sq_head_q_r_nxt;
-			{sq_tail_msb_r,sq_tail_r}	<= `SD sq_tail_q_r_nxt;
-			st_addr_vld_r				<= `SD st_addr_vld_r_nxt;
+			sq_head_q_r		<= `SD sq_head_q_r_nxt;
+			sq_tail_q_r		<= `SD sq_tail_q_r_nxt;
+			st_addr_vld_r	<= `SD st_addr_vld_r_nxt;
 		end
 	end
 
@@ -177,19 +180,20 @@ module lsq(
 	end
 
 	// ---------------------- Load Queue ----------------------------
-	assign lq_head_q_w = {lq_head_msb_r, lq_head_r};
+	assign lq_head_msb_r = lq_head_q_r[`LQ_IDX_W];
+	assign lq_head_r = lq_head_q_r[`LQ_IDX_W-1:0];
+	assign lq_tail_msb_r = lq_tail_q_r[`LQ_IDX_W];
+	assign lq_tail_r = lq_tail_q_r[`LQ_IDX_W-1:0];
 
-	assign lq_tail_q_w = {lq_tail_msb_r, sq_head_r};
+	assign lq_head_q_r_nxt = lsq_lq_com_rdy_o ? lq_head_q_r + 1 : lq_head_q_r;
 
-	assign lq_head_q_r_nxt = lsq_lq_com_rdy_o ? lq_head_q_w + 1 : lq_head_q_w;
-
-	assign lq_tail_q_r_nxt = ld_miss ? lq_tail_q_w + 1 : lq_tail_q_w;
+	assign lq_tail_q_r_nxt = ld_miss ? lq_tail_q_r + 1 : lq_tail_q_r;
 
 	assign lq_head_match = Dcache_mshr_vld_i && (Dcache_mshr_addr_i == lq_addr_r[lq_head_r]);
 
-	assign lsq_lq_com_rdy_o = (lq_head_match || lq_rdy_r[lq_head_r]) && (lq_head_q_w != lq_tail_q_w);
+	assign lsq_lq_com_rdy_o = (lq_head_match || lq_rdy_r[lq_head_r]) && (lq_head_q_r != lq_tail_q_r);
 
-	assign ld_miss = ~Dcache_hit_i & ~st2ld_forward_vld;
+	assign ld_miss = ld_vld_i & ~Dcache_hit_i & ~st2ld_forward_vld;//
 
 	assign lsq2Dcache_ld_addr_o = ld_vld_i ? addr_i : 0;
 
@@ -209,13 +213,11 @@ module lsq(
 	// synopsys sync_set_reset "rst"
 	always_ff @(posedge clk) begin
 		if (rst) begin
-			lq_head_r		<= `SD 0;
-			lq_head_msb_r	<= `SD 0;
-			lq_tail_r		<= `SD 0;
-			lq_tail_msb_r	<= `SD 0;
+			lq_head_q_r		<= `SD 0;
+			lq_tail_q_r		<= `SD 0;
 		end else begin
-			{lq_head_msb_r,lq_head_r}	<= `SD lq_head_q_r_nxt;
-			{lq_tail_msb_r,lq_tail_r}	<= `SD lq_tail_q_r_nxt;
+			lq_head_q_r		<= `SD lq_head_q_r_nxt;
+			lq_tail_q_r		<= `SD lq_tail_q_r_nxt;
 		end
 	end
 
