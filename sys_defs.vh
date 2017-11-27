@@ -51,7 +51,7 @@
 `define		DCACHE_TAG_W			64-`DCACHE_IDX_W-`DCACHE_BYTE_OFFSET
 
 `define		MSHR_NUM				4
-`define		MSHR_IDX_W				$clog2(`MSHR_PTR_W)
+`define		MSHR_IDX_W				$clog2(`MSHR_NUM)
 
 typedef enum logic[1:0] {
 	GET_S	= 2'h0,
@@ -59,6 +59,9 @@ typedef enum logic[1:0] {
 	PUT_M	= 2'h2,
 	NONE	= 2'h3
 } message_t;
+
+`define		RSP_Q_NUM				4
+`define		RSP_Q_PTR_W				$clog2(`RSP_Q_NUM)
 
 `define		MEM_TAG_W				4
 
