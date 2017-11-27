@@ -16,16 +16,18 @@ module fu_alu (
 		input		[63:0]				opb_i,
 		input		[31:0]				inst_i,
 		input		[`PRF_IDX_W-1:0]	dest_tag_i,
-		input		[`ROB_IDX_W-1:0]	rob_idx_i,
+		input		[`ROB_IDX_W:0]		rob_idx_i,
 		input		[`BR_MASK_W-1:0]	br_mask_i,
 		input							rob_br_recovery_i,
 		input							rob_br_pred_correct_i,
 		input		[`BR_MASK_W-1:0]	rob_br_tag_fix_i,
+		input							stall_i,
 
 		output	logic	[63:0]			result_o,
 		output	logic	[`PRF_IDX_W-1:0]dest_tag_o,
-		output	logic	[`ROB_IDX_W-1:0]rob_idx_o,
+		output	logic	[`ROB_IDX_W:0]	rob_idx_o,
 		output	logic	[`BR_MASK_W-1:0]br_mask_o,
+		output	logic					done_pre_o,
 		output	logic					done_o
 	
 		);	
@@ -37,6 +39,8 @@ logic	[63:0]				opb,opa;
 
 wire [63:0] alu_imm  = { 56'b0, inst_i[20:13]};
 wire [63:0] mem_disp = { {48{inst_i[15]}}, inst_i[15:0] };
+
+assign done_pre_o = start_i;
 
 function signed_lt;
 	input [63:0] a, b;
@@ -124,7 +128,7 @@ always_ff @(posedge clk) begin
 		dest_tag_o	<= `SD 0;
 		rob_idx_o	<= `SD 0;
 		br_mask_o	<= `SD 0;
-	end else if (~rob_br_recovery_i) begin
+	end else if (~rob_br_recovery_i & ~stall_i) begin
 		done_o		<= `SD start_i;	
 		result_o	<= `SD result_o_nxt;
 		dest_tag_o	<= `SD dest_tag_i;

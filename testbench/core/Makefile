@@ -37,6 +37,7 @@ SIMFILES =	$(SOURCE_DIR)/$(MODULE).v	\
 			$(SOURCE_DIR)/../id_stage.v	\
 			$(SOURCE_DIR)/../rs/pe.v	\
 			$(SOURCE_DIR)/../rs/ps.v	\
+			$(SOURCE_DIR)/../rs/oldest_finder.v	\
 			$(SOURCE_DIR)/../rs/rs1.v	\
 			$(SOURCE_DIR)/../rs/rs.v	\
 			$(SOURCE_DIR)/../rob/rob.v	\

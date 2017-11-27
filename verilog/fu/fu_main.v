@@ -4,7 +4,7 @@ module fu_main(
 		input 								rst,
 		                                	
 		input		[63:0]					rob2fu_NPC_i,
-		input 		[`ROB_IDX_W-1:0]		rs2fu_rob_idx_i,
+		input 		[`ROB_IDX_W:0]			rs2fu_rob_idx_i,
 		input 		[63:0]					prf2fu_ra_value_i,
 		input		[63:0]					prf2fu_rb_value_i,
 		input		[`PRF_IDX_W-1:0]		rs2fu_dest_tag_i,
@@ -34,12 +34,12 @@ module fu_main(
 		output 	logic	[`PRF_IDX_W-1:0]	fu2preg_wr_idx_o,
 		output 	logic	[63:0]				fu2preg_wr_value_o,
 		output	logic						fu2rob_done_o,
-		output	logic	[`ROB_IDX_W-1:0]	fu2rob_idx_o,
+		output	logic	[`ROB_IDX_W:0]		fu2rob_idx_o,
 		output	logic						fu2rob_br_taken_o,
 
 		output	logic						fu2rob_br_recovery_taken_o,
 		output	logic	[63:0]				fu2rob_br_recovery_target_o,
-		output	logic	[`ROB_IDX_W-1:0]	fu2rob_br_recovery_idx_o,
+		output	logic	[`ROB_IDX_W:0]		fu2rob_br_recovery_idx_o,
 		output	logic						fu2rob_br_recovery_done_o,
         //outputlogic	[63:0]              fu2br_pre_br_pc_o,//branch address to branch predictor 
 		output 	logic	[`PRF_IDX_W-1:0]	fu_cdb_broad_o,
@@ -47,9 +47,9 @@ module fu_main(
 
 		output	logic	[`SQ_IDX_W-1:0]		lsq_sq_tail_o,
 		output	logic						lsq_ld_iss_en_o,
-		output	logic						lsq2Dcache_ld_addr_o,
+		output	logic	[63:0]				lsq2Dcache_ld_addr_o,
 		output	logic						lsq2Dcache_ld_en_o,
-		output	logic						lsq_lq_com_rdy_o,
+		output	logic						lsq_lq_com_rdy_stall_o,
 		output	logic						lsq_sq_full_o,
 		output	logic						bp_br_done_o,
 		output	logic	[63:0]				bp_br_pc_o,
@@ -63,31 +63,37 @@ module fu_main(
 	logic		[`EX_UNIT_W-1:0]	ex_unit_en;
 	
 	logic		[63:0]				alu_result;
+	logic							alu_done_pre;
 	logic							alu_done;
 	logic		[`PRF_IDX_W-1:0]	alu_dest_tag;
-	logic		[`ROB_IDX_W-1:0]	alu_rob_idx;
+	logic		[`ROB_IDX_W:0]		alu_rob_idx;
 	logic		[`BR_MASK_W-1:0]	alu_br_mask;
 	
 	logic							br2rob_done;
 	logic							br_done;
 	//logic		[63:0]				br_target;
 	logic							br_taken;
-	logic		[`ROB_IDX_W-1:0] 	br_rob_idx;
+	logic		[`ROB_IDX_W:0] 		br_rob_idx;
     logic       [63:0]              br_pc;
 	
 	logic		[63:0]				mult_result;
+	logic							mult_done_pre;
 	logic							mult_done;
-	logic		[`ROB_IDX_W-1:0]	mult_rob_idx;
+	logic		[`ROB_IDX_W:0]		mult_rob_idx;
 	logic		[`PRF_IDX_W-1:0]	mult_dest_tag;
 	logic		[`BR_MASK_W-1:0]	mult_br_mask;
 
 	logic		[63:0]				ld_result;
+	logic							ld_done_pre;
 	logic							ld_done;
+	logic							st_done_pre;
 	logic							st_done;
-	logic		[`ROB_IDX_W-1:0]	ldst_rob_idx;
+	logic		[`ROB_IDX_W:0]		ldst_rob_idx;
 	logic		[`PRF_IDX_W-1:0]	ld_dest_tag;
 	logic							lsq_lq_com_rdy;
+	logic							lsq_lq_com_rdy_delay1;
 	logic		[`BR_MASK_W-1:0]	ld_br_mask;
+	logic							lsq_lq_com_rdy_stall;
 
 	assign bp_br_pc_o	= br_pc;
 	assign bp_br_done_o = br_done;
@@ -96,8 +102,9 @@ module fu_main(
 
 	assign fu2rob_br_recovery_done_o = br2rob_done;
 
-	assign fu2rob_done_o 		= alu_done | br_done | mult_done | st_done | ld_done; // lsq	
+	assign fu2rob_done_o 		= alu_done | br_done | mult_done | st_done | ld_done | lsq_lq_com_rdy_delay1; // lsq	
 	assign fu2rob_idx_o			= br_done ? br_rob_idx : 
+								  lsq_lq_com_rdy_delay1 ? ldst_rob_idx :
 	   							  alu_done ? alu_rob_idx :
 								  mult_done ? mult_rob_idx : 
 								  (ld_done | st_done) ? ldst_rob_idx : 0;
@@ -110,20 +117,24 @@ module fu_main(
 	assign fu2preg_wr_idx_o		= cdb_tag;
 	assign fu2preg_wr_value_o	= fu2preg_wr_value;
 
-	assign lsq_lq_com_rdy_o		= lsq_lq_com_rdy;
+	assign lsq_lq_com_rdy_stall = lsq_lq_com_rdy & (alu_done_pre | mult_done_pre | ex_unit_en[3] | ex_unit_en[4]);
+	assign lsq_lq_com_rdy_stall_o = lsq_lq_com_rdy_stall;
+
+	// synopsys sync_set_reset "rst"
+	always_ff @(posedge clk) begin
+		if (rst) begin
+			lsq_lq_com_rdy_delay1 <= `SD 1'b0;
+		end else begin
+			lsq_lq_com_rdy_delay1 <= `SD lsq_lq_com_rdy;
+		end
+	end
 
 	always_comb begin
-//		if (rob_br_recovery_i && ((cdb_br_mask_r & rob_br_tag_fix_i) != 0)) begin
-//			cdb_tag_r_nxt		= `ZERO_REG;
-//			cdb_vld_r_nxt		= 0;
-//			cdb_br_mask_r_nxt	= 0;
-//			fu2preg_wr_value	= 0;
-//		end else if (rob_br_recovery_i) begin
-//			cdb_tag_r_nxt		= cdb_tag_r;
-//			cdb_vld_r_nxt		= cdb_vld_r;
-//			cdb_br_mask_r_nxt	= cdb_br_mask_r;
-//			fu2preg_wr_value	= fu2preg_wr_value_o;
-        if (alu_done) begin
+		if (lsq_lq_com_rdy_delay1) begin
+			cdb_tag				= ld_dest_tag;
+			cdb_vld				= 1;
+			fu2preg_wr_value	= ld_result;
+        end else if (alu_done) begin
 			cdb_tag				= alu_dest_tag;
             cdb_vld       		= 1;
             fu2preg_wr_value	= alu_result;
@@ -158,18 +169,6 @@ module fu_main(
 			endcase
 		end
 	end		
-	
-//	always_ff @(posedge clk) begin
-//        if (rst) begin
-//			cdb_tag_r   		<= `SD `ZERO_REG;
-//            cdb_vld_r   		<= `SD 0;
-//            fu2preg_wr_value_o	<= `SD 0;
-//        end else begin
-//			cdb_tag_r   		<= `SD cdb_tag_r_nxt;
-//            cdb_vld_r   		<= `SD cdb_vld_r_nxt;
-//            fu2preg_wr_value_o	<= `SD fu2preg_wr_value;
-//        end    
-//	end
 
 	fu_alu fu_alu (
 			.clk					(clk),
@@ -184,10 +183,12 @@ module fu_main(
 			.rob_br_recovery_i		(rob_br_recovery_i),
 			.rob_br_pred_correct_i	(rob_br_pred_correct_i),
 			.rob_br_tag_fix_i		(rob_br_tag_fix_i),
+			.stall_i				(lsq_lq_com_rdy_stall),
 			.result_o				(alu_result),
 			.dest_tag_o				(alu_dest_tag),
 			.rob_idx_o				(alu_rob_idx),
 			.br_mask_o				(alu_br_mask),
+			.done_pre_o				(alu_done_pre),
 			.done_o					(alu_done)
 	);
 	
@@ -226,11 +227,13 @@ module fu_main(
 			.rob_br_recovery_i		(rob_br_recovery_i),
 			.rob_br_pred_correct_i	(rob_br_pred_correct_i),
 			.rob_br_tag_fix_i		(rob_br_tag_fix_i),
-			.product				(mult_result),
+			.stall_i				(lsq_lq_com_rdy_stall),
+			.product_o				(mult_result),
 			.rob_idx_o				(mult_rob_idx),
             .dest_tag_o				(mult_dest_tag),
 			.br_mask_o				(mult_br_mask),
-			.done					(mult_done)
+			.done_pre_o				(mult_done_pre),
+			.done_o					(mult_done)
 	);
 
 	fu_ldst fu_ldst (

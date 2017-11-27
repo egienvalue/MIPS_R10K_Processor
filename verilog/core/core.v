@@ -137,23 +137,28 @@ module core (
 	logic						id_inst_vld_i;
 	logic	[`FU_SEL_W-1:0]		id_fu_sel_i;
 	logic	[31:0]				id_IR_i;
-	logic	[`ROB_IDX_W-1:0]	rob_idx_i;
+	logic	[`ROB_IDX_W:0]		rob_idx_i;
 	logic	[`PRF_IDX_W-1:0]	cdb_tag_i;
 	logic						cdb_vld_i;
+	logic	[`SQ_IDX_W-1:0]		lsq_sq_tail_i;
+	logic						lsq_ld_iss_en_i;
+	logic						lsq_lq_com_rdy_stall_i;
 	logic						stall_dp_i;
 	logic	[`BR_MASK_W-1:0]	bmg_br_mask_i;
 	logic						rob2rs_pred_correct_i;
 	logic						rob2rs_br_recovery_i;
 	logic	[`BR_MASK_W-1:0]	br_stack_tag_fix_i;
 
+	logic	[`SQ_IDX_W-1:0]		rs_sq_position_o;
 	logic						rs_iss_vld_o;
 	logic	[`PRF_IDX_W-1:0]	rs_iss_opa_tag_o;
 	logic	[`PRF_IDX_W-1:0]	rs_iss_opb_tag_o;
 	logic	[`PRF_IDX_W-1:0]	rs_iss_dest_tag_o;
 	logic	[`FU_SEL_W-1:0]		rs_iss_fu_sel_o;
 	logic	[31:0]				rs_iss_IR_o;
-	logic	[`ROB_IDX_W-1:0]	rs_iss_rob_idx_o;
+	logic	[`ROB_IDX_W:0]		rs_iss_rob_idx_o;
 	logic	[`BR_MASK_W-1:0]	rs_iss_br_mask_o;
+	logic	[`SQ_IDX_W-1:0]		rs_iss_sq_position_o;
 	logic						rs_full_o;
 
 
@@ -243,7 +248,7 @@ module core (
 	// signals for fu
 	//---------------------------------------------------------------
 	logic	[63:0]				rob2fu_NPC_i;
-	logic	[`ROB_IDX_W-1:0]	rs2fu_rob_idx_i;
+	logic	[`ROB_IDX_W:0]		rs2fu_rob_idx_i;
 	logic	[63:0]				prf2fu_ra_value_i;
 	logic	[63:0]				prf2fu_rb_value_i;
 	logic	[`PRF_IDX_W-1:0]	rs2fu_dest_tag_i;
@@ -272,13 +277,13 @@ module core (
 	logic 	[`PRF_IDX_W-1:0]	fu2preg_wr_idx_o;
 	logic 	[63:0]				fu2preg_wr_value_o;
 	logic						fu2rob_done_o;
-	logic	[`ROB_IDX_W-1:0]	fu2rob_idx_o;
+	logic	[`ROB_IDX_W:0]		fu2rob_idx_o;
 	logic						fu2rob_br_taken_o;
 
 	//logic	[63:0]				fu2rob_br_target_o;
 	logic						fu2rob_br_recovery_taken_o;
 	logic	[63:0]				fu2rob_br_recovery_target_o;
-	logic	[`ROB_IDX_W-1:0]	fu2rob_br_recovery_idx_o;
+	logic	[`ROB_IDX_W:0]		fu2rob_br_recovery_idx_o;
 	logic						fu2rob_br_recovery_done_o;
 
 
@@ -287,9 +292,9 @@ module core (
 
 	logic	[`SQ_IDX_W-1:0]		lsq_sq_tail_o;
 	logic						lsq_ld_iss_en_o;
-	logic						lsq2Dcache_ld_addr_o;
+	logic	[63:0]				lsq2Dcache_ld_addr_o;
 	logic						lsq2Dcache_ld_en_o;
-	logic						lsq_lq_com_rdy_o;
+	logic						lsq_lq_com_rdy_stall_o;
 	logic						lsq_sq_full_o;
 
 	logic						bp_br_done_o;
@@ -523,7 +528,9 @@ module core (
 	assign rob_idx_i			= rob2rs_tail_idx_o;
 	assign cdb_tag_i			= fu_cdb_broad_o;
 	assign cdb_vld_i			= fu_cdb_vld_o;
-	assign lsq_sq_tail_i		= 0;
+	assign lsq_sq_tail_i		= lsq_sq_tail_o;
+	assign lsq_ld_iss_en_i		= lsq_ld_iss_en_o;
+	assign lsq_lq_com_rdy_stall_i = lsq_lq_com_rdy_stall_o;
 	assign stall_dp_i			= ~dispatch_en;
 	assign bmg_br_mask_i		= br_mask_o;
 	assign rob2rs_pred_correct_i= br_right_o;
@@ -546,12 +553,15 @@ module core (
 			.cdb_tag_i				(cdb_tag_i),
 			.cdb_vld_i				(cdb_vld_i),
 			.lsq_sq_tail_i			(lsq_sq_tail_i),
+			.lsq_ld_iss_en_i		(lsq_ld_iss_en_i),
+			.lsq_lq_com_rdy_stall_i	(lsq_lq_com_rdy_stall_i),
 			.stall_dp_i				(stall_dp_i),
 			.bmg_br_mask_i			(bmg_br_mask_i), //	branch recovery latter
 			.rob_br_pred_correct_i	(rob2rs_pred_correct_i),
 			.rob_br_recovery_i		(rob2rs_br_recovery_i),
 			.rob_br_tag_fix_i		(rob_br_tag_fix_i),
 
+			.rs_sq_position_o		(rs_sq_position_o),
 			.rs_iss_vld_o			(rs_iss_vld_o),
 			.rs_iss_opa_tag_o		(rs_iss_opa_tag_o),
 			.rs_iss_opb_tag_o		(rs_iss_opb_tag_o),
@@ -560,6 +570,7 @@ module core (
 			.rs_iss_IR_o			(rs_iss_IR_o),
 			.rs_iss_rob_idx_o		(rs_iss_rob_idx_o),
 			.rs_iss_br_mask_o		(rs_iss_br_mask_o),
+			.rs_iss_sq_position_o	(rs_iss_sq_position_o),
 			.rs_full_o				(rs_full_o)
 	);
 
@@ -707,9 +718,9 @@ module core (
 	assign rs2fu_sel_i			= rs_iss_fu_sel_o;
 	assign rs2fu_iss_vld_i		= rs_iss_vld_o;
 
-	assign rs2lsq_sq_idx_i			= 0;
-	assign rs_ld_position_i			= 0;
-	assign rs_iss_ld_position_i		= 0;
+	assign rs2lsq_sq_idx_i			= rs_iss_sq_position_o;
+	assign rs_ld_position_i			= rs_sq_position_o;
+	assign rs_iss_ld_position_i		= rs_iss_sq_position_o;
 	assign rob2lsq_st_retire_en_i	= 0;
 	assign st_dp_en_i				= 0;
 
@@ -773,7 +784,7 @@ module core (
 		.lsq_ld_iss_en_o		(lsq_ld_iss_en_o),
 		.lsq2Dcache_ld_addr_o	(lsq2Dcache_ld_addr_o),
 		.lsq2Dcache_ld_en_o		(lsq2Dcache_ld_en_o),
-		.lsq_lq_com_rdy_o		(lsq_lq_com_rdy_o),
+		.lsq_lq_com_rdy_stall_o		(lsq_lq_com_rdy_stall_o),
 		.lsq_sq_full_o			(lsq_sq_full_o),
 		.bp_br_done_o			(bp_br_done_o),
 		.bp_br_pc_o				(bp_br_pc_o),
