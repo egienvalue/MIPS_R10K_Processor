@@ -19,7 +19,7 @@ module lsq(
 		input								dp_en_i,
 
 		// load signals
-		input			[`ROB_IDX_W-1:0]	rob_idx_i,
+		input			[`ROB_IDX_W:0]		rob_idx_i,
 		input			[`PRF_IDX_W-1:0]	dest_tag_i,
 		input								ld_vld_i,
 		input			[`SQ_IDX_W-1:0]		rs_ld_position_i,
@@ -38,7 +38,7 @@ module lsq(
 		output	logic	[`ADDR_W-1:0]		lsq2Dcache_ld_addr_o,
 		output	logic						lsq2Dcache_ld_en_o,
 		output	logic	[63:0]				lsq_ld_data_o,
-		output	logic	[`ROB_IDX_W-1:0]	lsq_ld_rob_idx_o,
+		output	logic	[`ROB_IDX_W:0]	lsq_ld_rob_idx_o,
 		output	logic	[`PRF_IDX_W-1:0]	lsq_ld_dest_tag_o,
 		output	logic						lsq_lq_com_rdy_o,
 		output	logic						lsq_sq_full_o
@@ -49,30 +49,32 @@ module lsq(
 	logic	[`SQ_ENT_NUM-1:0][`ADDR_W-1:0]		st_addr_r;
 	logic	[`SQ_ENT_NUM-1:0]					st_addr_vld_r;
 	logic	[`SQ_ENT_NUM-1:0][63:0]				st_data_r;
+	logic	[`SQ_IDX_W:0]						sq_head_q_r;
+	logic	[`SQ_IDX_W:0]						sq_tail_q_r;
 	logic	[`SQ_IDX_W-1:0]						sq_head_r;
 	logic	[`SQ_IDX_W-1:0]						sq_tail_r;
 	logic										sq_head_msb_r;
 	logic										sq_tail_msb_r;
-	logic	[`SQ_IDX_W:0]						sq_head_q_r;
-	logic	[`SQ_IDX_W:0]						sq_tail_q_r;
+	logic	[`SQ_IDX_W:0]						sq_sq_head_q_r;
+	logic	[`SQ_IDX_W:0]						sq_sq_tail_q_r;
 
 	// load queue registers
+	logic	[`LQ_IDX_W:0]						lq_head_q_r;
+	logic	[`LQ_IDX_W:0]						lq_tail_q_r;
 	logic	[`LQ_IDX_W-1:0]						lq_head_r;
 	logic	[`LQ_IDX_W-1:0]						lq_tail_r;
 	logic										lq_head_msb_r;
 	logic										lq_tail_msb_r;
-	logic	[`LQ_IDX_W:0]						lq_head_q_r;
-	logic	[`LQ_IDX_W:0]						lq_tail_q_r;
 	logic	[`LQ_ENT_NUM-1:0][`ADDR_W-1:0]		lq_addr_r;
 	logic	[`LQ_ENT_NUM-1:0][63:0]				lq_data_r;
 	logic	[`LQ_ENT_NUM-1:0]					lq_rdy_r;
-	logic	[`LQ_ENT_NUM-1:0][`ROB_IDX_W-1:0]	lq_rob_idx_r;
+	logic	[`LQ_ENT_NUM-1:0][`ROB_IDX_W:0]		lq_rob_idx_r;
 	logic	[`LQ_ENT_NUM-1:0][`PRF_IDX_W-1:0]	lq_dest_tag_r;
 
 	// store queue signals
 	logic	[`SQ_IDX_W:0]						sq_head_q_r_nxt;
 	logic	[`SQ_IDX_W:0]						sq_tail_q_r_nxt;
-	logic	[`SQ_ENT_NUM-1:0]					st_addr_vld_r_nxt;
+	logic	[`SQ_IDX_W-1:0]						st_addr_vld_r_nxt;
 	logic	[63:0]								st2ld_forward_data;
 	logic	[63:0]								st2ld_forward_data1;
 	logic	[63:0]								st2ld_forward_data2;
@@ -82,6 +84,9 @@ module lsq(
 	logic										ld_iss_en;
 
 	// load queue signals
+	logic	[`LQ_IDX_W:0]						lq_head_q_w;
+	logic	[`LQ_IDX_W:0]						lq_tail_q_w;
+
 	logic	[`LQ_IDX_W:0]						lq_head_q_r_nxt;
 	logic	[`LQ_IDX_W:0]						lq_tail_q_r_nxt;
 	logic										lq_head_match;
@@ -89,21 +94,15 @@ module lsq(
 	logic										ld_miss;
 
 	// --------------------- Store Queue ------------------------------
-	assign sq_head_msb_r = sq_head_q_r[`SQ_IDX_W];
-	assign sq_head_r = sq_head_q_r[`SQ_IDX_W-1:0];
-	assign sq_tail_msb_r = sq_tail_q_r[`SQ_IDX_W];
-	assign sq_tail_r = sq_tail_q_r[`SQ_IDX_W-1:0];
+	assign sq_head_q_r_nxt = rob_st_retire_en_i ? ({sq_head_msb_r,sq_head_r} + 1) : {sq_head_msb_r,sq_head_r};
 
-	assign sq_head_q_r_nxt = rob_st_retire_en_i ? (sq_head_q_r + 1) : sq_head_q_r;
-
-	assign sq_tail_q_r_nxt = dp_en_i ? (sq_tail_q_r + 1) : sq_tail_q_r;
+	assign sq_tail_q_r_nxt = dp_en_i ? ({sq_tail_msb_r,sq_tail_r} + 1) : {sq_tail_msb_r,sq_tail_r};
 
 	assign lsq_sq_tail_o = sq_tail_r;
 
 	assign lsq_ld_iss_en_o = ld_iss_en & ~lq_full & ~Dcache_mshr_stall_i;
 
 	assign lsq_sq_full_o = ((sq_head_r == sq_tail_r) && (sq_head_msb_r != sq_tail_msb_r));
-
 
 	always_comb begin
 		st_addr_vld_r_nxt = st_addr_vld_r;
@@ -224,8 +223,6 @@ module lsq(
 	// synopsys sync_set_reset "rst"
 	always_ff @(posedge clk) begin
 		if (rst) begin
-			lq_rdy_r	<= `SD 0;
-		end else if (Dcache_mshr_vld_i) begin
 			for(int k = 0; k < `LQ_ENT_NUM; k = k + 1) begin
 				if (lq_addr_r[k] == Dcache_mshr_addr_i) begin
 					lq_rdy_r[k]		<= `SD 1'b1;

@@ -23,7 +23,7 @@ all:	simv
 #####
 
 TESTBENCH = ../../sys_defs.vh test_rs.v
-SIMFILES = rs.v rs1.v pe.v ps.v
+SIMFILES = rs.v rs1.v pe.v ps.v oldest_finder.v
 SYNFILES = rs.vg
 
 
