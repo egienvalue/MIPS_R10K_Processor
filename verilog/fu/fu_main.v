@@ -45,7 +45,7 @@ module fu_main(
 		output 	logic	[`PRF_IDX_W-1:0]	fu_cdb_broad_o,
         output  logic	                    fu_cdb_vld_o,
 
-		output	logic	[`SQ_IDX_W-1:0]		lsq_sq_tail_o,
+		output	logic	[`SQ_IDX_W:0]		lsq_sq_tail_o,
 		output	logic						lsq_ld_iss_en_o,
 		output	logic	[63:0]				lsq2Dcache_ld_addr_o,
 		output	logic						lsq2Dcache_ld_en_o,
