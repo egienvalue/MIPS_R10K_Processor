@@ -7,6 +7,8 @@
 // 	intial creation: 11/24/2017
 // ****************************************************************************
 
+`timescale 1ns/100ps
+
 module Dcache (
 		input											clk,
 		input											rst,
@@ -45,6 +47,9 @@ module Dcache (
 		output	logic	[`DCACHE_IDX_W-1:0]				Dcache2bus_req_idx_o,
 		output	logic	[`DCACHE_WORD_IN_BITS-1:0]		Dcache2bus_req_data_o,
 		output	message_t								Dcache2bus_req_message_o,
+
+		output	logic									Dcache2bus_rsp_ack_o,
+		// response to other request
 		output	logic									Dcache2bus_rsp_vld_o,
 		output	logic	[`DCACHE_WORD_IN_BITS-1:0]		Dcache2bus_rsp_data_o
 	);
@@ -56,28 +61,28 @@ module Dcache (
 	logic		[`DCACHE_WORD_IN_BITS-1:0]		Dctrl2Dcache_sq_wr_data;
 	logic										Dcache2Dctrl_sq_wr_hit;
 	logic										Dcache2Dctrl_sq_wr_dty;
-	logic		[`DCACHE_TAG_W-1:0]				Dcache2Dctrl_sq_wb_tag;
-	logic		[`DCACHE_WORD_IN_BITS-1:0]		Dcache2Dctrl_sq_wb_data;
 	
 	logic										Dctrl2Dcache_mshr_wr_en;
 	logic		[`DCACHE_TAG_W-1:0]				Dctrl2Dcache_mshr_wr_tag;
 	logic		[`DCACHE_IDX_W-1:0]				Dctrl2Dcache_mshr_wr_idx;
 	logic		[`DCACHE_WORD_IN_BITS-1:0]		Dctrl2Dcache_mshr_wr_data;
+	logic										Dctrl2Dcache_mshr_wr_dty;
 
 	logic										Dctrl2Dcache_mshr_st_en;
-	logic										Dctrl2Dcache_mshr_evict_en;
 	logic		[`DCACHE_TAG_W-1:0]				Dctrl2Dcache_mshr_iss_tag;
 	logic		[`DCACHE_IDX_W-1:0]				Dctrl2Dcache_mshr_iss_idx;
 	logic		[`DCACHE_WORD_IN_BITS-1:0]		Dctrl2Dcache_mshr_iss_data;
-	logic										Dcache2Dctrl_mshr_iss_hit;
 	logic										Dcache2Dctrl_mshr_iss_dty;
+
+	logic										Dctrl2Dcache_evict_en;
+	logic		[`DCACHE_IDX_W-1:0]				Dctrl2Dcache_evict_idx;
+	logic		[`DCACHE_TAG_W-1:0]				Dcache2Dctrl_evict_tag;
+	logic		[`DCACHE_WORD_IN_BITS-1:0]		Dcache2Dctrl_evict_data;
 	
 	logic		[`DCACHE_TAG_W-1:0]				Dctrl2Dcache_lq_rd_tag;
 	logic		[`DCACHE_IDX_W-1:0]				Dctrl2Dcache_lq_rd_idx;
-	logic		[`DCACHE_TAG_W-1:0]				Dcache2Dctrl_lq_rd_tag;
-	logic		[`DCACHE_WORD_IN_BITS-1:0]		Dcache2Dctrl_lq_rd_data;
-	logic										Dcache2Dctrl_lq_rd_dty;
 	logic										Dcache2Dctrl_lq_rd_hit;
+	logic		[`DCACHE_WORD_IN_BITS-1:0]		Dcache2Dctrl_lq_rd_data;
 	
 	logic										Dctrl2Dcache_bus_invld;
 	logic										Dctrl2Dcache_bus_downgrade;
@@ -88,7 +93,7 @@ module Dcache (
 
 
 	// Dcachemem instantiation
-	Dcachemem (
+	Dcachemem Dcachemem (
 		.clk				(clk),
 		.rst				(rst),
 
@@ -98,28 +103,28 @@ module Dcache (
 		.sq_wr_data_i		(Dctrl2Dcache_sq_wr_data),
 		.sq_wr_hit_o		(Dcache2Dctrl_sq_wr_hit),
 		.sq_wr_dty_o		(Dcache2Dctrl_sq_wr_dty),
-		.sq_wb_tag_o		(Dcache2Dctrl_sq_wb_tag),
-		.sq_wb_data_o		(Dcache2Dctrl_sq_wb_data),
 
-		.mshr_wr_en_i		(Dctrl2Dcache_mshr_wr_en),
-		.mshr_wr_tag_i		(Dctrl2Dcache_mshr_wr_tag),
-		.mshr_wr_idx_i		(Dctrl2Dcache_mshr_wr_idx),
-		.mshr_wr_data_i		(Dctrl2Dcache_mshr_wr_data),
+		.mshr_rsp_wr_en_i	(Dctrl2Dcache_mshr_wr_en),
+		.mshr_rsp_wr_tag_i	(Dctrl2Dcache_mshr_wr_tag),
+		.mshr_rsp_wr_idx_i	(Dctrl2Dcache_mshr_wr_idx),
+		.mshr_rsp_wr_data_i	(Dctrl2Dcache_mshr_wr_data),
+		.mshr_rsp_wr_dty_o	(Dctrl2Dcache_mshr_wr_dty),
 
-		.mshr_st_en_i		(Dctrl2Dcache_mshr_st_en),
-		.mshr_evict_en_i	(Dctrl2Dcache_mshr_evict_en),
+		.mshr_iss_st_en_i	(Dctrl2Dcache_mshr_st_en),
 		.mshr_iss_tag_i		(Dctrl2Dcache_mshr_iss_tag),
 		.mshr_iss_idx_i		(Dctrl2Dcache_mshr_iss_idx),
 		.mshr_iss_data_i	(Dctrl2Dcache_mshr_iss_data),
-		.mshr_iss_hit_o		(Dcache2Dctrl_mshr_iss_hit),
 		.mshr_iss_dty_o		(Dcache2Dctrl_mshr_iss_dty),
+
+		.mshr_evict_en_i	(Dctrl2Dcache_evict_en),
+		.mshr_evict_idx_i	(Dctrl2Dcache_evict_idx),
+		.mshr_evict_tag_o	(Dcache2Dctrl_evict_tag),
+		.mshr_evict_data_o	(Dcache2Dctrl_evict_data),		
 
 		.lq_rd_tag_i		(Dctrl2Dcache_lq_rd_tag),
 		.lq_rd_idx_i		(Dctrl2Dcache_lq_rd_idx),
-		.lq_rd_tag_o		(Dcache2Dctrl_lq_rd_tag),
-		.lq_rd_data_o		(Dcache2Dctrl_lq_rd_data),
-		.lq_rd_dty_o		(Dcache2Dctrl_lq_rd_dty),
 		.lq_rd_hit_o		(Dcache2Dctrl_lq_rd_hit),
+		.lq_rd_data_o		(Dcache2Dctrl_lq_rd_data),
 
 		.bus_invld_i		(Dctrl2Dcache_bus_invld),
 		.bus_downgrade_i	(Dctrl2Dcache_bus_downgrade),
@@ -131,7 +136,7 @@ module Dcache (
 
 
 	// Dctrl instantiation
-	Dcache_ctrl (
+	Dcache_ctrl Dcache_ctrl (
 		.clk						(clk),
 		.rst						(rst),
 
@@ -151,34 +156,35 @@ module Dcache (
 
 		.Dcache_sq_wr_hit_i			(Dcache2Dctrl_sq_wr_hit),
 		.Dcache_sq_wr_dty_i			(Dcache2Dctrl_sq_wr_dty),
-		.Dcache_sq_wb_tag_i			(Dcache2Dctrl_sq_wb_tag),
-		.Dcache_sq_wb_data_i		(Dcache2Dctrl_sq_wb_data),
 		.Dcache_sq_wr_en_o			(Dctrl2Dcache_sq_wr_en),
 		.Dcache_sq_wr_tag_o			(Dctrl2Dcache_sq_wr_tag),
 		.Dcache_sq_wr_idx_o			(Dctrl2Dcache_sq_wr_idx),
 		.Dcache_sq_wr_data_o		(Dctrl2Dcache_sq_wr_data),
 
-		.Dcache_lq_rd_tag_i			(Dcache2Dctrl_lq_rd_tag),
-		.Dcache_lq_rd_data_i		(Dcache2Dctrl_lq_rd_data),
-		.Dcache_lq_rd_dty_i			(Dcache2Dctrl_lq_rd_dty),
 		.Dcache_lq_rd_hit_i			(Dcache2Dctrl_lq_rd_hit),
+		.Dcache_lq_rd_data_i		(Dcache2Dctrl_lq_rd_data),
 		.Dcache_lq_rd_tag_o			(Dctrl2Dcache_lq_rd_tag),
 		.Dcache_lq_rd_idx_o			(Dctrl2Dcache_lq_rd_idx),
 
 		// to cachemem
+		.mshr_rsp_wr_dty_i			(Dctrl2Dcache_mshr_wr_dty),
 		.mshr_rsp_wr_en_o			(Dctrl2Dcache_mshr_wr_en),
 		.mshr_rsp_wr_tag_o			(Dctrl2Dcache_mshr_wr_tag),
 		.mshr_rsp_wr_idx_o			(Dctrl2Dcache_mshr_wr_idx),
 		.mshr_rsp_wr_data_o			(Dctrl2Dcache_mshr_wr_data),
 
 		// from/to cachemem
-		.mshr_iss_hit_i				(Dcache2Dctrl_mshr_iss_hit),
 		.mshr_iss_dty_i				(Dcache2Dctrl_mshr_iss_dty),
 		.mshr_iss_st_en_o			(Dctrl2Dcache_mshr_st_en),
-		.mshr_iss_evict_en_o		(Dctrl2Dcache_mshr_evict_en),
 		.mshr_iss_tag_o				(Dctrl2Dcache_mshr_iss_tag),
 		.mshr_iss_idx_o				(Dctrl2Dcache_mshr_iss_idx),
 		.mshr_iss_data_o			(Dctrl2Dcache_mshr_iss_data),
+
+		// evict from/to cachemem
+		.Dcache_evict_tag_i			(Dcache2Dctrl_evict_tag),
+		.Dcache_evict_data_i		(Dcache2Dctrl_evict_data),
+		.Dcache_evict_en_o			(Dctrl2Dcache_evict_en),
+		.Dcache_evict_idx_o			(Dctrl2Dcache_evict_idx),
 
 		// from/to cachemem bus signals
 		.Dcache_bus_data_i			(Dcache2Dctrl_bus_data),
@@ -204,6 +210,8 @@ module Dcache (
 		.bus2Dctrl_rsp_vld_i		(bus2Dcache_rsp_vld_i),
 		.bus2Dctrl_rsp_id_i			(bus2Dcache_rsp_id_i),
 		.bus2Dctrl_rsp_data_i		(bus2Dcache_rsp_data_i),
+		.Dctrl2bus_rsp_ack_o		(Dcache2bus_rsp_ack_o),
+		// response to other requests
 		.Dctrl2bus_rsp_vld_o		(Dcache2bus_rsp_vld_o),
 		.Dctrl2bus_rsp_data_o		(Dcache2bus_rsp_data_o)
 	);

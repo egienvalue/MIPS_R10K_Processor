@@ -6,6 +6,8 @@
 // 	intial creation: 11/26/2017
 // ****************************************************************************
 
+`timescale 1ns/100ps
+
 module bus (
 		input											clk,
 		input											rst,
@@ -18,6 +20,7 @@ module bus (
 		input	message_t								core0_req_message_i,
 		input											core0_rsp_vld_i,
 		input			[`DCACHE_WORD_IN_BITS-1:0]		core0_rsp_data_i,
+		input											core0_rsp_ack_i,
 		output	logic									bus2core0_req_ack_o,
 
 		// core1 signals
@@ -28,6 +31,7 @@ module bus (
 		input	message_t								core1_req_message_i,
 		input											core1_rsp_vld_i,
 		input			[`DCACHE_WORD_IN_BITS-1:0]		core1_rsp_data_i,
+		input											core1_rsp_ack_i,
 		output	logic									bus2core1_req_ack_o,
 
 		// memory controller signals
@@ -83,12 +87,16 @@ module bus (
 	logic												sel_r;
 
 	logic												bus_req_ack;
-	logic												core0_req_ack;
-	logic												core1_req_ack;
+	logic												core0_req_gnt;
+	logic												core1_req_gnt;
 
 	logic												core0_req_pend_hit;
 	logic												core1_req_pend_hit;
 
+	// response data sent to core been accepted
+	logic												core_rsp_ack;
+
+	assign core_rsp_ack = core0_rsp_ack_i | core1_rsp_ack_i;
 
 	//-----------------------------------------------------
 	// To Dmem_ctrl, response entry ptr
@@ -98,44 +106,44 @@ module bus (
 	//-----------------------------------------------------
 	// request logic, include arbitration and acknowledge
 	// request arbitration
-	assign bus_req_id_o			= bus2core1_req_ack_o ? 1'b1 : 1'b0;
-	assign bus_req_tag_o		= bus2core1_req_ack_o ? core1_req_tag_i : 
-								  bus2core0_req_ack_o ?	core0_req_tag_i : `DCACHE_TAG_W'b0;
-	assign bus_req_idx_o		= bus2core1_req_ack_o ? core1_req_idx_i : 
-								  bus2core0_req_ack_o ? core0_req_idx_i : `DCACHE_IDX_W'b0;
-	assign bus_req_message_o	= bus2core1_req_ack_o ? core1_req_message_i : 
-								  bus2core0_req_ack_o ? core0_req_message_i : NONE;
-	assign bus_req_data_o		= bus2core1_req_ack_o ? core1_req_data_i : 
-								  bus2core0_req_ack_o ? core0_req_data_i : 64'h0;
+	assign bus_req_id_o			= core1_req_gnt ? 1'b1 : 1'b0;
+	assign bus_req_tag_o		= core1_req_gnt ? core1_req_tag_i : 
+								  core0_req_gnt ? core0_req_tag_i : 0;
+	assign bus_req_idx_o		= core1_req_gnt ? core1_req_idx_i : 
+								  core0_req_gnt ? core0_req_idx_i : 0;
+	assign bus_req_message_o	= core1_req_gnt ? core1_req_message_i : 
+								  core0_req_gnt ? core0_req_message_i : NONE;
+	assign bus_req_data_o		= core1_req_gnt ? core1_req_data_i : 
+								  core0_req_gnt ? core0_req_data_i : 64'h0;
 
 	assign bus_req_ack			= ~rsp_stall && // request acked, release bus for next
 								  (core0_rsp_vld_i | core1_rsp_vld_i | Dmem_ctrl_rsp_ack_i);
-	assign bus2core0_req_ack_o	= core0_req_ack & bus_req_ack;
-	assign bus2core1_req_ack_o	= core1_req_ack & bus_req_ack;
+	assign bus2core0_req_ack_o	= core0_req_gnt & bus_req_ack;
+	assign bus2core1_req_ack_o	= core1_req_gnt & bus_req_ack;
 	
 	// request arbitration
 	always_comb begin
 		if (~sel_r) begin // core0 has priority
 			if (core0_req_en_i && ~core0_req_pend_hit) begin
-				core0_req_ack	= 1'b1;
-				core1_req_ack	= 1'b0;
+				core0_req_gnt	= 1'b1;
+				core1_req_gnt	= 1'b0;
 			end else if (core1_req_en_i && ~core1_req_pend_hit) begin
-				core0_req_ack	= 1'b0;
-				core1_req_ack	= 1'b1;
+				core0_req_gnt	= 1'b0;
+				core1_req_gnt	= 1'b1;
 			end else begin
-				core0_req_ack	= 1'b0;
-				core1_req_ack	= 1'b0;
+				core0_req_gnt	= 1'b0;
+				core1_req_gnt	= 1'b0;
 			end
 		end else begin // core1 has priority
 			if (core1_req_en_i && ~core1_req_pend_hit) begin
-				core0_req_ack	= 1'b0;
-				core1_req_ack	= 1'b1;
+				core0_req_gnt	= 1'b0;
+				core1_req_gnt	= 1'b1;
 			end else if (core0_req_en_i && ~core0_req_pend_hit) begin
-				core0_req_ack	= 1'b1;
-				core1_req_ack	= 1'b0;
+				core0_req_gnt	= 1'b1;
+				core1_req_gnt	= 1'b0;
 			end else begin
-				core0_req_ack	= 1'b0;
-				core1_req_ack	= 1'b0;
+				core0_req_gnt	= 1'b0;
+				core1_req_gnt	= 1'b0;
 			end
 		end
 	end
@@ -144,7 +152,7 @@ module bus (
 	always_comb begin
 		core0_req_pend_hit	= 1'b0;
 		core1_req_pend_hit	= 1'b0;
-		for (int i = 0; i < RSP_Q_NUM; i++) begin
+		for (int i = 0; i < `RSP_Q_NUM; i++) begin
 			if (core0_req_tag_i == tag_r[i] && core0_req_idx_i == idx_r[i] && vld_r[i])
 				core0_req_pend_hit	= 1'b1;
 			if (core1_req_tag_i == tag_r[i] && core1_req_idx_i == idx_r[i] && vld_r[i])
@@ -165,33 +173,39 @@ module bus (
 	// clear entry after response sent
 	// full and stall signals
 	assign rsp_full		= (head_msb_r != tail_msb_r) && (head_r == tail_r);
-	assign rsP_stall	= ~rsp_full | bus_rsp_vld_o;
+	assign rsp_stall	= rsp_full && core_rsp_ack;
 
 	// pointers update
-	assign head_msb_nxt	= (bus_rsp_vld_o && (head_r == `RSP_Q_NUM-1)) ? ~head_msb_r : head_msb_r;
-	assign head_nxt		= (bus_rsp_vld_o && (head_r == `RSP_Q_NUM-1)) ? 0 : 
-					  	  (bus_rsp_vld_o) ? head_r + 1 : head_r;
-	assign tail_msb_nxt	= ((bus_req_ack) &&
+	assign head_msb_nxt	= (core_rsp_ack && (head_r == `RSP_Q_NUM-1)) ? ~head_msb_r : head_msb_r;
+	assign head_nxt		= (core_rsp_ack && (head_r == `RSP_Q_NUM-1)) ? 0 : 
+					  	  (core_rsp_ack) ? head_r + 1 : head_r;
+	assign tail_msb_nxt	= ((bus_req_ack && bus_req_message_o == GET_S) &&
 						   (tail_r == `RSP_Q_NUM-1)) ? ~tail_msb_r : tail_msb_r;
-	assign tail_nxt		= ((bus_req_ack) &&
+	assign tail_nxt		= ((bus_req_ack && bus_req_message_o == GET_S) &&
 						   (tail_r == `RSP_Q_NUM-1)) ? 0 :
-						  (bus2core0_req_ack_o | bus2core1_req_ack_o) ? tail_r + 1 : tail_r;
+						  (bus_req_ack && bus_req_message_o == GET_S) ? tail_r + 1 : tail_r;
 
 	// allocate and clear entry
 	always_comb begin
+		tag_nxt		= tag_r;
+		idx_nxt		= idx_r;
 		data_nxt	= data_r;
 		id_nxt		= id_r;
 		vld_nxt		= vld_r;
 		rdy_nxt		= rdy_r;
-		if (bus_rsp_vld_o) begin // clear entry
+		if (core_rsp_ack) begin // clear entry
 			tag_nxt	[head_r]	= 0;
-			idx_r	[head_r]	= 0;
+			idx_nxt	[head_r]	= 0;
 			data_nxt[head_r]	= 64'h0;
 			id_nxt	[head_r]	= 1'b0;
 			vld_nxt	[head_r]	= 1'b0;
 			rdy_nxt	[head_r]	= 1'b0;
 		end
 		// allocate entry, higher priority if head_r = tail_r
+		if (Dmem_ctrl_rsp_vld_i) begin
+			data_nxt[Dmem_ctrl_rsp_ptr_i]	= Dmem_ctrl_rsp_data_i;
+			rdy_nxt[Dmem_ctrl_rsp_ptr_i]	= 1'b1;
+		end
 		if (core0_rsp_vld_i) begin // data rdy
 			data_nxt[tail_r]	= core0_rsp_data_i;
 			rdy_nxt	[tail_r]	= 1'b1;
@@ -199,10 +213,6 @@ module bus (
 		if (core1_rsp_vld_i) begin
 			data_nxt[tail_r]	= core1_rsp_data_i;
 			rdy_nxt[tail_r]		= 1'b1;
-		end
-		if (Dmem_ctrl_rsp_vld_i) begin
-			data_nxt[Dmem_ctrl_rsp_ptr_i]	= Dmem_ctrl_rsp_data_i;
-			rdy_nxt[Dmem_ctrl_rsp_ptr_i]	= 1'b1;
 		end
 		if (bus_req_message_o == GET_S) begin
 			if (bus2core0_req_ack_o) begin // request acked
@@ -222,7 +232,7 @@ module bus (
 
 
 	// synopsys sync_set_reset "rst"
-	always_ff (posedge clk) begin
+	always_ff @(posedge clk) begin
 		if (rst) begin
 			tag_r		<= `SD `DCACHE_TAG_W'b0;
 			idx_r		<= `SD `DCACHE_IDX_W'b0;
@@ -237,7 +247,7 @@ module bus (
 			tail_msb_r	<= `SD 1'b0;
 		end else begin
 			tag_r		<= `SD tag_nxt;
-			idx_r		<= `SD tag_nxt;
+			idx_r		<= `SD idx_nxt;
 			data_r		<= `SD data_nxt;
 			id_r		<= `SD id_nxt;
 			vld_r		<= `SD vld_nxt;

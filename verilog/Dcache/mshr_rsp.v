@@ -23,7 +23,6 @@ module mshr_rsp (
 		input			[`MSHR_IDX_W-1:0]				mshr_rsp_iss_head_i,
 		
 		input											mshr_rsp_ack_i,
-		output	logic									mshr_rsp_wr_en_o,
 		output	logic	[`DCACHE_TAG_W-1:0]				mshr_rsp_tag_o,
 		output	logic	[`DCACHE_IDX_W-1:0]				mshr_rsp_idx_o,
 		output	message_t								mshr_rsp_message_o,
@@ -82,7 +81,6 @@ module mshr_rsp (
 
 	//-----------------------------------------------------
 	// response logic, when entry is valid @head_r
-	assign mshr_rsp_wr_en_o		= mshr_rsp_ack_i;
 	assign mshr_rsp_tag_o		= tag_r[head_r];
 	assign mshr_rsp_idx_o		= idx_r[head_r];
 	assign mshr_rsp_message_o	= message_r[head_r];
@@ -111,28 +109,28 @@ module mshr_rsp (
 			tag_r_nxt[tail_r]		= mshr_rsp_tag_i;
 			idx_r_nxt[tail_r]		= mshr_rsp_idx_i;
 			message_r_nxt[tail_r]	= mshr_rsp_message_i;
-			iss_head_r_nxt[tail_r]	= mshr_rps_iss_head_i;
+			iss_head_r_nxt[tail_r]	= mshr_rsp_iss_head_i;
 		end
 		if (mshr_rsp_ack_i) begin // clear mshr entry
 			vld_r_nxt[head_r]		= 1'b0;
 			tag_r_nxt[head_r]		= `DCACHE_TAG_W'b0;
 			idx_r_nxt[head_r]		= `DCACHE_IDX_W'b0;
 			message_r_nxt[head_r]	= NONE;
-			iss_head_r_nxt[head_r]	= `MSHR_IDX_W'b0;
+			iss_head_r_nxt[head_r]	= 0;
 		end
 	end
 
 
 	// synopsys sync_set_reset "rst"
-	always_ff (posedge clk) begin
+	always_ff @(posedge clk) begin
 		if (rst) begin
 			vld_r		<= `SD `MSHR_NUM'b0;
 			tag_r		<= `SD {`MSHR_NUM{`DCACHE_TAG_W'b0}};
 			idx_r		<= `SD {`MSHR_NUM{`DCACHE_IDX_W'b0}};
 			message_r	<= `SD {`MSHR_NUM{NONE}};
 			iss_head_r	<= `SD {`MSHR_NUM{`MSHR_IDX_W'b0}};
-			head_r		<= `SD `MSHR_IDX_W'b0;
-			tail_r		<= `SD `MSHR_IDX_W'b0;
+			head_r		<= `SD `DCACHE_TAG_W'b0;
+			tail_r		<= `SD `DCACHE_IDX_W'b0;
 			head_msb_r	<= `SD 1'b0;
 			tail_msb_r	<= `SD 1'b0;
 		end else begin

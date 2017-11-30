@@ -37,21 +37,45 @@
 // defines for Dcache												   //
 //*********************************************************************//
 `define		TWO_WAY
+
+`ifdef TWO_WAY
 `define		DCACHE_SIZE_IN_BYTES	256
 `define		DCACHE_SIZE_IN_BITS		256*8
 `define		DCACHE_LINE_IN_BITS		64
-`define		DCACHE_LINE_IN_BYTES	`DCACHE_LINE_IN_BITS/8
+`define		DCACHE_LINE_IN_BYTES	8
 `define		DCACHE_WORD_IN_BITS		64
-`define		DCACHE_WORD_IN_BYTES	`DCACHE_WORD_IN_BITS/8
+`define		DCACHE_WORD_IN_BYTES	8
 `define		DCACHE_WAY_NUM			2
-`define		DCACHE_LINE_NUM			`DCACHE_SIZE_IN_BYTES/`DCACHE_LINE_IN_BYTES
-`define		DCACHE_SET_NUM			`DCACHE_LINE_NUM/`DCACHE_WAY_NUM
-`define		DCACHE_BYTE_OFFSET		$clog2(`DCACHE_WORD_IN_BYTES)
-`define		DCACHE_IDX_W			$clog2(`DCACHE_SET_NUM)
-`define		DCACHE_TAG_W			64-`DCACHE_IDX_W-`DCACHE_BYTE_OFFSET
+`define		DCACHE_LINE_NUM			32
+`define		DCACHE_SET_NUM			16
+`define		DCACHE_BYTE_OFFSET		3
+`define		DCACHE_IDX_W			4
+`define		DCACHE_TAG_W			57
+//`define		DCACHE_SET_NUM			(`DCACHE_LINE_NUM/`DCACHE_WAY_NUM)
+//`define		DCACHE_BYTE_OFFSET		($clog2(`DCACHE_WORD_IN_BYTES))
+//`define		DCACHE_IDX_W			($clog2(`DCACHE_SET_NUM))
+//`define		DCACHE_TAG_W			(64 - (`DCACHE_IDX_W + `DCACHE_BYTE_OFFSET))
+
+`else
+
+`define		DCACHE_SIZE_IN_BYTES	256
+`define		DCACHE_SIZE_IN_BITS		256*8
+`define		DCACHE_LINE_IN_BITS		64
+`define		DCACHE_LINE_IN_BYTES	8
+`define		DCACHE_WORD_IN_BITS		64
+`define		DCACHE_WORD_IN_BYTES	8
+`define		DCACHE_WAY_NUM			1
+`define		DCACHE_LINE_NUM			32
+`define		DCACHE_SET_NUM			32
+`define		DCACHE_BYTE_OFFSET		3
+`define		DCACHE_IDX_W			5
+`define		DCACHE_TAG_W			56
+
+`endif
+
 
 `define		MSHR_NUM				4
-`define		MSHR_IDX_W				$clog2(`MSHR_NUM)
+`define		MSHR_IDX_W				2
 
 typedef enum logic[1:0] {
 	GET_S	= 2'h0,

@@ -18,20 +18,18 @@ module mshr_iss (
 		input	message_t								mshr_iss_message_i,
 
 		input											mshr_iss_ack_i,
-		input											mshr_iss_hit_i,
-		input											mshr_iss_dty_i,
 		output	logic									mshr_iss_en_o,
-		output	logic									mshr_iss_st_en_o,
-		output	logic									mshr_iss_evict_en_o,
 		output	logic	[`DCACHE_TAG_W-1:0]				mshr_iss_tag_o,
 		output	logic	[`DCACHE_IDX_W-1:0]				mshr_iss_idx_o,
 		output	logic	[`DCACHE_WORD_IN_BITS-1:0]		mshr_iss_data_o,
 		output	message_t								mshr_iss_message_o,
 		output	logic	[`MSHR_IDX_W-1:0]				mshr_iss_head_o,
 
-		output	logic									mshr_iss_hit_o,
-		output	logic	[`DCACHE_WORD_IN_BITS-1:0]		mshr_iss_hit_data_o,
-		output	message_t								mshr_iss_hit_message_o,
+		input			[`DCACHE_TAG_W-1:0]				lq2mshr_iss_tag_i,
+		input			[`DCACHE_IDX_W-1:0]				lq2mshr_iss_idx_i,
+		output	logic									mshr_iss_lq_hit_o,
+		output	logic	[`DCACHE_WORD_IN_BITS-1:0]		mshr_iss_lq_hit_data_o,
+		output	message_t								mshr_iss_lq_hit_message_o,
 		output	logic									mshr_iss_full_o
 	);
 
@@ -60,25 +58,23 @@ module mshr_iss (
 	logic												tail_msb_r_nxt;
 
 	//-----------------------------------------------------
-	// check input if input tag and index hit on mshr
+	// check input if input tag and index hit on mshr !!! loop
 	always_comb begin
-		mshr_iss_hit_o			= 1'b0;
-		mshr_iss_hit_data_o		= 64'h0;
-		mshr_iss_hit_message_o	= NONE;
+		mshr_iss_lq_hit_o			= 1'b0;
+		mshr_iss_lq_hit_data_o		= 64'h0;
+		mshr_iss_lq_hit_message_o	= NONE;
 		for (int i = 0; i < `MSHR_NUM; i++) begin
-			if (vld_r[i] && tag_r[i] == mshr_iss_tag_i && idx_r[i] == mshr_iss_idx_i)
-				mshr_iss_hit_o			= 1'b1;
-				mshr_iss_hit_data_o		= data_r[i];
-				mshr_iss_hit_message_o	= message_r[i];
+			if (vld_r[i] && tag_r[i] == lq2mshr_iss_tag_i && idx_r[i] == lq2mshr_iss_idx_i)
+				mshr_iss_lq_hit_o			= 1'b1;
+				mshr_iss_lq_hit_data_o		= data_r[i];
+				mshr_iss_lq_hit_message_o	= message_r[i];
 		end
 	end
 
 
 	//-----------------------------------------------------
 	// issue logic, when entry is valid @head_r
-	assign mshr_iss_en_o		= vld_r[head_r] && (mshr_iss_dty_i | message_r_nxt[head_r] != PUT_M);
-	assign mshr_iss_st_en_o		= mshr_iss_en_o && (message_r[head_r] == GET_M);
-	assign mshr_iss_evict_en_o	= mshr_iss_en_o && (message_r[head_r] == PUT_M);
+	assign mshr_iss_en_o		= vld_r[head_r];
 	assign mshr_iss_tag_o		= tag_r[head_r];
 	assign mshr_iss_idx_o		= idx_r[head_r];
 	assign mshr_iss_data_o		= data_r[head_r];
@@ -90,8 +86,7 @@ module mshr_iss (
 	// allocate to tail pointer, and issue from head pointer
 	// if issue be acknowledged, clear mshr entry
 	assign mshr_iss_full_o	= (head_r == tail_r) & (head_msb_r != tail_msb_r);
-	assign head_r_nxt		= ((~mshr_iss_dty_i && message_r_nxt[head_r] == PUT_M) | 
-								mshr_iss_ack_i) ? head_r + 1 : head_r;
+	assign head_r_nxt		= (mshr_iss_ack_i) ? head_r + 1 : head_r;
 	assign head_msb_r_nxt	= (mshr_iss_ack_i &&
 							  (head_r == `MSHR_NUM-1)) ? ~head_msb_r : head_msb_r;
 	assign tail_r_nxt		= mshr_iss_alloc_en_i ? tail_r + 1 : tail_r;
@@ -118,26 +113,19 @@ module mshr_iss (
 			data_r_nxt[head_r]		= `DCACHE_WORD_IN_BITS'b0;
 			message_r_nxt[head_r]	= NONE;
 		end
-		if (~mshr_iss_dty_i && message_r_nxt[head_r] == PUT_M) begin
-			vld_r_nxt[head_r]		= 1'b0;
-			tag_r_nxt[head_r]		= `DCACHE_TAG_W'b0;
-			idx_r_nxt[head_r]		= `DCACHE_IDX_W'b0;
-			data_r_nxt[head_r]		= `DCACHE_WORD_IN_BITS'b0;
-			message_r_nxt[head_r]	= NONE;
-		end
 	end
 	
 
 	// synopsys sync_set_reset "rst"
-	always_ff (posedge clk) begin
+	always_ff @(posedge clk) begin
 		if (rst) begin
 			vld_r		<= `SD `MSHR_NUM'b0;
-			tag_r		<= `SD {`MSHR_NUM{`DCACHE_TAG_W'b0}};
+			tag_r		<= `SD {`MSHR_NUM{`DCACHE_TAG_W'h0}};
 			idx_r		<= `SD {`MSHR_NUM{`DCACHE_IDX_W'b0}};
 			data_r		<= `SD {`MSHR_NUM{`DCACHE_WORD_IN_BITS'b0}};
 			message_r	<= `SD {`MSHR_NUM{NONE}};
-			head_r		<= `SD `MSHR_IDX_W'b0;
-			tail_r		<= `SD `MSHR_IDX_W'b0;
+			head_r		<= `SD 0;
+			tail_r		<= `SD 0;
 			head_msb_r	<= `SD 1'b0;
 			tail_msb_r	<= `SD 1'b0;
 		end else begin
