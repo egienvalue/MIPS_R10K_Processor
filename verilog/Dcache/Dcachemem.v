@@ -11,6 +11,14 @@ module Dcachemem (
 		input											clk,
 		input											rst,
 
+		// ports for tb
+		input			[`DCACHE_WAY_NUM-1:0]			Dcache_way_idx_tb_i,
+		input			[`DCACHE_IDX_W-1:0]				Dcache_set_idx_tb_i,
+		output											Dcache_blk_dty_tb_o,
+		output			[`DCACHE_TAG_W-1:0]				Dcache_tag_tb_o,
+		output			[63:0]							Dcache_data_tb_o,
+		
+
 		input											sq_wr_en_i,
 		input			[`DCACHE_TAG_W-1:0]				sq_wr_tag_i,
 		input			[`DCACHE_IDX_W-1:0]				sq_wr_idx_i,
@@ -80,6 +88,14 @@ module Dcachemem (
 
 	logic	[`DCACHE_WAY_NUM-1:0][`DCACHE_WORD_IN_BITS-1:0]	bus_data_w;
 	logic	[`DCACHE_WAY_NUM-1:0]							bus_rd_hit_w;
+
+
+	//-----------------------------------------------------
+	// signals for tb
+	assign Dcache_blk_dty_tb_o	= dty_r	[Dcache_way_idx_tb_i][Dcache_set_idx_tb_i];
+	assign Dcache_tag_tb_o		= tag_r	[Dcache_way_idx_tb_i][Dcache_set_idx_tb_i];
+	assign Dcache_data_tb_o		= data_r[Dcache_way_idx_tb_i][Dcache_set_idx_tb_i];
+
 
 	//-----------------------------------------------------
 	// load queue read port

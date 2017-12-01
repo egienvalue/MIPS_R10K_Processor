@@ -57,7 +57,7 @@ module br_stack_ent(
 		if (rst) begin
 			map_table_stack	<= `SD 0;
 			fl_head_stack	<= `SD 0;
-			sq_tail_stack		<= `SD 0;
+			sq_tail_stack	<= `SD 0;
 		end else if (mask_bit_i == 1'b0) begin
 			map_table_stack	<= `SD bak_mp_next_data_i;
 			fl_head_stack	<= `SD bak_fl_head_i;

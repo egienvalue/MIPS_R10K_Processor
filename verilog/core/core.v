@@ -26,6 +26,12 @@ module core (
 		// may need more ports for testbench!!!
 		output	logic	[3:0]							core_retired_instrs,
 		output	logic	[3:0]							core_error_status,
+		// ports for writeback all dty data from Dcache to mem
+		input			[`DCACHE_WAY_NUM-1:0]			Dcache_way_idx_tb_i,
+		input			[`DCACHE_IDX_W-1:0]				Dcache_set_idx_tb_i,
+		output											Dcache_blk_dty_tb_o,
+		output			[`DCACHE_TAG_W-1:0]				Dcache_tag_tb_o,
+		output			[63:0]							Dcache_data_tb_o,
 
 		//-----------------------------------------------
 		// network(or bus) side signals
@@ -232,7 +238,8 @@ module core (
 	logic	[`PRF_IDX_W-1:0]	rob2arch_map_tag_o;//tag fro
 	logic	[`PRF_IDX_W-2:0]	rob2arch_map_logic_dest_o;//
 	logic						rob_stall_dp_o;//signal show
-	logic						rob_head_retire_rdy_o;//the 
+	logic						rob_head_retire_rdy_o;//the
+	logic						rob_head_st_instr_o; 
 
 	logic						br_recovery_rdy_o;//ready to
 	logic	[`PRF_IDX_W-2:0]	rob2fl_recover_head_o;
@@ -360,61 +367,15 @@ module core (
 	logic	[`BR_MASK_W-1:0]	br_dep_mask_i;		//[ROB]			
 	logic	[31:0][6:0]			bak_mp_next_data_i;		//[Map Table]	
 	logic	[`FL_PTR_W:0]		bak_fl_head_i;			//[Free List]
+	logic	[`SQ_IDX_W:0]		bak_sq_tail_i;
 
 	logic	[`BR_MASK_W-1:0]	br_mask_o;			//[ROB]			
 	logic	[`BR_MASK_W-1:0]	br_bit_o;			//[RS]			
 	logic	[31:0][6:0]			rc_mt_all_data_o;		//[Map Table]
 	logic	[`FL_PTR_W:0]		rc_fl_head_o;			//[Free List]
+	logic	[`SQ_IDX_W:0]		rc_sq_tail_o;
 	logic						br_stack_full_o;
 
-/*	//---------------------------------------------------------------
-	// signals for LSQ
-	//---------------------------------------------------------------
-	// store signals
-	logic		[`ADDR_W-1:0]			addr_i;
-	logic		[63:0]					st_data_i;
-	logic								st_vld_i;
-	logic		[`SQ_IDX_W-1:0]			sq_idx_i;
-	logic								rob_st_retire_en_i;
-	logic								dp_en_i;
-
-	// load signals
-	logic		[`ROB_IDX_W:0]			rob_idx_i;
-	logic		[`PRF_IDX_W-1:0]		dest_tag_i;
-	logic								ld_vld_i;
-	logic		[`SQ_IDX_W-1:0]			rs_ld_position_i;
-	logic		[`SQ_IDX_W-1:0]			ex_ld_position_i;
-
-	// Dcache signals
-	logic								Dcache_hit_i;
-	logic		[63:0]					Dcache_data_i;
-	logic		[`ADDR_W-1:0]			Dcache_mshr_addr_i;
-	logic								Dcache_mshr_ld_ack_i;
-	logic								Dcache_mshr_st_ack_i;
-	logic								Dcache_mshr_vld_i;
-	logic								Dcache_mshr_stall_i;
-
-	// branch recovery signals
-	logic		[`BR_MASK_W-1:0]		bs_br_mask_i;
-	logic		[`SQ_IDX_W:0]			bs_sq_tail_recovery_i;
-	logic								rob_br_recovery_i;
-	logic								rob_br_pred_correct_i;
-	logic		[`BR_MASK_W-1:0]		rob_br_tag_fix_i;
-
-	// output signals
-	logic		[`SQ_IDX_W:0]			lsq_sq_tail_o;
-	logic								lsq_ld_iss_en_o;
-	logic		[`ADDR_W-1:0]			lsq2Dcache_ld_addr_o;
-	logic								lsq2Dcache_ld_en_o;
-	logic		[63:0]					lsq2Dcache_st_addr_o;
-	logic		[63:0]					lsq2Dcache_st_data_o;
-	logic								lsq2Dcache_st_en_o;
-	logic		[63:0]					lsq_ld_data_o;
-	logic		[`ROB_IDX_W:0]			lsq_ld_rob_idx_o;
-	logic		[`PRF_IDX_W-1:0]		lsq_ld_dest_tag_o;
-	logic								lsq_lq_com_rdy_o;
-	logic								lsq_sq_full_o;
-*/	
 
 	//---------------------------------------------------------------
 	// signals for Dcache
@@ -770,6 +731,7 @@ module core (
 		.rob2arch_map_logic_dest_o	(rob2arch_map_logic_dest_o),
 		.rob_stall_dp_o				(rob_stall_dp_o),
 		.rob_head_retire_rdy_o		(rob_head_retire_rdy_o),
+		.rob_head_st_instr_o		(rob_head_st_instr_o),
 
 		.br_recovery_rdy_o			(br_recovery_rdy_o),
 		.rob2fl_recover_head_o		(rob2fl_recover_head_o),
@@ -846,7 +808,7 @@ module core (
 	assign rs2fu_iss_vld_i		= rs_iss_vld_o;
 
 	assign rs2lsq_sq_idx_i			= rs_iss_sq_position_o;
-	assign rob2lsq_st_retire_en_i	= 0; // !!! need this from rob
+	assign rob2lsq_st_retire_en_i	= rob_head_st_instr_o && rob_head_retire_rdy_o;
 	assign st_dp_en_i				= dispatch_en; // !!
 	assign rs_ld_position_i			= rs_sq_position_o;
 	assign rs_iss_ld_position_i		= rs_iss_sq_position_o;
@@ -856,7 +818,7 @@ module core (
 	assign rob2fu_br_recovery_i		= br_recovery_rdy_o;
 	assign br_stack_tag_fix_i		= br_bit_o; // from br_stack
 
-	assign bs_sq_tail_recovery_i	= ; // !!! from br_stack
+	assign bs_sq_tail_recovery_i	= rc_sq_tail_o;
 
 	assign Dcache_hit_i				= Dcache2lq_data_vld_o;
 	assign Dcache_data_i			= Dcache2lq_data_o;	
@@ -966,6 +928,7 @@ module core (
 	assign br_dep_mask_i		= br_recovery_mask_o; // from rob
 	assign bak_mp_next_data_i	= bak_data_o;
 	assign bak_fl_head_i		= free_preg_cur_head_o;
+	assign bak_sq_tail_i		= lsq_sq_tail_o;
 
 	branch_stack branch_stack (
 		.clk				(clk), 
@@ -978,6 +941,7 @@ module core (
 		.br_dep_mask_i		(br_dep_mask_i),
 		.bak_mp_next_data_i	(bak_mp_next_data_i),	
 		.bak_fl_head_i		(bak_fl_head_i),
+		.bak_sq_tail_i		(bak_sq_tail_i),
 
 		// <11/14>
 		.cdb_vld_i			(fu_cdb_vld_o),
@@ -987,6 +951,7 @@ module core (
 		.br_bit_o			(br_bit_o),
 		.rc_mt_all_data_o	(rc_mt_all_data_o),
 		.rc_fl_head_o		(rc_fl_head_o),
+		.rc_sq_tail_o		(rc_sq_tail_o),
 		.full_o				(br_stack_full_o)
 	);
 
@@ -1003,6 +968,13 @@ module core (
 	Dcache Dcache (
 		.clk						(clk),
 		.rst						(rst),
+
+		// ports for tb
+		.Dcache_way_idx_tb_i		(Dcache_way_idx_tb_i),
+		.Dcache_set_idx_tb_i		(Dcache_set_idx_tb_i),
+		.Dcache_blk_dty_tb_o		(Dcache_blk_dty_tb_o),
+		.Dcache_data_tb_o			(Dcache_data_tb_o),
+		.Dcache_tag_tb_o			(Dcache_tag_tb_o),
 
 		// core side signals
 		.cpu_id_i					(cpu_id_i),

@@ -71,6 +71,7 @@ module Dmem_ctrl(
 	logic											mshr_iss_wr_en;
 	logic											mshr_iss_full;
 	logic											mshr_iss_stall;
+	//logic											mshr_iss_req_hit; // !!! for load fwd
 
 	// mshr response registers, receive data from Dmem
 	logic	[`DMEM_MSHR_NUM-1:0]					mshr_rsp_vld_r;
@@ -149,42 +150,8 @@ module Dmem_ctrl(
 	assign mshr_iss_tail_nxt	= (mshr_iss_wr_en && (mshr_iss_tail_r == `DMEM_MSHR_NUM-1)) ? 0 : 
 								  (mshr_iss_wr_en) ? mshr_iss_tail_r + 1 : mshr_iss_tail_r;
 
-	// mshr_iss allocate/clear entry// Filename: Dmem_ctrl.v
-// Discription: Data memory controller for cache coherence
-// Author: Hengfei Zhong
-// Version History:
-// 	intial creation: 11/26/2017
-// ****************************************************************************
+	// mshr_iss allocate/clear entry
 
-module Dmem_ctrl(
-		input										clk,
-		input										rst,
-
-		// bus interface
-		input			[`DCACHE_TAG_W-1:0]			bus_req_tag_i,
-		input			[`DCACHE_IDX_W-1:0]			bus_req_idx_i,
-		input	message_t							bus_req_message_i,
-		input			[`DCACHE_WORD_IN_BITS-1:0]	bus_req_data_i,
-	
-		input										bus_rsp_vld_i,	
-		input			[`DCACHE_WORD_IN_BITS-1:0]	bus_rsp_data_i,
-		input			[63:0]						bus_rsp_addr_i,
-		input			[`RSP_Q_PTR_W-1:0]			bus_rsp_ptr_i,
-
-		output	logic								Dmem_ctrl_rsp_ack_o,
-		output	logic								Dmem_ctrl_rsp_vld_o,
-		output	logic	[`RSP_Q_PTR_W-1:0]			Dmem_ctrl_rsp_ptr_o,
-		output	logic	[`DCACHE_WORD_IN_BITS-1:0]	Dmem_ctrl_rsp_data_o,
-
-		// memory interface
-		input			[3:0]						Dmem2proc_response_i,
-		input			[63:0]						Dmem2Dcache_data_i,
-		input			[3:0]						Dmem2proc_tag_i,
-
-		output	logic	[63:0]						proc2Dmem_addr_o,
-		output	logic	[63:0]						proc2Dmem_data_o,
-		output	logic	[1:0]						proc2Dmem_command_o
-	);
 	always_comb begin
 		mshr_iss_vld_nxt	= mshr_iss_vld_r;
 		mshr_iss_rdy_nxt	= mshr_iss_rdy_r;
@@ -214,42 +181,7 @@ module Dmem_ctrl(
 				mshr_iss_cmd_nxt[mshr_iss_tail_r]	= `BUS_STORE;
 				mshr_iss_data_nxt[mshr_iss_tail_r]	= bus_req_data_i;
 				mshr_iss_addr_nxt[mshr_iss_tail_r]	= bus_req_addr;
-				mshr_iss_ptr_nxt[mshr_iss_tail_r]	= bus_rsp_ptr_i;// Filename: Dmem_ctrl.v
-// Discription: Data memory controller for cache coherence
-// Author: Hengfei Zhong
-// Version History:
-// 	intial creation: 11/26/2017
-// ****************************************************************************
-
-module Dmem_ctrl(
-		input										clk,
-		input										rst,
-
-		// bus interface
-		input			[`DCACHE_TAG_W-1:0]			bus_req_tag_i,
-		input			[`DCACHE_IDX_W-1:0]			bus_req_idx_i,
-		input	message_t							bus_req_message_i,
-		input			[`DCACHE_WORD_IN_BITS-1:0]	bus_req_data_i,
-	
-		input										bus_rsp_vld_i,	
-		input			[`DCACHE_WORD_IN_BITS-1:0]	bus_rsp_data_i,
-		input			[63:0]						bus_rsp_addr_i,
-		input			[`RSP_Q_PTR_W-1:0]			bus_rsp_ptr_i,
-
-		output	logic								Dmem_ctrl_rsp_ack_o,
-		output	logic								Dmem_ctrl_rsp_vld_o,
-		output	logic	[`RSP_Q_PTR_W-1:0]			Dmem_ctrl_rsp_ptr_o,
-		output	logic	[`DCACHE_WORD_IN_BITS-1:0]	Dmem_ctrl_rsp_data_o,
-
-		// memory interface
-		input			[3:0]						Dmem2proc_response_i,
-		input			[63:0]						Dmem2Dcache_data_i,
-		input			[3:0]						Dmem2proc_tag_i,
-
-		output	logic	[63:0]						proc2Dmem_addr_o,
-		output	logic	[63:0]						proc2Dmem_data_o,
-		output	logic	[1:0]						proc2Dmem_command_o
-	);
+				mshr_iss_ptr_nxt[mshr_iss_tail_r]	= bus_rsp_ptr_i;
 			end
 		end
 		if (bus_rsp_vld_i) begin
@@ -264,14 +196,21 @@ module Dmem_ctrl(
 
 	// mshr_iss_wr_en, and Dmem controller response ack outputs to bus
 	always_comb begin
+		vld_nxt	= vld_r;
+		dty_nxt	= dty_r;
 		// State I
 		if (~bus_req_vld) begin
 			if (bus_req_message_i == GET_S) begin
 				Dmem_ctrl_rsp_ack_o	= ~mshr_iss_stall; // I->S, send data
 				mshr_iss_wr_en		= ~mshr_iss_stall; // allocate a LD entry
+				
+				vld_nxt[bus_req_addr]	= ~mshr_iss_stall;
 			end else if (bus_req_message_i == GET_M) begin
 				Dmem_ctrl_rsp_ack_o = 1'b1; // I->M
 				mshr_iss_wr_en		= 1'b0;
+
+				vld_nxt[bus_req_addr]	= 1'b1;
+				dty_nxt[bus_req_addr]	= 1'b1;
 			end else
 				Dmem_ctrl_rsp_ack_o = 1'b0;
 				mshr_iss_wr_en		= 1'b0;
@@ -281,6 +220,8 @@ module Dmem_ctrl(
 			if (bus_req_message_i == GET_M) begin 
 				Dmem_ctrl_rsp_ack_o	= 1'b1; // S->M
 				mshr_iss_wr_en		= 1'b0;
+
+				dty_nxt[bus_req_addr]	= 1'b1;
 			end else begin
 				Dmem_ctrl_rsp_ack_o	= 1'b0;
 				mshr_iss_wr_en		= 1'b0;
@@ -290,9 +231,14 @@ module Dmem_ctrl(
 			if (bus_req_message_i == PUT_M) begin
 				Dmem_ctrl_rsp_ack_o	= ~mshr_iss_stall; // M->I_D, wait data
 				mshr_iss_wr_en		= ~mshr_iss_stall; // allocate a ST entry
+
+				vld_nxt[bus_req_addr]	= mshr_iss_stall;
+				dty_nxt[bus_req_addr]	= mshr_iss_stall;
 			end else if (bus_req_message_i == GET_S) begin
 				Dmem_ctrl_rsp_ack_o	= ~mshr_iss_stall; // M->S_D, wait data
 				mshr_iss_wr_en		= ~mshr_iss_stall; // allocate a ST entry
+
+				dty_nxt[bus_req_addr]	= mshr_iss_stall;
 			end else begin
 				Dmem_ctrl_rsp_ack_o	= 1'b0;
 				mshr_iss_wr_en		= 1'b0;

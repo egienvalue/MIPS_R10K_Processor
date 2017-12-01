@@ -13,6 +13,13 @@ module Dcache (
 		input											clk,
 		input											rst,
 
+		// ports for tb
+		input			[`DCACHE_WAY_NUM-1:0]			Dcache_way_idx_tb_i,
+		input			[`DCACHE_IDX_W-1:0]				Dcache_set_idx_tb_i,
+		output											Dcache_blk_dty_tb_o,
+		output			[`DCACHE_TAG_W-1:0]				Dcache_tag_tb_o,
+		output			[63:0]							Dcache_data_tb_o,
+
 		// core side signals
 		input											cpu_id_i,
 
@@ -98,12 +105,19 @@ module Dcache (
 
 	// Dcachemem instantiation
 	Dcachemem Dcachemem (
-		.clk				(clk),Dctrl2Dcache_sq_wr_idx
+		.clk				(clk),
 		.rst				(rst),
+
+		// ports for tb
+		.Dcache_way_idx_tb_i(Dcache_way_idx_tb_i),
+		.Dcache_set_idx_tb_i(Dcache_set_idx_tb_i),
+		.Dcache_blk_dty_tb_o(Dcache_blk_dty_tb_o),
+		.Dcache_tag_tb_o	(Dcache_tag_tb_o),
+		.Dcache_data_tb_o	(Dcache_data_tb_o),
 
 		.sq_wr_en_i			(Dctrl2Dcache_sq_wr_en),
 		.sq_wr_tag_i		(Dctrl2Dcache_sq_wr_tag),
-		.sq_wr_idx_i		(Dctrl2Dcache_sq_wr_idx),Dctrl2Dcache_sq_wr_idx
+		.sq_wr_idx_i		(Dctrl2Dcache_sq_wr_idx),
 		.sq_wr_data_i		(Dctrl2Dcache_sq_wr_data),
 		.sq_wr_hit_o		(Dcache2Dctrl_sq_wr_hit),
 		.sq_wr_dty_o		(Dcache2Dctrl_sq_wr_dty),

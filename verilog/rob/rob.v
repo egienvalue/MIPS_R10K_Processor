@@ -5,6 +5,7 @@
 // Version History: add early recovery 
 // 	intial creation: 10/17/2017
 // 	<11/11> added IR and vld bit fields in rob - Hengfei
+// 	<12/1>  added output rob_head_st_instr_o, for SQ
 // 	***************************************************************************
 
 // Comments by hengfei: please test your module every time after you edit
@@ -58,6 +59,8 @@ module	rob (
 		output		[`PRF_IDX_W-2:0]		rob2arch_map_logic_dest_o,//logic dest from ROB to Arch map
 		output								rob_stall_dp_o,//signal show if the ROB is full
 		output								rob_head_retire_rdy_o,//the head of ROb is ready to retire
+		output								rob_head_st_instr_o,
+
 		//----------------------------------------------------------------------
 		//Early Recovery Signal Ouput
 		//----------------------------------------------------------------------
@@ -178,6 +181,7 @@ module	rob (
 	assign rob2arch_map_tag_o			= rob_head_retire_rdy_o ? dest_tag_r[head_r[`HT_W-1:0]]	: 0;
 	assign rob2arch_map_logic_dest_o	= rob_head_retire_rdy_o ? logic_dest_r[head_r[`HT_W-1:0]] : 0;
 	assign rob_head_retire_rdy_o 		= (done_r[head_r[`HT_W-1:0]]==1);
+	assign rob_head_st_instr_o			= wr_mem_r[head_r[`HT_W-1:0]];
 	assign rob_stall_dp_o				= ((head_r^tail_r)==6'b100000)&&(~rob_head_retire_rdy_o);
     assign rob_halt_o                   = halt_r[head_r[`HT_W-1:0]]&(head_r!=tail_r);
     assign rob_illegal_o                = illegal_r[head_r[`HT_W-1:0]]&(head_r!=tail_r);

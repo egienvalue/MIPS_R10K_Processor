@@ -93,7 +93,10 @@ typedef enum logic[1:0] {
 
 `define		MEM_TAG_W				4
 
+`define		ID_MEM_ABT_VEC_W		5
+
 `define		PFETCH_NUM				4
+
 
 // jun
 `define			ROB_W			32
