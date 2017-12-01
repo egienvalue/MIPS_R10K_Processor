@@ -13,19 +13,23 @@ module fu_main(
 		input								rs2fu_iss_vld_i,
 
 		input		[`SQ_IDX_W-1:0]			rs2lsq_sq_idx_i,
-		input		[`SQ_IDX_W-1:0]			rs_ld_position_i,
-		input		[`SQ_IDX_W-1:0]			rs_iss_ld_position_i,
 		input								rob2lsq_st_retire_en_i,
 		input								st_dp_en_i,
+		input		[`SQ_IDX_W-1:0]			rs_ld_position_i,
+		input		[`SQ_IDX_W-1:0]			rs_iss_ld_position_i,
 
 		input		[`BR_MASK_W-1:0]		rs2fu_br_mask_i,
 		input								rob_br_pred_correct_i,
 		input								rob_br_recovery_i,
 		input		[`BR_MASK_W-1:0]		rob_br_tag_fix_i,
-                                        	
+
+		input		[`SQ_IDX_W:0]          	bs_sq_tail_recovery_i,
+	
 		input								Dcache_hit_i,
 		input		[63:0]					Dcache_data_i,
 		input		[63:0]					Dcache_mshr_addr_i,
+		input								Dcache_mshr_ld_ack_i,
+		input								Dcache_mshr_st_ack_i,
 		input								Dcache_mshr_vld_i,
 		input								Dcache_mshr_stall_i,
 
@@ -49,8 +53,13 @@ module fu_main(
 		output	logic						lsq_ld_iss_en_o,
 		output	logic	[63:0]				lsq2Dcache_ld_addr_o,
 		output	logic						lsq2Dcache_ld_en_o,
-		output	logic						lsq_lq_com_rdy_stall_o,
+		output	logic	[63:0]				lsq2Dcache_st_addr_o,
+		output	logic	[63:0]				lsq2Dcache_st_data_o,
+		output	logic						lsq2Dcache_st_en_o,
+
+		output	logic						lsq_lq_com_rdy_stall_o, // stall??
 		output	logic						lsq_sq_full_o,
+
 		output	logic						bp_br_done_o,
 		output	logic	[63:0]				bp_br_pc_o,
 		output	logic						bp_br_cond_o
@@ -237,36 +246,53 @@ module fu_main(
 	);
 
 	fu_ldst fu_ldst (
-			.clk					(clk),
-			.rst					(rst),
-			.opa_i					(prf2fu_ra_value_i),
-			.opb_i					(prf2fu_rb_value_i),
-			.inst_i					(rs2fu_IR_i),
-			.dest_tag_i				(rs2fu_dest_tag_i),
-			.rob_idx_i				(rs2fu_rob_idx_i),
-			.st_vld_i				(ex_unit_en[4]),
-			.ld_vld_i				(ex_unit_en[3]),
-			.sq_idx_i				(rs2lsq_sq_idx_i),
-			.rob_st_retire_en_i		(rob2lsq_st_retire_en_i),
-			.dp_en_i				(st_dp_en_i),
-			.rs_ld_position_i		(rs_ld_position_i),
-			.ex_ld_position_i		(rs_iss_ld_position_i),
-			.Dcache_hit_i			(Dcache_hit_i),
-			.Dcache_data_i			(Dcache_data_i),
-			.Dcache_mshr_addr_i		(Dcache_mshr_addr_i),
-			.Dcache_mshr_vld_i		(Dcache_mshr_vld_i),
-			.Dcache_mshr_stall_i	(Dcache_mshr_stall_i),
-			.result_o				(ld_result),
-			.dest_tag_o				(ld_dest_tag),
-			.rob_idx_o				(ldst_rob_idx),
-			.lsq_sq_tail_o			(lsq_sq_tail_o),
-			.lsq_ld_iss_en_o		(lsq_ld_iss_en_o),
-			.lsq2Dcache_ld_addr_o	(lsq2Dcache_ld_addr_o),
-			.lsq2Dcache_ld_en_o		(lsq2Dcache_ld_en_o),
-			.lsq_lq_com_rdy_o		(lsq_lq_com_rdy),
-			.lsq_sq_full_o			(lsq_sq_full_o),
-			.st_done_o				(st_done),
-			.ld_done_o				(ld_done)
+		.clk					(clk),
+		.rst					(rst),
+
+		.opa_i					(prf2fu_ra_value_i),
+		.opb_i					(prf2fu_rb_value_i),
+		.inst_i					(rs2fu_IR_i),
+		.dest_tag_i				(rs2fu_dest_tag_i),
+		.rob_idx_i				(rs2fu_rob_idx_i),
+
+		.st_vld_i				(ex_unit_en[4]),
+		.ld_vld_i				(ex_unit_en[3]),
+		.sq_idx_i				(rs2lsq_sq_idx_i),
+		.rob_st_retire_en_i		(rob2lsq_st_retire_en_i),
+		.dp_en_i				(st_dp_en_i),
+		.rs_ld_position_i		(rs_ld_position_i),
+		.ex_ld_position_i		(rs_iss_ld_position_i),
+
+		.Dcache_hit_i			(Dcache_hit_i),
+		.Dcache_data_i			(Dcache_data_i),
+		.Dcache_mshr_addr_i		(Dcache_mshr_addr_i),
+		.Dcache_mshr_ld_ack_i	(Dcache_mshr_ld_ack_i),
+		.Dcache_mshr_st_ack_i	(Dcache_mshr_st_ack_i),
+		.Dcache_mshr_vld_i		(Dcache_mshr_vld_i),
+		.Dcache_mshr_stall_i	(Dcache_mshr_stall_i),
+
+		.bs_br_mask_i			(rs2fu_br_mask_i),
+		.bs_sq_tail_recovery_i	(bs_sq_tail_recovery_i),
+		.rob_br_recovery_i		(rob_br_recovery_i),
+		.rob_br_pred_correct_i	(rob_br_pred_correct_i),
+		.rob_br_tag_fix_i		(rob_br_tag_fix_i),
+
+		.result_o				(ld_result),
+		.dest_tag_o				(ld_dest_tag),
+		.rob_idx_o				(ldst_rob_idx),
+
+		.lsq_sq_tail_o			(lsq_sq_tail_o),
+		.lsq_ld_iss_en_o		(lsq_ld_iss_en_o),
+		.lsq2Dcache_ld_addr_o	(lsq2Dcache_ld_addr_o),
+		.lsq2Dcache_ld_en_o		(lsq2Dcache_ld_en_o),
+		.lsq2Dcache_st_addr_o	(lsq2Dcache_st_addr_o),
+		.lsq2Dcache_st_data_o	(lsq2Dcache_st_data_o),
+		.lsq2Dcache_st_en_o		(lsq2Dcache_st_en_o),
+		.lsq_lq_com_rdy_o		(lsq_lq_com_rdy),
+		.lsq_sq_full_o			(lsq_sq_full_o),
+
+		.st_done_o				(st_done),
+		.ld_done_o				(ld_done)
 	);
 	
 endmodule	  

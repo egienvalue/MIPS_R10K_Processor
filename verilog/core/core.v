@@ -5,24 +5,57 @@
 // Author: group 5
 // Version History
 //   <11/5> initial creation: integrate without br_predictor, LSQ
+//   <11/30> added LSQ, Dcache -Hengfei
 //*****************************************************************************
 `timescale 1ns/100ps
 
 module core (
-		input									clk,
-		input									rst,
+		input											clk,
+		input											rst,
 
-		input			[3:0]					mem2proc_response_i,
-		input			[63:0]					mem2proc_data_i,
-		input			[3:0]					mem2proc_tag_i,
+		input											cpu_id_i,
+
+		input			[3:0]							mem2proc_response_i,
+		input			[63:0]							mem2proc_data_i,
+		input			[3:0]							mem2proc_tag_i,
 	
-		output	logic	[1:0]					proc2mem_command_o,
-		output	logic	[63:0]					proc2mem_addr_o,
-		output	logic	[63:0]					proc2mem_data_o,
+		output	logic	[1:0]							proc2mem_command_o,
+		output	logic	[63:0]							proc2mem_addr_o,
+		output	logic	[63:0]							proc2mem_data_o,
 
 		// may need more ports for testbench!!!
-		output	logic	[3:0]					core_retired_instrs,
-		output	logic	[3:0]					core_error_status
+		output	logic	[3:0]							core_retired_instrs,
+		output	logic	[3:0]							core_error_status,
+
+		//-----------------------------------------------
+		// network(or bus) side signals
+		input											bus2Dcache_req_ack_i,
+		input											bus2Dcache_req_id_i,
+		input			[`DCACHE_TAG_W-1:0]				bus2Dcache_req_tag_i,
+		input			[`DCACHE_IDX_W-1:0]				bus2Dcache_req_idx_i,
+		input	message_t								bus2Dcache_req_message_i,
+		input											bus2Dcache_rsp_vld_i,
+		input											bus2Dcache_rsp_id_i,
+		input			[`DCACHE_WORD_IN_BITS-1:0]		bus2Dcache_rsp_data_i,
+
+		output	logic									Dcache2bus_req_en_o,
+		output	logic	[`DCACHE_TAG_W-1:0]				Dcache2bus_req_tag_o,
+		output	logic	[`DCACHE_IDX_W-1:0]				Dcache2bus_req_idx_o,
+		output	logic	[`DCACHE_WORD_IN_BITS-1:0]		Dcache2bus_req_data_o,
+		output	message_t								Dcache2bus_req_message_o,
+
+		output	logic									Dcache2bus_rsp_ack_o,
+		// response to other request
+		output	logic									Dcache2bus_rsp_vld_o,
+		output	logic	[`DCACHE_WORD_IN_BITS-1:0]		Dcache2bus_rsp_data_o,
+
+		// Icache ports
+		input			[3:0]							Imem2proc_response_i,
+		input			[63:0]							Imem2Icache_data_i,
+		input			[3:0]							Imem2proc_tag_i,
+
+		output			[63:0]							proc2Imem_addr_o,
+		output			[1:0]							proc2Imem_command_o
 	);
 
 
@@ -30,16 +63,16 @@ module core (
 	//---------------------------------------------------------------
 	// signals for Icache
 	//---------------------------------------------------------------
-	logic	[3:0]							Imem2proc_response_i;
-	logic	[63:0]							Imem2Icache_data_i;
-	logic	[3:0]							Imem2proc_tag_i;
+	//logic	[3:0]							Imem2proc_response_i;
+	//logic	[63:0]							Imem2Icache_data_i;
+	//logic	[3:0]							Imem2proc_tag_i;
 
 	logic	[63:0]							if2Icache_addr_i;
 	logic									if2Icache_req_i;
 	logic									if2Icache_flush_i;
 
-	logic	[63:0]							proc2Imem_addr_o;
-	logic	[1:0]							proc2Imem_command_o;
+	//logic	[63:0]							proc2Imem_addr_o;
+	//logic	[1:0]							proc2Imem_command_o;
 
 	logic									Icache2if_vld_o;
 	logic	[`ICACHE_DATA_IN_BITS-1:0]		Icache2if_data_o;	
@@ -257,19 +290,23 @@ module core (
 	logic						rs2fu_iss_vld_i;
 
 	logic	[`SQ_IDX_W-1:0]		rs2lsq_sq_idx_i;
-	logic	[`SQ_IDX_W-1:0]		rs_ld_position_i;
-	logic	[`SQ_IDX_W-1:0]		rs_iss_ld_position_i;
 	logic						rob2lsq_st_retire_en_i;
 	logic						st_dp_en_i;
+	logic	[`SQ_IDX_W-1:0]		rs_ld_position_i;
+	logic	[`SQ_IDX_W-1:0]		rs_iss_ld_position_i;
 
 	logic	[`BR_MASK_W-1:0]	rs2fu_br_mask_i;
 	logic						rob2fu_pred_correct_i;
 	logic						rob2fu_br_recovery_i;
 	logic	[`BR_MASK_W-1:0]	rob_br_tag_fix_i;
 
+	logic	[`SQ_IDX_W:0]		bs_sq_tail_recovery_i;
+
 	logic						Dcache_hit_i;
 	logic	[63:0]				Dcache_data_i;
 	logic	[63:0]				Dcache_mshr_addr_i;
+	logic						Dcache_mshr_ld_ack_i;
+	logic						Dcache_mshr_st_ack_i;
 	logic						Dcache_mshr_vld_i;
 	logic						Dcache_mshr_stall_i;
 
@@ -294,6 +331,10 @@ module core (
 	logic						lsq_ld_iss_en_o;
 	logic	[63:0]				lsq2Dcache_ld_addr_o;
 	logic						lsq2Dcache_ld_en_o;
+	logic	[63:0]				lsq2Dcache_st_addr_o,
+	logic	[63:0]				lsq2Dcache_st_data_o,
+	logic						lsq2Dcache_st_en_o,
+
 	logic						lsq_lq_com_rdy_stall_o;
 	logic						lsq_sq_full_o;
 
@@ -326,22 +367,106 @@ module core (
 	logic	[`FL_PTR_W:0]		rc_fl_head_o;			//[Free List]
 	logic						br_stack_full_o;
 
-	//---------------------------------------------------------------
+/*	//---------------------------------------------------------------
 	// signals for LSQ
 	//---------------------------------------------------------------
-	
-	
+	// store signals
+	logic		[`ADDR_W-1:0]			addr_i;
+	logic		[63:0]					st_data_i;
+	logic								st_vld_i;
+	logic		[`SQ_IDX_W-1:0]			sq_idx_i;
+	logic								rob_st_retire_en_i;
+	logic								dp_en_i;
+
+	// load signals
+	logic		[`ROB_IDX_W:0]			rob_idx_i;
+	logic		[`PRF_IDX_W-1:0]		dest_tag_i;
+	logic								ld_vld_i;
+	logic		[`SQ_IDX_W-1:0]			rs_ld_position_i;
+	logic		[`SQ_IDX_W-1:0]			ex_ld_position_i;
+
+	// Dcache signals
+	logic								Dcache_hit_i;
+	logic		[63:0]					Dcache_data_i;
+	logic		[`ADDR_W-1:0]			Dcache_mshr_addr_i;
+	logic								Dcache_mshr_ld_ack_i;
+	logic								Dcache_mshr_st_ack_i;
+	logic								Dcache_mshr_vld_i;
+	logic								Dcache_mshr_stall_i;
+
+	// branch recovery signals
+	logic		[`BR_MASK_W-1:0]		bs_br_mask_i;
+	logic		[`SQ_IDX_W:0]			bs_sq_tail_recovery_i;
+	logic								rob_br_recovery_i;
+	logic								rob_br_pred_correct_i;
+	logic		[`BR_MASK_W-1:0]		rob_br_tag_fix_i;
+
+	// output signals
+	logic		[`SQ_IDX_W:0]			lsq_sq_tail_o;
+	logic								lsq_ld_iss_en_o;
+	logic		[`ADDR_W-1:0]			lsq2Dcache_ld_addr_o;
+	logic								lsq2Dcache_ld_en_o;
+	logic		[63:0]					lsq2Dcache_st_addr_o;
+	logic		[63:0]					lsq2Dcache_st_data_o;
+	logic								lsq2Dcache_st_en_o;
+	logic		[63:0]					lsq_ld_data_o;
+	logic		[`ROB_IDX_W:0]			lsq_ld_rob_idx_o;
+	logic		[`PRF_IDX_W-1:0]		lsq_ld_dest_tag_o;
+	logic								lsq_lq_com_rdy_o;
+	logic								lsq_sq_full_o;
+*/	
+
 	//---------------------------------------------------------------
 	// signals for Dcache
 	//---------------------------------------------------------------
-	
+	// core side signals
+	logic									cpu_id_i;
+
+	logic									lq2Dcache_en_i;
+	logic	[63:0]							lq2Dcache_addr_i;
+	logic									sq2Dcache_en_i;
+	logic	[63:0]							sq2Dcache_addr_i;
+	logic	[`DCACHE_WORD_IN_BITS-1:0]		sq2Dcache_data_i;
+		
+	logic									Dcache2lq_ack_o;
+	logic									Dcache2lq_data_vld_o;
+	logic									Dcache2lq_mshr_data_vld_o;
+	logic	[`DCACHE_WORD_IN_BITS-1:0]		Dcache2lq_data_o;
+	logic	[63:0]							Dcache2lq_addr_o
+	logic									Dcache2sq_ack_o;
+
+	logic									Dmshr2lq_data_vld_o;
+	logic	[63:0]							Dmshr2lq_addr_o;
+	logic	[`DCACHE_WORD_IN_BITS-1:0]		Dmshr2lq_data_o;
+
+	// network(or bus) side signals
+/*	logic									bus2Dcache_req_ack_i;
+	logic									bus2Dcache_req_id_i;
+	logic	[`DCACHE_TAG_W-1:0]				bus2Dcache_req_tag_i;
+	logic	[`DCACHE_IDX_W-1:0]				bus2Dcache_req_idx_i;
+	message_t								bus2Dcache_req_message_i;
+	logic									bus2Dcache_rsp_vld_i;
+	logic									bus2Dcache_rsp_id_i;
+	logic	[`DCACHE_WORD_IN_BITS-1:0]		bus2Dcache_rsp_data_i;
+
+	logic									Dcache2bus_req_en_o;
+	logic	[`DCACHE_TAG_W-1:0]				Dcache2bus_req_tag_o;
+	logic	[`DCACHE_IDX_W-1:0]				Dcache2bus_req_idx_o;
+	logic	[`DCACHE_WORD_IN_BITS-1:0]		Dcache2bus_req_data_o;
+	message_t								Dcache2bus_req_message_o;
+
+	logic									Dcache2bus_rsp_ack_o;
+	// response to other request
+	logic									Dcache2bus_rsp_vld_o;
+	logic	[`DCACHE_WORD_IN_BITS-1:0]		Dcache2bus_rsp_data_o;	
+*/
 
 	//===============================================================
 	// core output assignments
 	//===============================================================
-	assign proc2mem_command_o	= proc2Imem_command_o; // Dcache not added
-	assign proc2mem_addr_o		= proc2Imem_addr_o;
-	assign proc2mem_data_o		= 64'h0;
+	//assign proc2mem_command_o	= proc2Imem_command_o; // Dcache not added
+	//assign proc2mem_addr_o		= proc2Imem_addr_o;
+	//assign proc2mem_data_o		= 64'h0;
 
 	//===============================================================
 	// outputs for core_tb.v
@@ -353,9 +478,10 @@ module core (
 	//===============================================================
 	// Icache instantiation
 	//===============================================================
-	assign Imem2proc_response_i = mem2proc_response_i;
-	assign Imem2Icache_data_i	= mem2proc_data_i;
-	assign Imem2proc_tag_i		= mem2proc_tag_i;
+	//assign Imem2proc_response_i = mem2proc_response_i;
+	//assign Imem2Icache_data_i	= mem2proc_data_i;
+	//assign Imem2proc_tag_i		= mem2proc_tag_i;
+
 	assign if2Icache_addr_i		= proc2Imem_addr;
 	assign if2Icache_req_i		= if2Icache_req_o;
 	assign if2Icache_flush_i	= br_recovery_rdy_o; // from rob
@@ -382,8 +508,8 @@ module core (
 	//===============================================================
 	// if_stage instantiation
 	//===============================================================
-	assign bp2if_predict_i			= pred_o;//1'b0; // bp not added, always non-taken
-	assign br_predict_target_PC_i	= btb_target_o;//64'b0;//btb_target_o; // bp not added
+	assign bp2if_predict_i			= pred_o;
+	assign br_predict_target_PC_i	= btb_target_o;
 	assign br_flush_target_PC_i		= fu2rob_br_recovery_target_o;
 	assign Imem2proc_data			= Icache2if_data_o;
 	assign Imem_valid				= Icache2if_vld_o;
@@ -427,7 +553,8 @@ module core (
 	assign	ex_br_target_i	=	fu2rob_br_recovery_target_o;
 	
 	`ifdef PERCEPTRON
-		assign if_PC_vld_i	=	1;//I am not sure whether to add this signal or not, set it to 1,the perceptron will always be enabled
+		assign if_PC_vld_i	=	1;
+		//I am not sure whether to add this signal or not, set it to 1,the perceptron will always be enabled
 		
 		perceptron_bp perceptron_bp (
 			.clk(clk),
@@ -467,8 +594,8 @@ module core (
 	assign dispatch_rob_stall	= rob_stall_dp_o;
 	assign dispatch_fl_stall	= ~free_preg_vld_o && ~rob_head_retire_rdy_o;
 	assign dispatch_br_stk_stall= br_stack_full_o && ~br_right_o;
-	assign dispatch_lq_stall	= 1'b0; // LQ not added
-	assign dispatch_sq_stall	= 1'b0; // SQ not added
+	assign dispatch_lq_stall	= 1'b0; // LQ !!!
+	assign dispatch_sq_stall	= lsq_sq_full_o;
 	
 	assign dispatch_norm_en		= ~(dispatch_rs_stall | dispatch_rob_stall | 
 									dispatch_fl_stall | ~if_valid_inst_o) && ~br_recovery_rdy_o;
@@ -719,20 +846,25 @@ module core (
 	assign rs2fu_iss_vld_i		= rs_iss_vld_o;
 
 	assign rs2lsq_sq_idx_i			= rs_iss_sq_position_o;
+	assign rob2lsq_st_retire_en_i	= 0; // !!! need this from rob
+	assign st_dp_en_i				= dispatch_en; // !!
 	assign rs_ld_position_i			= rs_sq_position_o;
 	assign rs_iss_ld_position_i		= rs_iss_sq_position_o;
-	assign rob2lsq_st_retire_en_i	= 0;
-	assign st_dp_en_i				= 0;
 
 	assign rs2fu_br_mask_i			= rs_iss_br_mask_o;
 	assign rob2fu_pred_correct_i	= br_right_o;
 	assign rob2fu_br_recovery_i		= br_recovery_rdy_o;
 	assign br_stack_tag_fix_i		= br_bit_o; // from br_stack
 
-	assign Dcache_hit_i				= 0;
-	assign Dcache_data_i			= 0;	
-	assign Dcache_mshr_addr_i		= 0;
-	assign Dcache_mshr_vld_i		= 0;
+	assign bs_sq_tail_recovery_i	= ; // !!! from br_stack
+
+	assign Dcache_hit_i				= Dcache2lq_data_vld_o;
+	assign Dcache_data_i			= Dcache2lq_data_o;	
+	assign Dcache_mshr_addr_i		= Dcache2lq_addr_o;
+	assign Dcache_mshr_ld_ack_i		= Dcache2lq_ack_o;
+	assign Dcache_mshr_st_ack_i		= Dcache2sq_ack_o;
+	assign Dcache_mshr_vld_i		= Dcache2lq_mshr_data_vld_o;
+	assign Dcache_mshr_stall_i		= 1'b0; // never stall
 
 	fu_main fu_main (
 		.clk					(clk),
@@ -748,19 +880,23 @@ module core (
 		.rs2fu_iss_vld_i		(rs2fu_iss_vld_i),
 
 		.rs2lsq_sq_idx_i		(rs2lsq_sq_idx_i),
-		.rs_ld_position_i		(rs_ld_position_i),
-		.rs_iss_ld_position_i	(rs_iss_ld_position_i),
 		.rob2lsq_st_retire_en_i	(rob2lsq_st_retire_en_i),
 		.st_dp_en_i				(st_dp_en_i),
+		.rs_ld_position_i		(rs_ld_position_i),
+		.rs_iss_ld_position_i	(rs_iss_ld_position_i),
 
 		.rs2fu_br_mask_i		(rs2fu_br_mask_i),
 		.rob_br_pred_correct_i	(rob2fu_pred_correct_i),
 		.rob_br_recovery_i		(rob2fu_br_recovery_i),
 		.rob_br_tag_fix_i		(br_stack_tag_fix_i), // from br_stack
-        
+
+		.bs_sq_tail_recovery_i	(bs_sq_tail_recovery_i),
+ 
 		.Dcache_hit_i			(Dcache_hit_i),
 		.Dcache_data_i			(Dcache_data_i),
 		.Dcache_mshr_addr_i		(Dcache_mshr_addr_i),
+		.Dcache_mshr_ld_ack_i	(Dcache_mshr_ld_ack_i),
+		.Dcache_mshr_st_ack_i	(Dcache_mshr_st_ack_i),
 		.Dcache_mshr_vld_i		(Dcache_mshr_vld_i),
 		.Dcache_mshr_stall_i	(Dcache_mshr_stall_i),
 
@@ -784,8 +920,13 @@ module core (
 		.lsq_ld_iss_en_o		(lsq_ld_iss_en_o),
 		.lsq2Dcache_ld_addr_o	(lsq2Dcache_ld_addr_o),
 		.lsq2Dcache_ld_en_o		(lsq2Dcache_ld_en_o),
-		.lsq_lq_com_rdy_stall_o		(lsq_lq_com_rdy_stall_o),
+		.lsq2Dcache_st_addr_o	(lsq2Dcache_st_addr_o),
+		.lsq2Dcache_st_data_o	(lsq2Dcache_st_data_o),
+		.lsq2Dcache_st_en_o		(lsq2Dcache_st_en_o),
+
+		.lsq_lq_com_rdy_stall_o	(lsq_lq_com_rdy_stall_o),
 		.lsq_sq_full_o			(lsq_sq_full_o),
+
 		.bp_br_done_o			(bp_br_done_o),
 		.bp_br_pc_o				(bp_br_pc_o),
 		.bp_br_cond_o			(bp_br_cond_o)
@@ -848,17 +989,62 @@ module core (
 		.rc_fl_head_o		(rc_fl_head_o),
 		.full_o				(br_stack_full_o)
 	);
-	
-	//===============================================================
-	// LSQ instantiation
-	//===============================================================
-	
+
 
 	//===============================================================
 	// Dcache instantiation
 	//===============================================================
+	assign lq2Dcache_en_i			= lsq2Dcache_ld_en_o;
+	assign lq2Dcache_addr_i			= lsq2Dcache_ld_addr_o;
+	assign sq2Dcache_en_i			= lsq2Dcache_st_en_o;
+	assign sq2Dcache_addr_i			= lsq2Dcache_st_addr_o;
+	assign sq2Dcache_data_i			= lsq2Dcache_st_data_o;
 	
+	Dcache Dcache (
+		.clk						(clk),
+		.rst						(rst),
 
+		// core side signals
+		.cpu_id_i					(cpu_id_i),
+
+		.lq2Dcache_en_i				(lq2Dcache_en_i),
+		.lq2Dcache_addr_i			(lq2Dcache_addr_i),
+		.sq2Dcache_en_i				(sq2Dcache_en_i),
+		.sq2Dcache_addr_i			(sq2Dcache_addr_i),
+		.sq2Dcache_data_i			(sq2Dcache_data_i),
+		
+		.Dcache2lq_ack_o			(Dcache2lq_ack_o),
+		.Dcache2lq_data_vld_o		(Dcache2lq_data_vld_o),
+		.Dcache2lq_mshr_data_vld_o	(Dcache2lq_mshr_data_vld_o),
+		.Dcache2lq_data_o			(Dcache2lq_data_o),
+		.Dcache2lq_addr_o			(Dcache2lq_addr_o),
+		.Dcache2sq_ack_o			(Dcache2sq_ack_o),
+
+		.Dmshr2lq_data_vld_o		(Dmshr2lq_data_vld_o),
+		.Dmshr2lq_addr_o			(Dmshr2lq_addr_o),
+		.Dmshr2lq_data_o			(Dmshr2lq_data_o),
+
+		// network(or bus) side signals
+		.bus2Dcache_req_ack_i		(bus2Dcache_req_ack_i),
+		.bus2Dcache_req_id_i		(bus2Dcache_req_id_i),
+		.bus2Dcache_req_tag_i		(bus2Dcache_req_tag_i),
+		.bus2Dcache_req_idx_i		(bus2Dcache_req_idx_i),
+		.bus2Dcache_req_message_i	(bus2Dcache_req_message_i),
+		.bus2Dcache_rsp_vld_i		(bus2Dcache_rsp_vld_i),
+		.bus2Dcache_rsp_id_i		(bus2Dcache_rsp_id_i),
+		.bus2Dcache_rsp_data_i		(bus2Dcache_rsp_data_i),
+
+		.Dcache2bus_req_en_o		(Dcache2bus_req_en_o),
+		.Dcache2bus_req_tag_o		(Dcache2bus_req_tag_o),
+		.Dcache2bus_req_idx_o		(Dcache2bus_req_idx_o),
+		.Dcache2bus_req_data_o		(Dcache2bus_req_data_o),
+		.Dcache2bus_req_message_o	(Dcache2bus_req_message_o),
+
+		.Dcache2bus_rsp_ack_o		(Dcache2bus_rsp_ack_o),
+		// response to other request
+		.Dcache2bus_rsp_vld_o		(Dcache2bus_rsp_vld_o),
+		.Dcache2bus_rsp_data_o		(Dcache2bus_rsp_data_o)
+	);
 
 
 endmodule: core

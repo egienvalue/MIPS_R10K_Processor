@@ -26,6 +26,7 @@ module Dcache (
 		output	logic									Dcache2lq_data_vld_o,
 		output	logic									Dcache2lq_mshr_data_vld_o,
 		output	logic	[`DCACHE_WORD_IN_BITS-1:0]		Dcache2lq_data_o,
+		output	logic	[63:0]							Dcache2lq_addr_o,
 		output	logic									Dcache2sq_ack_o,
 
 		output	logic									Dmshr2lq_data_vld_o,
@@ -53,6 +54,9 @@ module Dcache (
 		output	logic									Dcache2bus_rsp_vld_o,
 		output	logic	[`DCACHE_WORD_IN_BITS-1:0]		Dcache2bus_rsp_data_o
 	);
+
+
+	assign Dcache2lq_addr_o	= {Dctrl2Dcache_mshr_wr_tag, Dctrl2Dcache_sq_wr_idx, 3'h0};
 
 	// signals between Dcachemem and Dcache_ctrl
 	logic										Dctrl2Dcache_sq_wr_en;
@@ -94,12 +98,12 @@ module Dcache (
 
 	// Dcachemem instantiation
 	Dcachemem Dcachemem (
-		.clk				(clk),
+		.clk				(clk),Dctrl2Dcache_sq_wr_idx
 		.rst				(rst),
 
 		.sq_wr_en_i			(Dctrl2Dcache_sq_wr_en),
 		.sq_wr_tag_i		(Dctrl2Dcache_sq_wr_tag),
-		.sq_wr_idx_i		(Dctrl2Dcache_sq_wr_idx),
+		.sq_wr_idx_i		(Dctrl2Dcache_sq_wr_idx),Dctrl2Dcache_sq_wr_idx
 		.sq_wr_data_i		(Dctrl2Dcache_sq_wr_data),
 		.sq_wr_hit_o		(Dcache2Dctrl_sq_wr_hit),
 		.sq_wr_dty_o		(Dcache2Dctrl_sq_wr_dty),

@@ -6,7 +6,7 @@
 // intial creation: 11/06/2017
 // ***************************************************************************
 
-module lsq(
+module lsq (
 		input								clk,
 		input								rst,
 
