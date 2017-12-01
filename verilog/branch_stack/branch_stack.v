@@ -32,7 +32,7 @@ module branch_stack(
 		input	[`BR_MASK_W-1:0]					br_dep_mask_i,		//[ROB]			The mask of currently resolved branch.
 		input	[`MT_NUM-1:0][`PRF_IDX_W:0]			bak_mp_next_data_i,	//[Map Table]	Back up data from map table.
 		input	[`FL_PTR_W:0]						bak_fl_head_i,		//[Free List]	Back up head of free list.
-
+		input	[`SQ_IDX_W:0]						bak_sq_tail_i,
 		// <11/14>
 		input										cdb_vld_i,
 		input	[`PRF_IDX_W-1:0]					cdb_tag_i,
@@ -41,7 +41,8 @@ module branch_stack(
 		output	logic	[`BR_MASK_W-1:0]			br_bit_o,			//[RS]			Output corresponding branch bit immediately after knowing wrong or correct. 
 		output	logic								full_o,				//[ROB]			Tell ROB that stack is full and no further branch dispatch is allowed. 
 		output	logic	[`MT_NUM-1:0][`PRF_IDX_W:0]	rc_mt_all_data_o,	//[Map Table]	Recovery data for map table.
-		output	logic	[`FL_PTR_W:0]				rc_fl_head_o		//[Free List]	Recovery head value for free list.
+		output	logic	[`FL_PTR_W:0]				rc_fl_head_o,		//[Free List]	Recovery head value for free list.
+		output	logic	[`SQ_IDX_W:0]				rc_sq_tail_o
 	);
 
 
@@ -49,6 +50,7 @@ module branch_stack(
 
 	logic [`BR_MASK_W-1:0][`MT_NUM-1:0][`PRF_IDX_W:0]	unslctd_mt_data;
 	logic [`BR_MASK_W-1:0][`FL_PTR_W:0]					unslctd_fl_data;
+	logic [`BR_MASK_W-1:0][`SQ_IDX_W:0]					unslctd_sq_data;
 
 	assign br_mask_o = br_mask;
 
@@ -56,17 +58,20 @@ module branch_stack(
 	always_comb begin
 		rc_mt_all_data_o =	0;
         rc_fl_head_o	 =	0;
+		rc_sq_tail_o	 =	0;
 		if (br_state_i == `BR_PR_WRONG) begin
 			for (int i=0;i<`BR_MASK_W;i++) begin
 				if (br_bit_o[i] == 1) begin
 					rc_mt_all_data_o = unslctd_mt_data[i];
 					rc_fl_head_o	 = unslctd_fl_data[i];
+					rc_sq_tail_o	 = unslctd_sq_data[i];
 					//break;
 				end
 			end
 		end else begin
 			rc_mt_all_data_o =	0;
             rc_fl_head_o	 =	0;
+			rc_sq_tail_o	 =	0;
 		end
 	end
 		
@@ -93,8 +98,10 @@ module branch_stack(
 		
         .bak_mp_next_data_i(bak_mp_next_data_i),	
         .bak_fl_head_i(bak_fl_head_i),
+		.bak_sq_tail_i(bak_sq_tail_i),
         .rc_mt_all_data_o(unslctd_mt_data),	
-        .rc_fl_head_o(unslctd_fl_data)
+        .rc_fl_head_o(unslctd_fl_data),
+		.rc_sq_tail_o(unslctd_sq_data)
 	);
 
 endmodule
