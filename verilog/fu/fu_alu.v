@@ -133,7 +133,7 @@ always_ff @(posedge clk) begin
 		result_o	<= `SD result_o_nxt;
 		dest_tag_o	<= `SD dest_tag_i;
 		rob_idx_o	<= `SD rob_idx_i;
-		br_mask_o	<= `SD rob_br_pred_correct_i ? (br_mask_i ^ rob_br_tag_fix_i) : br_mask_i;	
+		br_mask_o	<= `SD rob_br_pred_correct_i ? (br_mask_i & ~rob_br_tag_fix_i) : br_mask_i;	
 	end
 end
 

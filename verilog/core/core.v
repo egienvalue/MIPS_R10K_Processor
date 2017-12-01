@@ -290,7 +290,7 @@ module core (
 	logic 	[`PRF_IDX_W-1:0]	fu_cdb_broad_o;
 	logic						fu_cdb_vld_o;
 
-	logic	[`SQ_IDX_W-1:0]		lsq_sq_tail_o;
+	logic	[`SQ_IDX_W:0]		lsq_sq_tail_o;
 	logic						lsq_ld_iss_en_o;
 	logic	[63:0]				lsq2Dcache_ld_addr_o;
 	logic						lsq2Dcache_ld_en_o;
@@ -528,7 +528,7 @@ module core (
 	assign rob_idx_i			= rob2rs_tail_idx_o;
 	assign cdb_tag_i			= fu_cdb_broad_o;
 	assign cdb_vld_i			= fu_cdb_vld_o;
-	assign lsq_sq_tail_i		= lsq_sq_tail_o;
+	assign lsq_sq_tail_i		= lsq_sq_tail_o[`SQ_IDX_W-1:0];
 	assign lsq_ld_iss_en_i		= lsq_ld_iss_en_o;
 	assign lsq_lq_com_rdy_stall_i = lsq_lq_com_rdy_stall_o;
 	assign stall_dp_i			= ~dispatch_en;

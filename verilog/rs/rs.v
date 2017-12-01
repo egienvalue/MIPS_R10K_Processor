@@ -290,7 +290,7 @@ module rs (
 	non_ld_selector (
 		.req		(rdy_vec_scheduled_non_ld),
 		.order		(rob_idx_vec_reordered),
-		.en		(~rob_br_recovery_i),
+		.en		(~rob_br_recovery_i & ~lsq_lq_com_rdy_stall_i),
 		.gnt		(iss_vec_non_ld),
 		.req_up		(),
 		.order_up	()
@@ -302,7 +302,7 @@ module rs (
 	ld_selector (
 		.req		(rdy_vec_scheduled_ld),
 		.order		(rob_idx_vec_reordered),
-		.en		(~rob_br_recovery_i),
+		.en		(~rob_br_recovery_i & ~lsq_lq_com_rdy_stall_i),
 		.gnt		(iss_vec_ld),
 		.req_up		(),
 		.order_up	()

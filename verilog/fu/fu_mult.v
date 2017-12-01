@@ -64,7 +64,7 @@ module mult_stage (
 			mcand_out        <= `SD next_mcand;
 			rob_idx_o		 <= `SD rob_idx_i;
 			dest_tag_o		 <= `SD dest_tag_i;
-			br_mask_o		 <= `SD rob_br_pred_correct_i ? (br_mask_i ^ rob_br_tag_fix_i) : br_mask_i;
+			br_mask_o		 <= `SD rob_br_pred_correct_i ? (br_mask_i & ~rob_br_tag_fix_i) : br_mask_i;
 		end
 	end
 
