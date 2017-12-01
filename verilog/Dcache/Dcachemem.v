@@ -238,6 +238,13 @@ module Dcachemem (
 	// vld_r update, vld_r_nxt
 	always_comb begin
 		vld_r_nxt	= vld_r;
+		// invld vld bit can be overwrite by others
+		if (bus_invld_i && bus_rd_hit_o) begin
+			for (int i = 0; i < `DCACHE_WAY_NUM; i++) begin
+				if (bus_rd_hit_w[i])
+					vld_r_nxt[i][bus_rd_idx_i]	= 1'b0;
+			end
+		end
 		if (mshr_rsp_wr_en_i) begin
 			if (mshr_rsp_hit) begin
 				for (int i = 0; i < `DCACHE_WAY_NUM; i++) begin
@@ -271,18 +278,26 @@ module Dcachemem (
 		if (mshr_evict_en_i) begin
 			vld_r_nxt[sel_r[mshr_evict_idx_i]][mshr_evict_idx_i] = 1'b0;
 		end
-		if (bus_invld_i && bus_rd_hit_o) begin
-			for (int i = 0; i < `DCACHE_WAY_NUM; i++) begin
-				if (bus_rd_hit_w[i])
-					vld_r_nxt[i][bus_rd_idx_i]	= 1'b0;
-			end
-		end
 	end
 	
 	//-----------------------------------------------------
 	// dty_r update, dty_r_nxt	
 	always_comb begin
 		dty_r_nxt	 = dty_r;
+		// invld and down grade can be overwrite if block
+		// conflict in cachemem, bus_rd_idx_i = mshr_iss_idx_i
+		if (bus_downgrade_i && bus_rd_hit_o) begin
+			for (int i = 0; i < `DCACHE_WAY_NUM; i++) begin
+				if (bus_rd_hit_w[i])
+					dty_r_nxt[i][bus_rd_idx_i]	= 1'b0;
+			end
+		end
+		if (bus_invld_i && bus_rd_hit_o) begin
+			for (int i = 0; i < `DCACHE_WAY_NUM; i++) begin
+				if (bus_rd_hit_w[i])
+					dty_r_nxt[i][bus_rd_idx_i]	= 1'b0;
+			end
+		end
 		if (mshr_evict_en_i) begin
 			dty_r_nxt[sel_r[mshr_evict_idx_i]][mshr_evict_idx_i] = 1'b0;
 		end
@@ -294,18 +309,6 @@ module Dcachemem (
 				end
 			end else begin
 				dty_r_nxt[sel_r[mshr_iss_idx_i]][mshr_iss_idx_i] = 1'b1;
-			end
-		end
-		if (bus_downgrade_i && bus_rd_hit_o) begin
-			for (int i = 0; i < `DCACHE_WAY_NUM; i++) begin
-				if (bus_rd_hit_w[i])
-					dty_r_nxt[i][bus_rd_idx_i]	= 1'b0;
-			end
-		end
-		if (bus_invld_i && bus_rd_hit_o) begin
-			for (int i = 0; i < `DCACHE_WAY_NUM; i++) begin
-				if (bus_rd_hit_w[i])
-					dty_r_nxt[i][bus_rd_idx_i]	= 1'b0;
 			end
 		end
 	end

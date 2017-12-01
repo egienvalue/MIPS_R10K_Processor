@@ -84,8 +84,12 @@ typedef enum logic[1:0] {
 	NONE	= 2'h3
 } message_t;
 
+
 `define		RSP_Q_NUM				4
-`define		RSP_Q_PTR_W				$clog2(`RSP_Q_NUM)
+`define		RSP_Q_PTR_W				2
+
+`define		DMEM_MSHR_NUM			4
+`define		DMEM_MSHR_IDX_W			2
 
 `define		MEM_TAG_W				4
 

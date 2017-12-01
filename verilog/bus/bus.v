@@ -51,7 +51,8 @@ module bus (
 		// response outputs
 		output	logic									bus_rsp_vld_o,
 		output	logic									bus_rsp_id_o,
-		output	logic	[`DCACHE_WORD_IN_BITS-1:0]		bus_rsp_data_o
+		output	logic	[`DCACHE_WORD_IN_BITS-1:0]		bus_rsp_data_o,
+		output	logic	[63:0]							bus_rsp_addr_o // to Dmem_ctrl
 	);
 
 	// bus response queue registers
@@ -166,6 +167,7 @@ module bus (
 	assign bus_rsp_vld_o	= rdy_r[head_r];
 	assign bus_rsp_id_o		= id_r[head_r];
 	assign bus_rsp_data_o	= data_r[head_r];
+	assign bus_rsp_addr_o	= {tag_r[head_r], idx_r[head_r], 3'h0};
 
 
 	//-----------------------------------------------------
@@ -173,7 +175,7 @@ module bus (
 	// clear entry after response sent
 	// full and stall signals
 	assign rsp_full		= (head_msb_r != tail_msb_r) && (head_r == tail_r);
-	assign rsp_stall	= rsp_full && core_rsp_ack;
+	assign rsp_stall	= rsp_full && ~core_rsp_ack;
 
 	// pointers update
 	assign head_msb_nxt	= (core_rsp_ack && (head_r == `RSP_Q_NUM-1)) ? ~head_msb_r : head_msb_r;
