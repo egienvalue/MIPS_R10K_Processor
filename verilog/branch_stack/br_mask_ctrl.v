@@ -70,7 +70,7 @@ module br_mask_ctrl(
 		always_comb begin												// Assign br_bit_idx and next_mask. Assign next_mask under the condition of br_state_i (wrong or correct?)
 			if (br_state_i == `BR_PR_WRONG) begin
 				first_zero_idx(br_dep_mask_i, br_bit_idx, br_bit); 
-				next_mask = br_dep_mask_i;
+				next_mask = (mask & br_dep_mask_i);
 			end else if (br_state_i == `BR_PR_CORRECT && ~is_save_br) begin
 				first_zero_idx(br_dep_mask_i, br_bit_idx, br_bit); 
 				next_mask = mask ^ br_bit;				
