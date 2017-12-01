@@ -45,7 +45,7 @@ module if_stage(
 	logic			ifb2if_full;
 	logic			ifb2if_empty;
 
-	logic    [63:0] target_PC;
+	//logic    [63:0] target_PC;
 
 	assign ifb_en = ~ifb2if_full && Imem_valid;
 

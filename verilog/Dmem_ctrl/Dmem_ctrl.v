@@ -185,7 +185,7 @@ module Dmem_ctrl(
 			end
 		end
 		if (bus_rsp_vld_i) begin
-			for (int i = 0; i < DMEM_MSHR_NUM; i++) begin
+			for (int i = 0; i < `DMEM_MSHR_NUM; i++) begin
 				if (bus_rsp_addr_i == mshr_iss_addr_r[i] && mshr_iss_vld_r[i]) begin
 					mshr_iss_rdy_nxt[i]		= 1'b1;
 					mshr_iss_data_nxt[i]	= bus_rsp_data_i;
@@ -211,7 +211,7 @@ module Dmem_ctrl(
 
 				vld_nxt[bus_req_addr]	= 1'b1;
 				dty_nxt[bus_req_addr]	= 1'b1;
-			end else
+			end else begin
 				Dmem_ctrl_rsp_ack_o = 1'b0;
 				mshr_iss_wr_en		= 1'b0;
 			end

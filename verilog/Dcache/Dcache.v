@@ -63,8 +63,6 @@ module Dcache (
 	);
 
 
-	assign Dcache2lq_addr_o	= {Dctrl2Dcache_mshr_wr_tag, Dctrl2Dcache_sq_wr_idx, 3'h0};
-
 	// signals between Dcachemem and Dcache_ctrl
 	logic										Dctrl2Dcache_sq_wr_en;
 	logic		[`DCACHE_TAG_W-1:0]				Dctrl2Dcache_sq_wr_tag;
@@ -101,6 +99,9 @@ module Dcache (
 	logic		[`DCACHE_IDX_W-1:0]				Dctrl2Dcache_bus_idx;
 	logic		[`DCACHE_WORD_IN_BITS-1:0]		Dcache2Dctrl_bus_data;
 	logic										Dcache2Dctrl_bus_hit;
+
+	// 
+	assign Dcache2lq_addr_o	= {Dctrl2Dcache_mshr_wr_tag, Dctrl2Dcache_mshr_wr_idx, 3'h0};
 
 
 	// Dcachemem instantiation

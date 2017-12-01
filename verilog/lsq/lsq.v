@@ -119,6 +119,10 @@ module lsq (
 	logic										ld_miss;
 	logic										lq_com_rdy;
 
+
+	parameter IDLE = 1'b0,
+			  BUSY = 1'b1;
+
 	// --------------------- Store Queue ------------------------------
 	assign sq_head_msb_r = sq_head_q_r[`SQ_IDX_W];
 	assign sq_head_r = sq_head_q_r[`SQ_IDX_W-1:0];
@@ -240,8 +244,8 @@ module lsq (
 	end
 
 	// ---------------------- Load Queue ----------------------------
-	parameter IDLE = 1'b0,
-			  BUSY = 1'b1;
+//	parameter IDLE = 1'b0,
+//			  BUSY = 1'b1;
 
 	always_comb begin
 		if (ld_miss & ~Dcache_mshr_ld_ack_i) begin
@@ -314,7 +318,6 @@ module lsq (
 			lq_rdy_r_nxt[lq_tail_r]		= 1'b0;
 			lq_vld_r_nxt[lq_tail_r]		= 1'b1;
 		end
-ld_iss_en
 		if (Dcache_mshr_vld_i) begin
 			for (int k = 0; k < `LQ_ENT_NUM; k = k + 1) begin
 				if ((lq_addr_r[k] == Dcache_mshr_addr_i) && lq_vld_r[k]) begin
@@ -328,9 +331,10 @@ ld_iss_en
 	always_comb begin
 		lq_br_mask_r_nxt = lq_br_mask_r;
 
-		if (rob_br_recovery_i && ((lq_br_mask_r[k] & rob_br_tag_fix_i) != 0))
+		if (rob_br_recovery_i)
 			for (int k = 0; k < `LQ_ENT_NUM; k = k + 1)
-				lq_br_mask_r_nxt[k]		= 0;
+				if ((lq_br_mask_r[k] & rob_br_tag_fix_i) != 0)
+					lq_br_mask_r_nxt[k]		= 0;
 		else if (rob_br_pred_correct_i)
 			for (int k = 0; k < `LQ_ENT_NUM; k = k + 1)
 				lq_br_mask_r_nxt[k]		= lq_br_mask_r[k] & ~rob_br_tag_fix_i;
