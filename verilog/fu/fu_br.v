@@ -37,6 +37,7 @@ module fu_br (
 		input		[31:0]  		inst_i,
 		input		[`PRF_IDX_W-1:0]dest_tag_i,
 		input		[`ROB_IDX_W:0]	rob_idx_i,
+		input						rob_br_recovery_i,
 
 		output	logic					done_o,
 		//output	logic	[63:0]		br_target_o,
@@ -121,7 +122,7 @@ module fu_br (
 			dest_tag_o	<= `SD 0;
 			rob_idx_o	<= `SD 0;
             br_pc_o     <= `SD 0;
-		end else begin
+		end else if (~rob_br_recovery_i) begin
 			done_o 		<= `SD start_i;
 			br_result_o <= `SD br_result_nxt;
 			br_wr_en_o	<= `SD br_wr_en_nxt;

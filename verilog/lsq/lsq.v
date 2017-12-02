@@ -247,7 +247,7 @@ module lsq (
 
 	// ---------------------- Load Queue ----------------------------
 	always_comb begin
-		if (~Dcache_hit_i & ~Dcache_mshr_ld_ack_i) begin
+		if (ld_vld_i & ~Dcache_hit_i & ~Dcache_mshr_ld_ack_i) begin
 			ld_addr_hold_r_state_nxt = BUSY;
 			ld_addr_hold_r_nxt = addr_i;
 		end else if (Dcache_mshr_ld_ack_i) begin

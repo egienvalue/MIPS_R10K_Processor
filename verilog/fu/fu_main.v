@@ -217,11 +217,12 @@ module fu_main(
 			.inst_i					(rs2fu_IR_i),
 			.dest_tag_i				(rs2fu_dest_tag_i),
 			.rob_idx_i				(rs2fu_rob_idx_i),
+			.rob_br_recovery_i		(rob_br_recovery_i),
 			.done_o					(br_done),
 			//.br_target_o			(br_target),
 			.br_result_o			(br_taken),
 			.br_wr_en_o				(br_wr_en),
-			.dest_tag_o				(br_dest_tag)
+			.dest_tag_o				(br_dest_tag),
 			.rob_idx_o				(br_rob_idx),
             .br_pc_o				(br_pc),
 
