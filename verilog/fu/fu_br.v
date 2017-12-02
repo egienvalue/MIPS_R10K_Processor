@@ -35,11 +35,14 @@ module fu_br (
 		input		[63:0]  		npc_i,
 		input		[63:0]  		opa_i,//reg A value
 		input		[31:0]  		inst_i,
+		input		[`PRF_IDX_W-1:0]dest_tag_i,
 		input		[`ROB_IDX_W:0]	rob_idx_i,
 
 		output	logic					done_o,
 		//output	logic	[63:0]		br_target_o,
 		output	logic					br_result_o,
+		output	logic					br_wr_en_o,
+		output	logic	[`PRF_IDX_W-1:0]dest_tag_o,
 		output	logic	[`ROB_IDX_W:0]	rob_idx_o,
         output  logic   [63:0]      	br_pc_o,
 
@@ -55,6 +58,7 @@ module fu_br (
 		logic			cond_br;
 		logic	[63:0]	br_target_nxt;
 		logic   		br_result_nxt;
+		logic			br_wr_en_nxt;
 		logic			brcond_result;
 		//logic	[`ROB_IDX_W-1:0]	rob_idx_r;
 		logic	[`ROB_IDX_W:0]		rob_idx_nxt;
@@ -74,6 +78,7 @@ module fu_br (
 
 	always_comb begin
         
+		br_wr_en_nxt = 0;
         br_target_nxt = npc_i;
         cond_br = 0;
 		case({inst_i[31:29], 3'b0})
@@ -89,6 +94,7 @@ module fu_br (
 						`BR_INST, `BSR_INST: 
 							begin
 								cond_br  = 0;
+								br_wr_en_nxt = 1;
 							end
 						default: 
 							begin
@@ -110,13 +116,17 @@ module fu_br (
 		if(rst) begin
 			done_o 		<= `SD 0;
 			br_result_o <= `SD 0;
+			br_wr_en_o	<= `SD 0;
 			//br_target_o <= `SD 0;
+			dest_tag_o	<= `SD 0;
 			rob_idx_o	<= `SD 0;
             br_pc_o     <= `SD 0;
 		end else begin
 			done_o 		<= `SD start_i;
 			br_result_o <= `SD br_result_nxt;
+			br_wr_en_o	<= `SD br_wr_en_nxt;
 			//br_target_o <= `SD br_target_nxt;
+			dest_tag_o	<= `SD dest_tag_i;
 			rob_idx_o	<= `SD rob_idx_nxt;
             br_pc_o     <= `SD npc_i;
 		end

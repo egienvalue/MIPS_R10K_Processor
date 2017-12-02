@@ -40,6 +40,7 @@ module lsq (
 		input								rob_br_recovery_i,
 		input								rob_br_pred_correct_i,
 		input			[`BR_MASK_W-1:0]	rob_br_tag_fix_i,
+		input								fu_br_done_i,
 
 		// output signals
 		output	logic	[`SQ_IDX_W:0]		lsq_sq_tail_o,
@@ -246,7 +247,7 @@ module lsq (
 
 	// ---------------------- Load Queue ----------------------------
 	always_comb begin
-		if (ld_miss & ~Dcache_mshr_ld_ack_i) begin
+		if (~Dcache_hit_i & ~Dcache_mshr_ld_ack_i) begin
 			ld_addr_hold_r_state_nxt = BUSY;
 			ld_addr_hold_r_nxt = addr_i;
 		end else if (Dcache_mshr_ld_ack_i) begin
@@ -274,7 +275,7 @@ module lsq (
 	assign lq_tail_msb_r = lq_tail_q_r[`LQ_IDX_W];
 	assign lq_tail_r = lq_tail_q_r[`LQ_IDX_W-1:0];
 
-	assign lq_head_q_r_nxt = (lq_com_rdy & ~rob_br_recovery_i | ~lq_vld_r[lq_head_r]) ? lq_head_q_r + 1 : lq_head_q_r;//
+	assign lq_head_q_r_nxt = (lq_com_rdy & ~fu_br_done_i | ~lq_vld_r[lq_head_r]) ? lq_head_q_r + 1 : lq_head_q_r;//
 
 	assign lq_tail_q_r_nxt = rob_br_recovery_i ? lq_tail_q_r :
 							 ld_miss ? lq_tail_q_r + 1 : lq_tail_q_r;

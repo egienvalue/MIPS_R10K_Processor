@@ -82,6 +82,8 @@ module fu_main(
 	logic							br_done;
 	//logic		[63:0]				br_target;
 	logic							br_taken;
+	logic							br_wr_en;
+	logic		[`PRF_IDX_W-1:0]	br_dest_tag;
 	logic		[`ROB_IDX_W:0] 		br_rob_idx;
     logic       [63:0]              br_pc;
 	
@@ -139,7 +141,11 @@ module fu_main(
 	end
 
 	always_comb begin
-		if (lsq_lq_com_rdy_delay1) begin
+		if (br_wr_en) begin
+			cdb_tag				= br_dest_tag;
+			cdb_vld				= 1;
+			fu2preg_wr_value	= br_pc;
+		end else if (lsq_lq_com_rdy_delay1) begin
 			cdb_tag				= ld_dest_tag;
 			cdb_vld				= 1;
 			fu2preg_wr_value	= ld_result;
@@ -209,10 +215,13 @@ module fu_main(
 			.npc_i					(rob2fu_NPC_i),
 			.opa_i					(prf2fu_ra_value_i),
 			.inst_i					(rs2fu_IR_i),
+			.dest_tag_i				(rs2fu_dest_tag_i),
 			.rob_idx_i				(rs2fu_rob_idx_i),
 			.done_o					(br_done),
 			//.br_target_o			(br_target),
 			.br_result_o			(br_taken),
+			.br_wr_en_o				(br_wr_en),
+			.dest_tag_o				(br_dest_tag)
 			.rob_idx_o				(br_rob_idx),
             .br_pc_o				(br_pc),
 
@@ -276,6 +285,7 @@ module fu_main(
 		.rob_br_recovery_i		(rob_br_recovery_i),
 		.rob_br_pred_correct_i	(rob_br_pred_correct_i),
 		.rob_br_tag_fix_i		(rob_br_tag_fix_i),
+		.fu_br_done_i			(br2rob_done),
 
 		.stall_i				(lsq_lq_com_rdy_stall),
 
