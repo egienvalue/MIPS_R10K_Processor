@@ -199,7 +199,7 @@ module rs (
 	endgenerate
 
 	// -------------------------- Dispatch --------------------------------
-	assign dp_en = id_inst_vld_i & ~stall_dp_i & ~rob_br_recovery_i;
+	assign dp_en = ~stall_dp_i & ~rob_br_recovery_i;
 
 	assign load_vec = ~dp_en ? 0 :
 			  rs_full ? iss_vec : load_vec_without_forward;

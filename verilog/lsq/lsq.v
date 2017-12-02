@@ -50,6 +50,7 @@ module lsq (
 		output	logic	[63:0]				lsq2Dcache_st_addr_o,
 		output	logic	[63:0]				lsq2Dcache_st_data_o,
 		output	logic						lsq2Dcache_st_en_o,
+		output	logic						lsq_ld_done_o,
 		output	logic	[63:0]				lsq_ld_data_o,
 		output	logic	[`ROB_IDX_W:0]		lsq_ld_rob_idx_o,
 		output	logic	[`PRF_IDX_W-1:0]	lsq_ld_dest_tag_o,
@@ -286,7 +287,9 @@ module lsq (
 
 	assign lsq_lq_com_rdy_o = lq_com_rdy & lq_vld_r[lq_head_r];
 
-	assign ld_miss = ld_vld_i & ~Dcache_hit_i & ~st2ld_forward_vld;//
+	assign lsq_ld_done_o = Dcache_hit_i | st2ld_forward_vld;
+
+	assign ld_miss = ld_vld_i & ~lsq_ld_done_o;//
 
 	assign lsq2Dcache_ld_addr_o = ld_vld_i ? addr_i : ld_addr_hold_r;
 

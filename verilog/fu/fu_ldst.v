@@ -72,7 +72,6 @@ module fu_ldst(
 
 		assign mem_disp			= { {48{inst_i[15]}}, inst_i[15:0] };
 		assign addr				= opb_i + mem_disp;
-		assign ld_done			= Dcache_hit_i;
 		assign st_done			= st_vld_i;
 
 		// synopsys sync_set_reset "rst"
@@ -140,6 +139,7 @@ module fu_ldst(
 				.lsq2Dcache_st_addr_o	(lsq2Dcache_st_addr_o),
 				.lsq2Dcache_st_data_o	(lsq2Dcache_st_data_o),
 				.lsq2Dcache_st_en_o		(lsq2Dcache_st_en_o),
+				.lsq_ld_done_o			(ld_done),
 				.lsq_ld_data_o			(result),
 				.lsq_ld_rob_idx_o		(rob_idx),
 				.lsq_ld_dest_tag_o		(dest_tag),

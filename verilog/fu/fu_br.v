@@ -95,7 +95,7 @@ module fu_br (
 						`BR_INST, `BSR_INST: 
 							begin
 								cond_br  = 0;
-								br_wr_en_nxt = 1;
+								br_wr_en_nxt = (dest_tag_i == `ZERO_REG) ? 1'b0 : 1'b1;
 							end
 						default: 
 							begin
