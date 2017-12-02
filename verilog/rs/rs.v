@@ -141,17 +141,7 @@ module rs (
 			rs_iss_rob_idx_o	<= `SD 0;
 			rs_iss_br_mask_o	<= `SD 0;
 			rs_iss_sq_position_o	<= `SD 0;
-		end else if (rob_br_recovery_i) begin
-			rs_iss_vld_o		<= `SD 1'b0;
-			rs_iss_opa_tag_o	<= `SD 0;
-			rs_iss_opb_tag_o	<= `SD 0;
-			rs_iss_dest_tag_o	<= `SD 0;
-			rs_iss_fu_sel_o		<= `SD `FU_SEL_NONE;
-			rs_iss_IR_o		<= `SD 0;
-			rs_iss_rob_idx_o	<= `SD 0;
-			rs_iss_br_mask_o	<= `SD 0;
-			rs_iss_sq_position_o	<= `SD 0;
-		end else if (~lsq_lq_com_rdy_stall_i) begin
+		end else if (~lsq_lq_com_rdy_stall_i & ~rob_br_recovery_i) begin
 			rs_iss_vld_o		<= `SD rs_iss_vld;
 			rs_iss_opa_tag_o	<= `SD rs_iss_opa_tag;
 			rs_iss_opb_tag_o	<= `SD rs_iss_opb_tag;
