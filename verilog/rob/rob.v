@@ -6,11 +6,9 @@
 // 	intial creation: 10/17/2017
 // 	<11/11> added IR and vld bit fields in rob - Hengfei
 // 	<12/1>  added output rob_head_st_instr_o, for SQ
+// 	<12/1>  added br_recovery_mark_r for only one cycle br_recovery signal
 // 	***************************************************************************
 
-// Comments by hengfei: please test your module every time after you edit
-// it!!! very important!!! I can see some bugs by just looking this module.
-// labeled with "!!!". Delete this comment after you make them right
 
 //`define DEBUG_OUT
 
@@ -171,6 +169,8 @@ module	rob (
 	logic						fu_br_taken_r_nxt;
 	logic						fu_done_r_nxt;
 
+	logic						br_recovery_mark_r; // <12/1>
+
 	wire dispatch_en					= rob_dispatch_en_i;
 	// <11/14>
 	wire br_predict_wrong				= ((br_pretaken_r[br_recovery_idx_i[`ROB_IDX_W-1:0]] != br_recovery_taken_i) |
@@ -196,7 +196,7 @@ module	rob (
                 br_right_o          = 0;
 				br_recovery_mask_o  = br_mask_r[br_recovery_idx_i[`ROB_IDX_W-1:0]];
                 rob2fl_recover_head_o = fl_cur_head_r[br_recovery_idx_i[`ROB_IDX_W-1:0]];
-				br_recovery_rdy_o   = 1;
+				br_recovery_rdy_o   = br_recovery_mark_r; // depends on mark <12/1>
 			end else begin
                 br_right_o          = 1;
 				br_recovery_mask_o  = br_mask_r[br_recovery_idx_i[`ROB_IDX_W-1:0]];
@@ -371,6 +371,21 @@ module	rob (
 	
 	`endif
 
+	// <12/1>
+	// synopsys sync_set_rest "rst"
+	always_ff @(posedge clk) begin
+		if (rst) begin
+			br_recovery_mark_r	<= `SD 1'b1;
+		end else begin
+			if (br_recovery_rdy_o)
+				br_recovery_mark_r	<= `SD 1'b0;
+			else 
+				br_recovery_mark_r	<= `SD 1'b1;
+		end
+	end
+
+
+
 	always_ff @(posedge clk) begin
 		if (rst) begin
 			head_r			<= `SD 0;
@@ -434,7 +449,9 @@ module	rob (
 
 			br_taken_r[fu2rob_idx_i[`HT_W-1:0]]	<= `SD fu_br_taken_r_nxt;
 			done_r[fu2rob_idx_i[`HT_W-1:0]]		<= `SD fu_done_r_nxt;
-			
 		end 
-	end	
+	end
+	
+
 endmodule
+
