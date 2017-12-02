@@ -52,11 +52,14 @@ module lsq (
 		output	logic	[63:0]				lsq_ld_data_o,
 		output	logic	[`ROB_IDX_W:0]		lsq_ld_rob_idx_o,
 		output	logic	[`PRF_IDX_W-1:0]	lsq_ld_dest_tag_o,
+		output	logic	[`BR_MASK_W-1:0]	lsq_ld_br_mask_o,
 		output	logic						lsq_lq_com_rdy_o,
 		output	logic						lsq_sq_full_o
 );
 
 	// ------------------ Internal Signals ---------------------
+	parameter IDLE = 1'b0,
+			  BUSY = 1'b1;
 	// store queue registers
 	logic	[`SQ_ENT_NUM-1:0][`ADDR_W-1:0]		st_addr_r;
 	logic	[`SQ_ENT_NUM-1:0]					st_addr_vld_r;
@@ -119,10 +122,6 @@ module lsq (
 	logic										ld_miss;
 	logic										lq_com_rdy;
 
-
-	parameter IDLE = 1'b0,
-			  BUSY = 1'b1;
-
 	// --------------------- Store Queue ------------------------------
 	assign sq_head_msb_r = sq_head_q_r[`SQ_IDX_W];
 	assign sq_head_r = sq_head_q_r[`SQ_IDX_W-1:0];
@@ -154,6 +153,8 @@ module lsq (
 
 	always_comb begin
 		st_addr_vld_r_nxt = st_addr_vld_r;
+		if (dp_en_i)
+			st_addr_vld_r_nxt[sq_tail_r] = 1'b0;
 		
 		if (st_vld_i)
 			st_addr_vld_r_nxt[sq_idx_i] = 1'b1;
@@ -161,8 +162,6 @@ module lsq (
 		if (sq_retire_en)
 			st_addr_vld_r_nxt[sq_head_r] = 1'b0;
 
-		if (dp_en_i)
-			st_addr_vld_r_nxt[sq_tail_r] = 1'b0;
 	end
 
 	always_comb begin
@@ -185,15 +184,17 @@ module lsq (
 	// synopsys sync_set_reset "rst"
 	always_ff @(posedge clk) begin
 		if (rst) begin
-			sq_head_q_r		<= `SD 0;
-			sq_tail_q_r		<= `SD 0;
-			st_addr_vld_r	<= `SD 0;
-			st_retire_rdy_r	<= `SD 0;
+			sq_head_q_r			<= `SD 0;
+			sq_tail_q_r			<= `SD 0;
+			sq_retire_head_q_r	<= `SD 0;//
+			st_addr_vld_r		<= `SD 0;
+			st_retire_rdy_r		<= `SD 0;
 		end else begin
-			sq_head_q_r		<= `SD sq_head_q_r_nxt;
-			sq_tail_q_r		<= `SD sq_tail_q_r_nxt;
-			st_addr_vld_r	<= `SD st_addr_vld_r_nxt;
-			st_retire_rdy_r	<= `SD st_retire_rdy_r_nxt;
+			sq_head_q_r			<= `SD sq_head_q_r_nxt;
+			sq_tail_q_r			<= `SD sq_tail_q_r_nxt;
+			sq_retire_head_q_r	<= `SD sq_retire_head_q_r_nxt;//
+			st_addr_vld_r		<= `SD st_addr_vld_r_nxt;
+			st_retire_rdy_r		<= `SD st_retire_rdy_r_nxt;
 		end
 	end
 
@@ -244,9 +245,6 @@ module lsq (
 	end
 
 	// ---------------------- Load Queue ----------------------------
-//	parameter IDLE = 1'b0,
-//			  BUSY = 1'b1;
-
 	always_comb begin
 		if (ld_miss & ~Dcache_mshr_ld_ack_i) begin
 			ld_addr_hold_r_state_nxt = BUSY;
@@ -276,9 +274,9 @@ module lsq (
 	assign lq_tail_msb_r = lq_tail_q_r[`LQ_IDX_W];
 	assign lq_tail_r = lq_tail_q_r[`LQ_IDX_W-1:0];
 
-	assign lq_head_q_r_nxt = (lq_com_rdy & ~rob_br_recovery_i) ? lq_head_q_r + 1 : lq_head_q_r;
+	assign lq_head_q_r_nxt = (lq_com_rdy & ~rob_br_recovery_i | ~lq_vld_r[lq_head_r]) ? lq_head_q_r + 1 : lq_head_q_r;//
 
-	assign lq_tail_q_r_nxt = rob_br_recovery_i ? bs_sq_tail_recovery_i :
+	assign lq_tail_q_r_nxt = rob_br_recovery_i ? lq_tail_q_r :
 							 ld_miss ? lq_tail_q_r + 1 : lq_tail_q_r;
 
 	assign lq_head_match = Dcache_mshr_vld_i && (Dcache_mshr_addr_i == lq_addr_r[lq_head_r]);
@@ -301,6 +299,8 @@ module lsq (
 	assign lsq_ld_rob_idx_o = lsq_lq_com_rdy_o ? lq_rob_idx_r[lq_head_r] : rob_idx_i;
 
 	assign lsq_ld_dest_tag_o = lsq_lq_com_rdy_o ? lq_dest_tag_r[lq_head_r] : dest_tag_i;
+
+	assign lsq_ld_br_mask_o = lsq_lq_com_rdy_o ? lq_br_mask_r[lq_head_r] : bs_br_mask_i;
 
 	assign lq_full = (lq_head_r == lq_tail_r) && (lq_head_msb_r != lq_tail_msb_r);
 

@@ -277,6 +277,8 @@ module fu_main(
 		.rob_br_pred_correct_i	(rob_br_pred_correct_i),
 		.rob_br_tag_fix_i		(rob_br_tag_fix_i),
 
+		.stall_i				(lsq_lq_com_rdy_stall),
+
 		.result_o				(ld_result),
 		.dest_tag_o				(ld_dest_tag),
 		.rob_idx_o				(ldst_rob_idx),
@@ -291,6 +293,7 @@ module fu_main(
 		.lsq_lq_com_rdy_o		(lsq_lq_com_rdy),
 		.lsq_sq_full_o			(lsq_sq_full_o),
 
+		.br_mask_o				(ld_br_mask),
 		.st_done_o				(st_done),
 		.ld_done_o				(ld_done)
 	);
