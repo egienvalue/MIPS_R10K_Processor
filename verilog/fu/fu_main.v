@@ -113,7 +113,8 @@ module fu_main(
 
 	assign fu2rob_br_recovery_done_o = br2rob_done;
 
-	assign fu2rob_done_o 		= alu_done | br_done | mult_done | st_done | ld_done | lsq_lq_com_rdy_delay1; // lsq	
+	assign fu2rob_done_o 		= (alu_done | br_done | mult_done | st_done | ld_done | lsq_lq_com_rdy_delay1) && 
+								  ~rob_br_recovery_i; // lsq	
 	assign fu2rob_idx_o			= br_done ? br_rob_idx : 
 								  lsq_lq_com_rdy_delay1 ? ldst_rob_idx :
 	   							  alu_done ? alu_rob_idx :

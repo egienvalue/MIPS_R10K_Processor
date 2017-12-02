@@ -72,7 +72,7 @@ module free_list(
 									retire_en_i		? retire_preg_i : 0;
 
 		//assign free_preg_cur_head_o = dispatch_en_i ? head : 5'b00000;
-		assign free_preg_cur_head_o = {head_msb,head};
+		assign free_preg_cur_head_o = head_conc_nxt; //<12/2> {head_msb,head};
 
 		assign head_conc_nxt = recover_en ? rc_head_i : 
 							   dispatch_en_i ? {head_msb,head} + 1 : {head_msb,head};

@@ -49,10 +49,10 @@ module ifb(
 //fetch stage to insn fetch buffer
 
 //insn fetch buffer to decode stage
-	assign ifb_PC_o   = decode_en_i ? PC_array[ifb_head] : 0;//~decode_en_i ? 0 : PC_array[ifb_head];
-	assign ifb_insn_o = decode_en_i ? insn_array[ifb_head] : 0;//~decode_en_i ? 0 : insn_array[ifb_head];
-	assign ifb_target_PC_o = decode_en_i ? target_PC_r[ifb_head] : 0;
-	assign ifb_pred_bit_o  = decode_en_i ? pred_bit_r[ifb_head] : 0;
+	assign ifb_PC_o			= PC_array[ifb_head];//~decode_en_i ? 0 : PC_array[ifb_head];
+	assign ifb_insn_o		= insn_array[ifb_head];//~decode_en_i ? 0 : insn_array[ifb_head];
+	assign ifb_target_PC_o	= target_PC_r[ifb_head];
+	assign ifb_pred_bit_o 	= pred_bit_r[ifb_head];
 
 	assign ifb_2id_empty_o = ((ifb_head == ifb_tail) && (h_round == t_round));
 	assign ifb_2if_full_o  = ((ifb_tail == ifb_head) && (h_round != t_round));

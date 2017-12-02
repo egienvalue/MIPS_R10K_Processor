@@ -809,7 +809,7 @@ module core (
 
 	assign rs2lsq_sq_idx_i			= rs_iss_sq_position_o;
 	assign rob2lsq_st_retire_en_i	= rob_head_st_instr_o && rob_head_retire_rdy_o;
-	assign st_dp_en_i				= dispatch_en; // !!
+	assign st_dp_en_i				= dispatch_st_en; // !!
 	assign rs_ld_position_i			= rs_sq_position_o;
 	assign rs_iss_ld_position_i		= rs_iss_sq_position_o;
 

@@ -191,23 +191,22 @@ module	rob (
     assign rob2fu_rd_NPC_o              = PC_r[rs2rob_rd_idx_i[`ROB_IDX_W-1:0]]+4; //sent the NPC to branch alu to calculate the branch target
 
 	always_comb begin
+		br_recovery_mask_o  = br_mask_r[br_recovery_idx_i[`ROB_IDX_W-1:0]];
+		rob2fl_recover_head_o = fl_cur_head_r[br_recovery_idx_i[`ROB_IDX_W-1:0]];
 		if(br_flag_r[br_recovery_idx_i[`ROB_IDX_W-1:0]]&br_recovery_done_i)
 			if(br_predict_wrong) begin
                 br_right_o          = 0;
-				br_recovery_mask_o  = br_mask_r[br_recovery_idx_i[`ROB_IDX_W-1:0]];
-                rob2fl_recover_head_o = fl_cur_head_r[br_recovery_idx_i[`ROB_IDX_W-1:0]];
+                //rob2fl_recover_head_o = fl_cur_head_r[br_recovery_idx_i[`ROB_IDX_W-1:0]];
 				br_recovery_rdy_o   = br_recovery_mark_r; // depends on mark <12/1>
 			end else begin
                 br_right_o          = 1;
-				br_recovery_mask_o  = br_mask_r[br_recovery_idx_i[`ROB_IDX_W-1:0]];
-                rob2fl_recover_head_o = 0;
+                //rob2fl_recover_head_o = 0;
 				br_recovery_rdy_o   = 0;
 			end
 		else begin
             br_right_o          = 0;
 			br_recovery_rdy_o   = 0;
-			br_recovery_mask_o  = 0;
-            rob2fl_recover_head_o = 0;
+            //rob2fl_recover_head_o = 0;
 		end
 	end
 
@@ -289,9 +288,8 @@ module	rob (
 				t_done_r_nxt				= done_r[tail_r[`HT_W-1:0]];
 			end
 		end
-
-
 	end
+
 	always_comb begin
 		if(rob_head_retire_rdy_o) begin
 			h_old_dest_tag_r_nxt		= 6'd31;

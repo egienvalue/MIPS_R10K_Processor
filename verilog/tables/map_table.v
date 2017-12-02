@@ -68,8 +68,8 @@ module map_table(
 			assign cdb_match_fd		= cdb_match_found;
 		`endif
 	
-		assign opa_preg_o			= dispatch_en_i ? MAP[opa_areg_idx_i]: 6'b000000;		// Always use original map table here. Copies only for dealing with branch issues.
-		assign opb_preg_o			= dispatch_en_i ? MAP[opb_areg_idx_i]: 6'b000000;
+		assign opa_preg_o			= MAP[opa_areg_idx_i];		// Always use original map table here. Copies only for dealing with branch issues.
+		assign opb_preg_o			= MAP[opb_areg_idx_i];
 
 		//assign opa_preg_rdy_bit_o	= dispatch_en_i ? cdb_match_index==opa_areg_idx_i ? 1 : RDY[opa_areg_idx_i] : 0;
 		//assign opb_preg_rdy_bit_o	= dispatch_en_i ? cdb_match_index==opb_areg_idx_i ? 1 : RDY[opb_areg_idx_i] : 0;
@@ -77,7 +77,8 @@ module map_table(
 		assign opa_preg_rdy_bit_o = RDY[opa_areg_idx_i];
 		assign opb_preg_rdy_bit_o = RDY[opb_areg_idx_i];
 
-		assign dest_old_preg_o		= dispatch_en_i ? MAP[dest_areg_idx_i] : 6'b000000;
+		assign dest_old_preg_o		= MAP[dest_areg_idx_i];
+
 		assign state				= (branch_state_i == `BR_PR_WRONG) ? ROLLBACK : NORMAL; 	// Two different situations. 
 
 		always_comb begin					// Concatenate/pack-up two arrays for output.
@@ -92,9 +93,9 @@ module map_table(
 			case(state)
 				NORMAL:
 				begin
-					if (cdb_set_rdy_bit_en_i && cdb_match_found) begin
+					if (cdb_set_rdy_bit_en_i /*&& cdb_match_found*/) begin
 						for (int i=0; i<`MT_NUM; i++) begin
-							if (i==cdb_match_index) begin
+							if (/*i==cdb_match_index*/MAP[i] == cdb_set_rdy_bit_preg_i) begin
 								next_RDY[i] = 1;
 							end else begin
 								//next_RDY[i] = RDY[i];   // Accordant with the origin.
@@ -103,7 +104,9 @@ module map_table(
 					end else begin
 					end
 					if (dispatch_en_i) begin
-						for (int i=0; i<`MT_NUM; i++) begin
+						next_MAP[dest_areg_idx_i] = new_free_preg_i;
+						next_RDY[dest_areg_idx_i] = 0;
+						/*for (int i=0; i<`MT_NUM; i++) begin
 							if (i==dest_areg_idx_i) begin
 								next_MAP[dest_areg_idx_i] = new_free_preg_i;
 								next_RDY[dest_areg_idx_i] = 0;
@@ -111,8 +114,7 @@ module map_table(
 								//next_MAP[i] = MAP[i];		// Accordant with the origin.
 								//next_RDY[i] = RDY[i];
 							end
-						end
-					end else begin
+						end */
 					end
 				end
 				ROLLBACK:
@@ -123,10 +125,11 @@ module map_table(
 					end
 				end
 			endcase
+			next_MAP[31] = `ZERO_REG;
 			next_RDY[31] = 1; // edited by hengfei ZERO_REG is always ready
 		end
 
-		always_comb begin					// Find index by cdb's tag
+/*		always_comb begin					// Find index by cdb's tag
 			cdb_match_index = 0;
 			cdb_match_found = 0;
 			if(cdb_set_rdy_bit_en_i) begin
@@ -139,7 +142,7 @@ module map_table(
 				end
 			end
 		end
-
+*/
 		always_ff@(posedge clk) begin								// Use for loop going over through every registers to make sequential assignments
 			if (rst) begin
 				for (int i=0; i<`MT_NUM; i++) begin

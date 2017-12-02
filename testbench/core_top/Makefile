@@ -145,11 +145,10 @@ syn_dve:	$(HEADERS) $(SYNFILES) $(TESTBENCH)
 clean:
 	rm -rf simv simv.daidir csrc vcs.key program.out
 	rm -rf vis_simv vis_simv.daidir
-	rm -rf dve*
+	#rm -rf dve*
 	rm -rf syn_simv syn_simv.daidir syn_program.out
 	rm -rf synsimv synsimv.daidir csrc vcdplus.vpd vcs.key synprog.out pipeline.out writeback.out vc_hdrs.h
 	rm -rf ucli.key
-	rm -rf DVEfiles
 	rm -rf ./*.out
 
 nuke:	clean
