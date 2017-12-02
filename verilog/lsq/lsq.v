@@ -139,7 +139,7 @@ module lsq (
 	assign sq_tail_q_r_nxt = rob_br_recovery_i ? bs_sq_tail_recovery_i :
 							 dp_en_i ? (sq_tail_q_r + 1) : sq_tail_q_r;
 
-	assign lsq_sq_tail_o = sq_tail_r;
+	assign lsq_sq_tail_o = sq_tail_q_r;
 
 	assign lsq_ld_iss_en_o = ld_iss_en && ~lq_full && ~Dcache_mshr_stall_i && (ld_addr_hold_r_state_nxt != BUSY);
 

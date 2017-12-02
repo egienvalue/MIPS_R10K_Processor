@@ -412,7 +412,7 @@ module Dcachemem (
 		`endif
 	end
 
-	// synopsys sync_set_rest "rst"
+	// synopsys sync_set_reset "rst"
 	always_ff @(posedge clk) begin
 		if (rst) begin
 			for (int i = 0; i < `DCACHE_WAY_NUM; i++) begin
