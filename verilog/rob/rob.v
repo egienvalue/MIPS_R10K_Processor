@@ -58,7 +58,8 @@ module	rob (
 		output								rob_stall_dp_o,//signal show if the ROB is full
 		output								rob_head_retire_rdy_o,//the head of ROb is ready to retire
 		output								rob_head_st_instr_o,
-
+		//12.02
+		output	logic						rob2lsq_st_retire_en_o,
 		//----------------------------------------------------------------------
 		//Early Recovery Signal Ouput
 		//----------------------------------------------------------------------
@@ -370,7 +371,7 @@ module	rob (
 	`endif
 
 	// <12/1>
-	// synopsys sync_set_rest "rst"
+	// synopsys sync_set_reset "rst"
 	always_ff @(posedge clk) begin
 		if (rst) begin
 			br_recovery_mark_r	<= `SD 1'b1;
