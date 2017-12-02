@@ -38,6 +38,7 @@ module fu_ldst(
 		input								rob_br_recovery_i,
 		input								rob_br_pred_correct_i,
 		input			[`BR_MASK_W-1:0]	rob_br_tag_fix_i,
+		input								fu_br_done_i,
 
 		input								stall_i,
 
@@ -130,6 +131,7 @@ module fu_ldst(
 				.rob_br_recovery_i		(rob_br_recovery_i),
 				.rob_br_pred_correct_i	(rob_br_pred_correct_i),
 				.rob_br_tag_fix_i		(rob_br_tag_fix_i),
+				.fu_br_done_i			(fu_br_done_i),
 
 				.lsq_sq_tail_o			(lsq_sq_tail_o),
 				.lsq_ld_iss_en_o		(lsq_ld_iss_en_o),
