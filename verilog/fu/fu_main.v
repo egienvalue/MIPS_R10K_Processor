@@ -215,6 +215,7 @@ module fu_main(
 			.start_i				(ex_unit_en[1]),
 			.npc_i					(rob2fu_NPC_i),
 			.opa_i					(prf2fu_ra_value_i),
+			.opb_i					(prf2fu_rb_value_i),
 			.inst_i					(rs2fu_IR_i),
 			.dest_tag_i				(rs2fu_dest_tag_i),
 			.rob_idx_i				(rs2fu_rob_idx_i),
