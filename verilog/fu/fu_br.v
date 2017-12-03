@@ -34,6 +34,7 @@ module fu_br (
 		input						start_i,
 		input		[63:0]  		npc_i,
 		input		[63:0]  		opa_i,//reg A value
+		input		[63:0]			opb_i,//reg B value
 		input		[31:0]  		inst_i,
 		input		[`PRF_IDX_W-1:0]dest_tag_i,
 		input		[`ROB_IDX_W:0]	rob_idx_i,
@@ -75,7 +76,6 @@ module fu_br (
 		assign br_disp = { {41{inst_i[20]}}, inst_i[20:0], 2'b00 };
 		assign br_result_nxt = (~cond_br) ? 1 : brcond_result;
 		assign rob_idx_nxt = rob_idx_i;
-		wire    [4:0] rb_idx = inst_i[20:16];	
 
 	always_comb begin
         
@@ -85,7 +85,8 @@ module fu_br (
 		case({inst_i[31:29], 3'b0})
 			6'h18:// JMP, JSR, RET, and JSR_CO
 				begin
-					br_target_nxt = {rb_idx[4:2],2'b00};
+					br_target_nxt = {opb_i[63:2], 2'b00};
+					br_wr_en_nxt = (dest_tag_i == `ZERO_REG) ? 1'b0 : 1'b1;
 					cond_br  = 0;
 				end
 			6'h30, 6'h38:
