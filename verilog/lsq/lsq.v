@@ -248,7 +248,7 @@ module lsq (
 
 	// ---------------------- Load Queue ----------------------------
 	always_comb begin
-		if (ld_vld_i & ~Dcache_hit_i & ~Dcache_mshr_ld_ack_i) begin
+		if (ld_vld_i & ~lsq_ld_done_o & ~Dcache_mshr_ld_ack_i) begin
 			ld_addr_hold_r_state_nxt = BUSY;
 			ld_addr_hold_r_nxt = addr_i;
 		end else if (Dcache_mshr_ld_ack_i) begin
@@ -293,7 +293,7 @@ module lsq (
 
 	assign lsq2Dcache_ld_addr_o = ld_vld_i ? addr_i : ld_addr_hold_r;
 
-	assign lsq2Dcache_ld_en_o = (ld_vld_i || (ld_addr_hold_r_state == BUSY)) && ~Dcache_mshr_vld_i;
+	assign lsq2Dcache_ld_en_o = (ld_vld_i || (ld_addr_hold_r_state == BUSY)) && ~lsq_lq_com_rdy_o;
 
 	assign lsq_ld_data_o = (lq_head_match & lq_vld_r[lq_head_r]) ? Dcache_data_i :
 		                   (lq_rdy_r[lq_head_r] & lq_vld_r[lq_head_r]) ? lq_data_r[lq_head_r] :
@@ -375,7 +375,11 @@ module lsq (
 
 	// synopsys sync_set_reset "rst"
 	always_ff @(posedge clk) begin
-		if (ld_miss) begin
+		if (rst) begin
+			lq_addr_r					<= `SD 'b0;
+			lq_rob_idx_r				<= `SD 'b0;
+			lq_dest_tag_r				<= `SD 'b0;
+		end else if (ld_miss) begin
 			lq_addr_r[lq_tail_r]		<= `SD addr_i;
 			lq_rob_idx_r[lq_tail_r]		<= `SD rob_idx_i;
 			lq_dest_tag_r[lq_tail_r]	<= `SD dest_tag_i;

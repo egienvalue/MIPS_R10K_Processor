@@ -64,10 +64,11 @@ module mshr_iss (
 		mshr_iss_lq_hit_data_o		= 64'h0;
 		mshr_iss_lq_hit_message_o	= NONE;
 		for (int i = 0; i < `MSHR_NUM; i++) begin
-			if (vld_r[i] && tag_r[i] == lq2mshr_iss_tag_i && idx_r[i] == lq2mshr_iss_idx_i)
+			if (vld_r[i] && tag_r[i] == lq2mshr_iss_tag_i && idx_r[i] == lq2mshr_iss_idx_i) begin
 				mshr_iss_lq_hit_o			= 1'b1;
 				mshr_iss_lq_hit_data_o		= data_r[i];
 				mshr_iss_lq_hit_message_o	= message_r[i];
+			end
 		end
 	end
 

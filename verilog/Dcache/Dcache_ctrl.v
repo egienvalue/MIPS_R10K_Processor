@@ -187,8 +187,8 @@ module Dcache_ctrl (
 	assign Dctrl2lq_data_vld_o		= Dcache_lq_rd_hit_i | (mshr_iss_lq_hit && mshr_iss_lq_hit_message == GET_M) |
 	 								 (mshr_rsp_lq_fwd && mshr_rsp_wr_en_o);
 	assign Dctrl2lq_mshr_data_vld_o = mshr_rsp_wr_en_o;
-	assign Dctrl2lq_data_o			= Dctrl2lq_mshr_data_vld_o ? bus2Dctrl_rsp_data_i : 
-									 (mshr_iss_lq_hit && mshr_iss_lq_hit_message == GET_M) ? mshr_iss_lq_hit_data : 
+	assign Dctrl2lq_data_o			= (mshr_iss_lq_hit && mshr_iss_lq_hit_message == GET_M) ? mshr_iss_lq_hit_data : 
+									  Dctrl2lq_mshr_data_vld_o ? bus2Dctrl_rsp_data_i :
 									 (Dcache_lq_rd_hit_i) ? Dcache_lq_rd_data_i : 64'h0;
 	
 

@@ -32,9 +32,9 @@ module br_mask_ctrl(
 		input	[`BR_STATE_W-1:0]	br_state_i,		//[ROB]			Branch prediction wrong or correct?		
 		input	[`BR_MASK_W-1:0]	br_dep_mask_i,	//[ROB]			The mask of currently resolved branch.
 		
-		output	[`BR_MASK_W-1:0]	br_mask_o,		//[ROB][Stacks]			Send current mask value to ROB to save in an ROB entry.
-		output	[`BR_MASK_W-1:0]	br_bit_o,		//[RS]			Output corresponding branch bit immediately after knowing wrong or correct. 
-		output						full_o			//[ROB]			Tell ROB that stack is full and no further branch dispatch is allowed. 
+		output logic	[`BR_MASK_W-1:0]	br_mask_o,		//[ROB][Stacks]			Send current mask value to ROB to save in an ROB entry.
+		output logic	[`BR_MASK_W-1:0]	br_bit_o,		//[RS]			Output corresponding branch bit immediately after knowing wrong or correct. 
+		output logic						full_o			//[ROB]			Tell ROB that stack is full and no further branch dispatch is allowed. 
 		);
 
 		task first_zero_idx;							// Task finding the first zero in a mask
@@ -63,28 +63,33 @@ module br_mask_ctrl(
 
 		assign full			= (mask == {`BR_MASK_W{1'b1}}) ? 1:0;
 		assign full_o		= full;
-		assign br_mask_o	= mask;										// Assign current branch mask output
+		//assign br_mask_o	= mask;										// Assign current branch mask output
 		assign br_bit_o		= br_bit;
-		assign is_save_br	= is_br_i && (is_cond_i || ((~is_cond_i) && (~is_taken_i))); 
+		assign is_save_br	= is_br_i;// && (is_cond_i || ((~is_cond_i) && (~is_taken_i))); 
 
 		always_comb begin												// Assign br_bit_idx and next_mask. Assign next_mask under the condition of br_state_i (wrong or correct?)
 			if (br_state_i == `BR_PR_WRONG) begin
 				first_zero_idx(br_dep_mask_i, br_bit_idx, br_bit); 
 				next_mask = (mask & br_dep_mask_i);
+				br_mask_o = mask;
 			end else if (br_state_i == `BR_PR_CORRECT && ~is_save_br) begin
 				first_zero_idx(br_dep_mask_i, br_bit_idx, br_bit); 
-				next_mask = mask ^ br_bit;				
+				next_mask = mask ^ br_bit;	
+				br_mask_o = mask;			
 			end else if (br_state_i == `BR_PR_CORRECT && is_save_br) begin
 				first_zero_idx(br_dep_mask_i, br_bit_idx, br_bit); 
 				first_zero_idx(mask ^ br_bit, temp_bit_idx, temp_bit); 
 				next_mask = mask ^ br_bit ^ temp_bit;
+				br_mask_o = mask ^ br_bit;
 			end else if (is_save_br) begin
 				first_zero_idx(mask, temp_bit_idx, temp_bit);
 				next_mask = mask ^ temp_bit;
 				br_bit = 0;
+				br_mask_o = mask;
 			end else begin
 				next_mask = mask;
 				br_bit = 0;
+				br_mask_o = mask;
 			end
 		end
 	
