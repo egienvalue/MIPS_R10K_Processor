@@ -75,11 +75,11 @@ module Dmem_ctrl(
 
 	// mshr response registers, receive data from Dmem
 	logic	[`DMEM_MSHR_NUM-1:0]					mshr_rsp_vld_r;
-	logic	[`DMEM_MSHR_NUM-1:0][1:0]				mshr_rsp_tag_r;
+	logic	[`DMEM_MSHR_NUM-1:0][3:0]				mshr_rsp_tag_r;
 	logic	[`DMEM_MSHR_NUM-1:0][`RSP_Q_PTR_W-1:0]	mshr_rsp_ptr_r; // BUS queue ptr
 	
 	logic	[`DMEM_MSHR_NUM-1:0]					mshr_rsp_vld_nxt;
-	logic	[`DMEM_MSHR_NUM-1:0][1:0]				mshr_rsp_tag_nxt;
+	logic	[`DMEM_MSHR_NUM-1:0][3:0]				mshr_rsp_tag_nxt;
 	logic	[`DMEM_MSHR_NUM-1:0][`RSP_Q_PTR_W-1:0]	mshr_rsp_ptr_nxt; // BUS queue ptr
 
 	logic	[`DMEM_MSHR_IDX_W-1:0]					mshr_rsp_head_r;
@@ -175,9 +175,16 @@ module Dmem_ctrl(
 				mshr_iss_data_nxt[mshr_iss_tail_r]	= 64'h0;
 				mshr_iss_addr_nxt[mshr_iss_tail_r]	= bus_req_addr;
 				mshr_iss_ptr_nxt[mshr_iss_tail_r]	= bus_rsp_ptr_i;
-			end else begin
+			end else if (bus_req_message_i == GET_S) begin // M->S_D, wait data
 				mshr_iss_vld_nxt[mshr_iss_tail_r]	= 1'b1;
-				mshr_iss_rdy_nxt[mshr_iss_tail_r]	= 1'b0; // wait for data
+				mshr_iss_rdy_nxt[mshr_iss_tail_r]	= 1'b0; // wait data
+				mshr_iss_cmd_nxt[mshr_iss_tail_r]	= `BUS_STORE;
+				mshr_iss_data_nxt[mshr_iss_tail_r]	= 64'h0; // bus_req_data_i;
+				mshr_iss_addr_nxt[mshr_iss_tail_r]	= bus_req_addr;
+				mshr_iss_ptr_nxt[mshr_iss_tail_r]	= bus_rsp_ptr_i;
+			end else begin // PUT_M, M->I_D, wait for data, but data is along with req
+				mshr_iss_vld_nxt[mshr_iss_tail_r]	= 1'b1;
+				mshr_iss_rdy_nxt[mshr_iss_tail_r]	= 1'b1; // data rdy with req
 				mshr_iss_cmd_nxt[mshr_iss_tail_r]	= `BUS_STORE;
 				mshr_iss_data_nxt[mshr_iss_tail_r]	= bus_req_data_i;
 				mshr_iss_addr_nxt[mshr_iss_tail_r]	= bus_req_addr;
@@ -229,7 +236,7 @@ module Dmem_ctrl(
 		// State M
 		end else if (bus_req_dty) begin
 			if (bus_req_message_i == PUT_M) begin
-				Dmem_ctrl_rsp_ack_o	= ~mshr_iss_stall; // M->I_D, wait data
+				Dmem_ctrl_rsp_ack_o	= ~mshr_iss_stall; // M->I_D, wait for data, right rdy
 				mshr_iss_wr_en		= ~mshr_iss_stall; // allocate a ST entry
 
 				vld_nxt[bus_req_addr]	= mshr_iss_stall;
@@ -278,7 +285,7 @@ module Dmem_ctrl(
 		if (mshr_rsp_wr_en) begin
 			mshr_rsp_vld_nxt[mshr_rsp_tail_r]	= 1'b1;
             mshr_rsp_tag_nxt[mshr_rsp_tail_r]	= Dmem2proc_response_i;
-            mshr_rsp_ptr_nxt[mshr_rsp_tail_r]	= mshr_iss_ptr_r[mshr_rsp_head_r];
+            mshr_rsp_ptr_nxt[mshr_rsp_tail_r]	= mshr_iss_ptr_r[mshr_iss_head_r];
 		end
 
 	end

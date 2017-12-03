@@ -151,8 +151,8 @@ typedef enum logic[1:0] {
 `define			EX_CYCLES_MAX		4
 `define			EX_CYCLES_ALU		1
 `define			EX_CYCLES_BRANCH	1
-`define			EX_CYCLES_LOAD		2
-`define			EX_CYCLES_STORE		2
+`define			EX_CYCLES_LOAD		1
+`define			EX_CYCLES_STORE		1
 `define			EX_CYCLES_MULT		4
 
 `define			BR_MASK_W			5

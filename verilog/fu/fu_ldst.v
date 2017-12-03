@@ -90,7 +90,7 @@ module fu_ldst(
 					ld_done_o		<= `SD 1'b0;
 					st_done_o		<= `SD 1'b0;
 					br_mask_o		<= `SD 0;
-				end else if (~rob_br_recovery_i & ~stall_i) begin
+				end else if (~rob_br_recovery_i) begin
 					result_o		<= `SD result;
 					dest_tag_o		<= `SD dest_tag;
 					rob_idx_o		<= `SD rob_idx;

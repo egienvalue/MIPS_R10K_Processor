@@ -279,7 +279,8 @@ module Dcache_ctrl (
 
 	//-----------------------------------------------------
 	// Dctrl response to other request logic
-	assign Dctrl2bus_rsp_vld_o	= Dcache_bus_hit_i && (bus2Dctrl_req_message_i == GET_S);
+	assign Dctrl2bus_rsp_vld_o	= Dcache_bus_hit_i && (bus2Dctrl_req_message_i == GET_S) &&
+								 (bus2Dctrl_req_id_i != Dctrl_cpu_id_i);
 	assign Dctrl2bus_rsp_data_o	= Dcache_bus_data_i;
 
 

@@ -46,9 +46,9 @@ module ifb(
 	
 	//assign direct = ifb_2id_empty_o && ifb_en_i && decode_en_i;
 
-//fetch stage to insn fetch buffer
+	//fetch stage to insn fetch buffer
 
-//insn fetch buffer to decode stage
+	//insn fetch buffer to decode stage	<12/2: decode_en_i add here may cause the timing loop>
 	assign ifb_PC_o			= PC_array[ifb_head];//~decode_en_i ? 0 : PC_array[ifb_head];
 	assign ifb_insn_o		= insn_array[ifb_head];//~decode_en_i ? 0 : insn_array[ifb_head];
 	assign ifb_target_PC_o	= target_PC_r[ifb_head];

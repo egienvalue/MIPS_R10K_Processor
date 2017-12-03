@@ -95,6 +95,8 @@ module core_top_tb;
 	end
 
 	// Task to display # of elapsed clock edges
+	logic				freeze_clk_count;
+
 	task show_clk_count;
 		real cpi;
 
@@ -112,15 +114,19 @@ module core_top_tb;
 	task show_mem_with_decimal;
 		input [31:0] start_addr;
 		input [31:0] end_addr;
+
 		int showing_data;
 		begin
+			freeze_clk_count	= 1;
+			#1
 			// write dirty data block back to memroy
 			for (int i = 0; i < `DCACHE_SET_NUM; i++) begin
 				for (int j = 0; j < `DCACHE_WAY_NUM; j++) begin
 					Dcache_way_idx_tb_i	= j;
 					Dcache_set_idx_tb_i	= i;
+					#1
 					if (Dcache_blk_dty_tb_o)
-						memory.unified_memory[{Dcache_tag_tb_o,Dcache_set_idx_tb_i,3'b0}] = Dcache_data_tb_o;
+						memory.unified_memory[{Dcache_tag_tb_o,Dcache_set_idx_tb_i}] = Dcache_data_tb_o;
 				end
 			end
 			$display("@@@");
@@ -151,6 +157,7 @@ module core_top_tb;
 		  
 		clk = 1'b0;
 		rst = 1'b0;
+		freeze_clk_count = 1'b0;
 
 		// Pulse the reset signal
 		$display("@@\n@@\n@@  %t  Asserting System reset......", $realtime);
@@ -279,7 +286,7 @@ module core_top_tb;
 			instr_count <= `SD 0;
 		end
 		else
-		begin
+		if (~freeze_clk_count) begin
 			clock_count <= `SD (clock_count + 1);
 			instr_count <= `SD (instr_count + core_retired_instrs);
 		end
