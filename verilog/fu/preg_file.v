@@ -18,8 +18,6 @@ module preg_file(
 	always_comb begin
 		if(rda_idx_i == `ZERO_REG)
 			rda_data_o = 0;
-		else if (wr_en_i && (wr_idx_i == rda_idx_i))
-			rda_data_o = wr_data_i;
 		else
 			rda_data_o = rda_reg;
 	end
@@ -28,8 +26,6 @@ module preg_file(
 	always_comb begin
 		if(rdb_idx_i == `ZERO_REG)
 			rdb_data_o = 0;
-		else if (wr_en_i && (wr_idx_i == rdb_idx_i))
-			rdb_data_o = wr_data_i;
 		else
 			rdb_data_o = rdb_reg;
 	end
