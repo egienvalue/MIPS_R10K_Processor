@@ -92,6 +92,8 @@ module branch_stack(
 		.clk(clk),
         .rst(rst),
         .mask_bit_i(br_mask),
+		.br_1hot_bit_i(br_bit_o),
+		.br_state_i(br_state_i),
 
 		.cdb_vld_i	(cdb_vld_i),
 		.cdb_tag_i	(cdb_tag_i),

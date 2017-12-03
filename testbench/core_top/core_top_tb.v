@@ -190,7 +190,7 @@ module core_top_tb;
 	task print_rs;
 		$fdisplay(rs_fileno, "@@@");
 		$fdisplay(rs_fileno, "@@@");
-		$fdisplay(rs_fileno, "@@@ At cycle%-1d:", clock_count);
+		$fdisplay(rs_fileno, "@@@ At c%-1d:", clock_count);
 		$fdisplay(rs_fileno, "@@@ The content of RS is:");
 		//
 		$fdisplay(rs_fileno, "@@@      TAGA  | RDYA |  TAGB  | RDYB |DEST_TAG| FU_SEL|   IR     |ROB_IDX|BR_MASK| AVAIL  | Instr");
@@ -223,7 +223,7 @@ module core_top_tb;
 	task print_rob;
 		$fdisplay(rob_fileno, "@@@");
 		$fdisplay(rob_fileno, "@@@");
-		$fdisplay(rob_fileno, "@@@ At cycle%-1d:", clock_count);
+		$fdisplay(rob_fileno, "@@@ At c%-1d:", clock_count);
 		$fdisplay(rob_fileno, "@@@ The content of ROB is:");
 		$fdisplay(rob_fileno, "@@@     Tnew | Told | dest | Done | rd_wr | br | br p&t |        PC        |      t-PC        | br_mask |    IR     |  Instr ");
 		// print whole rob
@@ -355,7 +355,7 @@ module core_top_tb;
 
 	
 	initial begin // for step by step debug
-		for (int i = 0; i < 20000; i++) begin
+		for (int i = 0; i < 170; i++) begin
 			@(negedge clk);
 		end
 		$display("@@@\n@@");

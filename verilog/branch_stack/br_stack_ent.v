@@ -21,6 +21,7 @@
 // 	intial creation: 11/04/2017
 // 	<11/14> ready bit in check point should update along with map table,
 // 	according to cdb_tag
+// 	<12/3> added br_stack update during right br resolving
 // 	***************************************************************************
 
 
@@ -30,6 +31,9 @@ module br_stack_ent(
 		input								clk,
 		input								rst,
 		input								mask_bit_i,
+		input								br_1hot_bit_i,
+		input	[`BR_STATE_W-1:0]			br_state_i,
+
 		input								cdb_vld_i,
 		input	[`PRF_IDX_W-1:0]			cdb_tag_i,
 		input	[`MT_NUM-1:0][`PRF_IDX_W:0]	bak_mp_next_data_i,	//[Map Table]	Back up data from map table.
@@ -58,7 +62,7 @@ module br_stack_ent(
 			map_table_stack	<= `SD 0;
 			fl_head_stack	<= `SD 0;
 			sq_tail_stack	<= `SD 0;
-		end else if (mask_bit_i == 1'b0) begin
+		end else if (mask_bit_i == 1'b0 | (br_state_i == `BR_PR_CORRECT && br_1hot_bit_i)) begin
 			map_table_stack	<= `SD bak_mp_next_data_i;
 			fl_head_stack	<= `SD bak_fl_head_i;
 			sq_tail_stack	<= `SD bak_sq_tail_i;
