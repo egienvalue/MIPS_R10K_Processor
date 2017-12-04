@@ -102,7 +102,7 @@ module fu_main(
 	logic		[`ROB_IDX_W:0]		ldst_rob_idx;
 	logic		[`PRF_IDX_W-1:0]	ld_dest_tag;
 	logic							lsq_lq_com_rdy;
-	logic							lsq_lq_com_rdy_delay1;
+	logic							lq_done;
 	logic		[`BR_MASK_W-1:0]	ld_br_mask;
 	logic							lsq_lq_com_rdy_stall;
 
@@ -113,10 +113,10 @@ module fu_main(
 
 	assign fu2rob_br_recovery_done_o = br2rob_done;
 
-	assign fu2rob_done_o 		= (alu_done | br_done | mult_done | st_done | ld_done | lsq_lq_com_rdy_delay1) && 
+	assign fu2rob_done_o 		= (alu_done | br_done | mult_done | st_done | ld_done | lq_done) && 
 								  ~rob_br_recovery_i; // lsq	
 	assign fu2rob_idx_o			= br_done ? br_rob_idx : 
-								  lsq_lq_com_rdy_delay1 ? ldst_rob_idx :
+								  lq_done ? ldst_rob_idx :
 	   							  alu_done ? alu_rob_idx :
 								  mult_done ? mult_rob_idx : 
 								  (ld_done | st_done) ? ldst_rob_idx : 0;
@@ -132,21 +132,12 @@ module fu_main(
 	assign lsq_lq_com_rdy_stall = lsq_lq_com_rdy & (alu_done_pre | mult_done_pre | ex_unit_en[3] | ex_unit_en[4]);
 	assign lsq_lq_com_rdy_stall_o = lsq_lq_com_rdy_stall;
 
-	// synopsys sync_set_reset "rst"
-	always_ff @(posedge clk) begin
-		if (rst) begin
-			lsq_lq_com_rdy_delay1 <= `SD 1'b0;
-		end else begin
-			lsq_lq_com_rdy_delay1 <= `SD lsq_lq_com_rdy;
-		end
-	end
-
 	always_comb begin
 		if (br_wr_en) begin
 			cdb_tag				= br_dest_tag;
 			cdb_vld				= 1;
 			fu2preg_wr_value	= br_pc;
-		end else if (lsq_lq_com_rdy_delay1) begin
+		end else if (lq_done) begin
 			cdb_tag				= ld_dest_tag;
 			cdb_vld				= 1;
 			fu2preg_wr_value	= ld_result;
@@ -308,7 +299,8 @@ module fu_main(
 
 		.br_mask_o				(ld_br_mask),
 		.st_done_o				(st_done),
-		.ld_done_o				(ld_done)
+		.ld_done_o				(ld_done),
+		.lq_done_o				(lq_done)
 	);
 	
 endmodule	  

@@ -57,12 +57,12 @@ module fu_ldst(
 		output	logic						lsq_sq_full_o,
 		output	logic	[`BR_MASK_W-1:0]	br_mask_o,
 		output	logic						st_done_o,
-		output	logic						ld_done_o
+		output	logic						ld_done_o,
+		output	logic						lq_done_o
 );
 
 		logic	[63:0]						mem_disp;
 		logic	[63:0]						addr;
-		logic								lsq_ld_com_rdy;
 		logic	[63:0]						result;
 		logic	[`PRF_IDX_W-1:0]			dest_tag;
 		logic	[`ROB_IDX_W:0]				rob_idx;
@@ -82,6 +82,7 @@ module fu_ldst(
 					rob_idx_o		<= `SD 0;
 					ld_done_o		<= `SD 1'b0;
 					st_done_o		<= `SD 1'b0;
+					lq_done_o		<= `SD 1'b0;
 					br_mask_o		<= `SD 0;
 				end else if (rob_br_recovery_i && ((br_mask_o & rob_br_tag_fix_i) != 0)) begin
 					result_o		<= `SD 0;
@@ -89,6 +90,7 @@ module fu_ldst(
 					rob_idx_o		<= `SD 0;
 					ld_done_o		<= `SD 1'b0;
 					st_done_o		<= `SD 1'b0;
+					lq_done_o		<= `SD 1'b0;
 					br_mask_o		<= `SD 0;
 				end else if (~rob_br_recovery_i) begin
 					result_o		<= `SD result;
@@ -96,6 +98,7 @@ module fu_ldst(
 					rob_idx_o		<= `SD rob_idx;
 					ld_done_o		<= `SD ld_done;
 					st_done_o		<= `SD st_done;
+					lq_done_o		<= `SD lsq_lq_com_rdy_o;
 					br_mask_o		<= `SD rob_br_pred_correct_i ? (br_mask & ~rob_br_tag_fix_i) : br_mask;
 				end
 		end		

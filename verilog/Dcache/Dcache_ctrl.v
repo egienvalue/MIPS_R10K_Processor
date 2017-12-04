@@ -263,7 +263,7 @@ module Dcache_ctrl (
 			Dctrl2bus_req_data_o	= Dcache_evict_data_i;
 			Dctrl2bus_req_message_o = PUT_M;
 		end else begin
-			Dctrl2bus_req_en_o		= mshr_iss_en && ~mshr_rsp_full;;
+			Dctrl2bus_req_en_o		= mshr_iss_en && ~mshr_rsp_full;
 			Dctrl2bus_req_tag_o		= mshr_iss_tag_o;
 			Dctrl2bus_req_idx_o		= mshr_iss_idx_o;
 			Dctrl2bus_req_data_o	= mshr_iss_data_o;

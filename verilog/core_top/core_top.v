@@ -93,6 +93,7 @@ module core_top	(
 	logic		[`DCACHE_WORD_IN_BITS-1:0]		Dmem_ctrl_rsp_data_i;
 	logic		[`RSP_Q_PTR_W-1:0]				bus2Dmem_ctrl_rsp_ptr_o;
 	logic										bus2Dmem_ctrl_core_req_o;
+	logic										bus2Dmem_ctrl_req_ack_o;
 
 	// request outputs
 	logic										bus_req_id_o;
@@ -117,6 +118,8 @@ module core_top	(
 	message_t								bus_req_message_i;
 	logic		[`DCACHE_WORD_IN_BITS-1:0]	bus_req_data_i;
 	logic									bus_req_core_ack_i;
+
+	logic									bus_req_ack_i;
 
 	logic									bus_rsp_vld_i;	
 	logic		[`DCACHE_WORD_IN_BITS-1:0]	bus_rsp_data_i;
@@ -296,6 +299,7 @@ module core_top	(
 		.Dmem_ctrl_rsp_data_i	(Dmem_ctrl_rsp_data_i),
 		.bus2Dmem_ctrl_rsp_ptr_o(bus2Dmem_ctrl_rsp_ptr_o),
 		.bus2Dmem_ctrl_core_req_o(bus2Dmem_ctrl_core_req_o),
+		.bus2Dmem_ctrl_req_ack_o(bus2Dmem_ctrl_req_ack_o),
 
 		// request outputs
 		.bus_req_id_o			(bus_req_id_o),
@@ -321,6 +325,9 @@ module core_top	(
 	assign bus_req_message_i    = bus_req_message_o;
 	assign bus_req_data_i       = bus_req_data_o;
 	assign bus_req_core_ack_i	= bus2Dmem_ctrl_core_req_o;
+
+	assign bus_req_ack_i		= bus2Dmem_ctrl_req_ack_o;
+
 	assign bus_rsp_vld_i		= bus_rsp_vld_o;
 	assign bus_rsp_data_i		= bus_rsp_data_o;
 	assign bus_rsp_addr_i		= bus_rsp_addr_o;
@@ -341,6 +348,8 @@ module core_top	(
 		.bus_req_data_i			(bus_req_data_i),
 
 		.bus_req_core_ack_i		(bus_req_core_ack_i),
+
+		.bus_req_ack_i			(bus_req_ack_i),
 	
 		.bus_rsp_vld_i			(bus_rsp_vld_i),	
 		.bus_rsp_data_i			(bus_rsp_data_i),

@@ -42,6 +42,8 @@ module bus (
 		output	logic	[`RSP_Q_PTR_W-1:0]				bus2Dmem_ctrl_rsp_ptr_o,
 
 		output	logic									bus2Dmem_ctrl_core_req_o,
+		// <12/4> for Dmemc_ctrl mshr_iss alloc and dty bit update
+		output	logic									bus2Dmem_ctrl_req_ack_o,
 
 		// request outputs
 		output	logic									bus_req_id_o,
@@ -106,6 +108,8 @@ module bus (
 	assign bus2Dmem_ctrl_rsp_ptr_o	= tail_r;
 
 	assign bus2Dmem_ctrl_core_req_o	= core0_rsp_vld_i | core1_rsp_vld_i;
+
+	assign bus2Dmem_ctrl_req_ack_o	= bus2core0_req_ack_o | bus2core1_req_ack_o;
 	
 	//-----------------------------------------------------
 	// request logic, include arbitration and acknowledge
@@ -178,7 +182,7 @@ module bus (
 	// clear entry after response sent
 	// full and stall signals
 	assign rsp_full		= (head_msb_r != tail_msb_r) && (head_r == tail_r);
-	assign rsp_stall	= rsp_full && ~core_rsp_ack;
+	assign rsp_stall	= rsp_full && (~core_rsp_ack && bus_req_message_o == GET_S); // <21/4>, deadlock avoided
 
 	// pointers update
 	assign head_msb_nxt	= (core_rsp_ack && (head_r == `RSP_Q_NUM-1)) ? ~head_msb_r : head_msb_r;

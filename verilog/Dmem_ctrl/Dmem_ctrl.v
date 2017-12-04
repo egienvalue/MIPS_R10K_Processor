@@ -17,6 +17,9 @@ module Dmem_ctrl(
 		input			[`DCACHE_WORD_IN_BITS-1:0]	bus_req_data_i,
 
 		input										bus_req_core_ack_i,
+
+		// <12/4>
+		input										bus_req_ack_i,
 	
 		input										bus_rsp_vld_i,	
 		input			[`DCACHE_WORD_IN_BITS-1:0]	bus_rsp_data_i,
@@ -177,10 +180,10 @@ module Dmem_ctrl(
 				mshr_iss_data_nxt[mshr_iss_tail_r]	= 64'h0;
 				mshr_iss_addr_nxt[mshr_iss_tail_r]	= bus_req_addr;
 				mshr_iss_ptr_nxt[mshr_iss_tail_r]	= bus_rsp_ptr_i;
-			end else if (bus_req_message_i == GET_S) begin // M->IorS_D, wait data
+			end else if (bus_req_message_i == GET_S) begin // M->IorS_D, wait/or no wait data
 				mshr_iss_vld_nxt[mshr_iss_tail_r]	= 1'b1;
-				mshr_iss_rdy_nxt[mshr_iss_tail_r]	= 1'b0; // wait data
-				mshr_iss_cmd_nxt[mshr_iss_tail_r]	= `BUS_STORE;
+				mshr_iss_rdy_nxt[mshr_iss_tail_r]	= ~bus_req_core_ack_i; // core_not rsp (in I state), set rdy
+				mshr_iss_cmd_nxt[mshr_iss_tail_r]	= ~bus_req_core_ack_i ? `BUS_LOAD : `BUS_STORE;
 				mshr_iss_data_nxt[mshr_iss_tail_r]	= 64'h0; // bus_req_data_i;
 				mshr_iss_addr_nxt[mshr_iss_tail_r]	= bus_req_addr;
 				mshr_iss_ptr_nxt[mshr_iss_tail_r]	= bus_rsp_ptr_i;
@@ -233,7 +236,7 @@ module Dmem_ctrl(
 				dty_nxt[bus_req_addr]	= 1'b1;
 			end else if (bus_req_message_i == GET_S && ~bus_req_core_ack_i) begin // !!! IorS
 				Dmem_ctrl_rsp_ack_o	= ~mshr_iss_stall;
-				mshr_iss_wr_en		= ~mshr_iss_stall; // allocate a LD entry
+				mshr_iss_wr_en		= bus_req_ack_i; // allocate a LD entry
 			end else begin
 				Dmem_ctrl_rsp_ack_o	= 1'b0;
 				mshr_iss_wr_en		= 1'b0;
@@ -242,15 +245,15 @@ module Dmem_ctrl(
 		end else /*if (bus_req_dty)*/ begin
 			if (bus_req_message_i == PUT_M) begin
 				Dmem_ctrl_rsp_ack_o	= ~mshr_iss_stall; // M->IorS_D, wait for data, right rdy
-				mshr_iss_wr_en		= ~mshr_iss_stall; // allocate a ST entry
+				mshr_iss_wr_en		= bus_req_ack_i; // allocate a ST entry
 
 				//vld_nxt[bus_req_addr]	= mshr_iss_stall;
-				dty_nxt[bus_req_addr]	= mshr_iss_stall;
+				dty_nxt[bus_req_addr]	= bus_req_ack_i;
 			end else if (bus_req_message_i == GET_S) begin
 				Dmem_ctrl_rsp_ack_o	= ~mshr_iss_stall; // M->IorS_D, wait data
-				mshr_iss_wr_en		= ~mshr_iss_stall; // allocate a ST entry
+				mshr_iss_wr_en		= bus_req_ack_i; // allocate a ST entry
 
-				dty_nxt[bus_req_addr]	= mshr_iss_stall;
+				dty_nxt[bus_req_addr]	= ~bus_req_ack_i;
 			end else if (bus_req_message_i == GET_M) begin // M->M
 				Dmem_ctrl_rsp_ack_o	= 1'b1;
 				mshr_iss_wr_en		= 1'b0;
