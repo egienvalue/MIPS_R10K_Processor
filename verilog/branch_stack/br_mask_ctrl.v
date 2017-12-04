@@ -31,6 +31,7 @@ module br_mask_ctrl(
 
 		input	[`BR_STATE_W-1:0]	br_state_i,		//[ROB]			Branch prediction wrong or correct?		
 		input	[`BR_MASK_W-1:0]	br_dep_mask_i,	//[ROB]			The mask of currently resolved branch.
+		input	[`BR_MASK_W-1:0]	rs_iss2br_mask_i,
 		
 		output logic	[`BR_MASK_W-1:0]	br_mask_o,		//[ROB][Stacks]			Send current mask value to ROB to save in an ROB entry.
 		output logic	[`BR_MASK_W-1:0]	br_bit_o,		//[RS]			Output corresponding branch bit immediately after knowing wrong or correct. 
@@ -70,7 +71,7 @@ module br_mask_ctrl(
 		always_comb begin												// Assign br_bit_idx and next_mask. Assign next_mask under the condition of br_state_i (wrong or correct?)
 			if (br_state_i == `BR_PR_WRONG) begin
 				first_zero_idx(br_dep_mask_i, br_bit_idx, br_bit); 
-				next_mask = (mask & br_dep_mask_i);
+				next_mask = (mask & rs_iss2br_mask_i); /* br_dep_mask_i);*/
 				br_mask_o = mask;
 			end else if (br_state_i == `BR_PR_CORRECT && ~is_save_br) begin
 				first_zero_idx(br_dep_mask_i, br_bit_idx, br_bit); 

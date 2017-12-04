@@ -30,6 +30,7 @@ module branch_stack(
 		input										is_taken_i,			//[Dispatch]
 		input	[`BR_STATE_W-1:0]					br_state_i,			//[ROB]			Branch prediction wrong or correct?		
 		input	[`BR_MASK_W-1:0]					br_dep_mask_i,		//[ROB]			The mask of currently resolved branch.
+		input	[`BR_MASK_W-1:0]					rs_iss2br_mask_i,
 		input	[`MT_NUM-1:0][`PRF_IDX_W:0]			bak_mp_next_data_i,	//[Map Table]	Back up data from map table.
 		input	[`FL_PTR_W:0]						bak_fl_head_i,		//[Free List]	Back up head of free list.
 		input	[`SQ_IDX_W:0]						bak_sq_tail_i,
@@ -82,7 +83,8 @@ module branch_stack(
 		.is_cond_i(is_cond_i),
 		.is_taken_i(is_taken_i),
     	.br_state_i(br_state_i),		
-    	.br_dep_mask_i(br_dep_mask_i),	
+    	.br_dep_mask_i(br_dep_mask_i),
+		.rs_iss2br_mask_i(rs_iss2br_mask_i),
     	.br_mask_o(br_mask),		
     	.br_bit_o(br_bit_o),		
     	.full_o(full_o)

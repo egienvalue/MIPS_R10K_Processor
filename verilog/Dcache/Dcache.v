@@ -36,9 +36,9 @@ module Dcache (
 		output	logic	[63:0]							Dcache2lq_addr_o,
 		output	logic									Dcache2sq_ack_o,
 
-		output	logic									Dmshr2lq_data_vld_o,
-		output	logic	[63:0]							Dmshr2lq_addr_o,
-		output	logic	[`DCACHE_WORD_IN_BITS-1:0]		Dmshr2lq_data_o,
+		//output	logic									Dmshr2lq_data_vld_o,
+		//output	logic	[63:0]							Dmshr2lq_addr_o,
+		//output	logic	[`DCACHE_WORD_IN_BITS-1:0]		Dmshr2lq_data_o,
 
 		// network(or bus) side signals
 		input											bus2Dcache_req_ack_i,

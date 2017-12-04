@@ -364,7 +364,8 @@ module core (
 	logic						is_cond_i;
 	logic						is_taken_i;
 	logic	[`BR_STATE_W-1:0]	br_state_i;			//[ROB]			
-	logic	[`BR_MASK_W-1:0]	br_dep_mask_i;		//[ROB]			
+	logic	[`BR_MASK_W-1:0]	br_dep_mask_i;		//[ROB]
+	logic	[`BR_MASK_W-1:0]	rs_iss2br_mask_i;
 	logic	[31:0][6:0]			bak_mp_next_data_i;		//[Map Table]	
 	logic	[`FL_PTR_W:0]		bak_fl_head_i;			//[Free List]
 	logic	[`SQ_IDX_W:0]		bak_sq_tail_i;
@@ -396,9 +397,9 @@ module core (
 	logic	[63:0]							Dcache2lq_addr_o;
 	logic									Dcache2sq_ack_o;
 
-	logic									Dmshr2lq_data_vld_o;
-	logic	[63:0]							Dmshr2lq_addr_o;
-	logic	[`DCACHE_WORD_IN_BITS-1:0]		Dmshr2lq_data_o;
+	//logic									Dmshr2lq_data_vld_o;
+	//logic	[63:0]							Dmshr2lq_addr_o;
+	//logic	[`DCACHE_WORD_IN_BITS-1:0]		Dmshr2lq_data_o;
 
 	// network(or bus) side signals
 /*	logic									bus2Dcache_req_ack_i;
@@ -925,34 +926,36 @@ module core (
 	assign is_taken_i			= if_pred_bit_o; // from if pb prediction
 	assign br_state_i			= br_recovery_rdy_o ? `BR_PR_WRONG : 
 								  br_right_o ? `BR_PR_CORRECT : `BR_NONE; // 
-	assign br_dep_mask_i		= br_recovery_mask_o; // from rob
+	assign br_dep_mask_i		= br_recovery_mask_o; // <12/3> modified (from rs, i.e. iss reg)
+	assign rs_iss2br_mask_i		= rs_iss_br_mask_o;
 	assign bak_mp_next_data_i	= bak_data_o;
 	assign bak_fl_head_i		= free_preg_cur_head_o;
 	assign bak_sq_tail_i		= lsq_sq_tail_o;
 
 	branch_stack branch_stack (
-		.clk				(clk), 
-		.rst				(rst),
+		.clk					(clk), 
+		.rst					(rst),
 
-		.is_br_i			(is_br_i),
-		.is_cond_i			(is_cond_i),
-		.is_taken_i			(is_taken_i),
-		.br_state_i			(br_state_i),
-		.br_dep_mask_i		(br_dep_mask_i),
-		.bak_mp_next_data_i	(bak_mp_next_data_i),	
-		.bak_fl_head_i		(bak_fl_head_i),
-		.bak_sq_tail_i		(bak_sq_tail_i),
+		.is_br_i				(is_br_i),
+		.is_cond_i				(is_cond_i),
+		.is_taken_i				(is_taken_i),
+		.br_state_i				(br_state_i),
+		.br_dep_mask_i			(br_dep_mask_i),
+		.rs_iss2br_mask_i		(rs_iss2br_mask_i),
+		.bak_mp_next_data_i		(bak_mp_next_data_i),	
+		.bak_fl_head_i			(bak_fl_head_i),
+		.bak_sq_tail_i			(bak_sq_tail_i),
 
 		// <11/14>
-		.cdb_vld_i			(fu_cdb_vld_o),
-		.cdb_tag_i			(fu_cdb_broad_o),
+		.cdb_vld_i				(fu_cdb_vld_o),
+		.cdb_tag_i				(fu_cdb_broad_o),
 
-		.br_mask_o			(br_mask_o),
-		.br_bit_o			(br_bit_o),
-		.rc_mt_all_data_o	(rc_mt_all_data_o),
-		.rc_fl_head_o		(rc_fl_head_o),
-		.rc_sq_tail_o		(rc_sq_tail_o),
-		.full_o				(br_stack_full_o)
+		.br_mask_o				(br_mask_o),
+		.br_bit_o				(br_bit_o),
+		.rc_mt_all_data_o		(rc_mt_all_data_o),
+		.rc_fl_head_o			(rc_fl_head_o),
+		.rc_sq_tail_o			(rc_sq_tail_o),
+		.full_o					(br_stack_full_o)
 	);
 
 
@@ -992,9 +995,9 @@ module core (
 		.Dcache2lq_addr_o			(Dcache2lq_addr_o),
 		.Dcache2sq_ack_o			(Dcache2sq_ack_o),
 
-		.Dmshr2lq_data_vld_o		(Dmshr2lq_data_vld_o),
-		.Dmshr2lq_addr_o			(Dmshr2lq_addr_o),
-		.Dmshr2lq_data_o			(Dmshr2lq_data_o),
+		//.Dmshr2lq_data_vld_o		(Dmshr2lq_data_vld_o),
+		//.Dmshr2lq_addr_o			(Dmshr2lq_addr_o),
+		//.Dmshr2lq_data_o			(Dmshr2lq_data_o),
 
 		// network(or bus) side signals
 		.bus2Dcache_req_ack_i		(bus2Dcache_req_ack_i),

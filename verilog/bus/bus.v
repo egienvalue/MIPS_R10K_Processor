@@ -41,6 +41,8 @@ module bus (
 		input			[`DCACHE_WORD_IN_BITS-1:0]		Dmem_ctrl_rsp_data_i,
 		output	logic	[`RSP_Q_PTR_W-1:0]				bus2Dmem_ctrl_rsp_ptr_o,
 
+		output	logic									bus2Dmem_ctrl_core_req_o,
+
 		// request outputs
 		output	logic									bus_req_id_o,
 		output	logic	[`DCACHE_TAG_W-1:0]				bus_req_tag_o,
@@ -103,6 +105,7 @@ module bus (
 	// To Dmem_ctrl, response entry ptr
 	assign bus2Dmem_ctrl_rsp_ptr_o	= tail_r;
 
+	assign bus2Dmem_ctrl_core_req_o	= core0_rsp_vld_i | core1_rsp_vld_i;
 	
 	//-----------------------------------------------------
 	// request logic, include arbitration and acknowledge

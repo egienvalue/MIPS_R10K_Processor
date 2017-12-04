@@ -287,9 +287,9 @@ module lsq (
 
 	assign lsq_lq_com_rdy_o = lq_com_rdy & lq_vld_r[lq_head_r];
 
-	assign lsq_ld_done_o = Dcache_hit_i | st2ld_forward_vld;
+	assign lsq_ld_done_o = (Dcache_hit_i | st2ld_forward_vld) & ld_vld_i;
 
-	assign ld_miss = ld_vld_i & ~lsq_ld_done_o;//
+	assign ld_miss = ld_vld_i & ~Dcache_hit_i & ~st2ld_forward_vld;//
 
 	assign lsq2Dcache_ld_addr_o = ld_vld_i ? addr_i : ld_addr_hold_r;
 

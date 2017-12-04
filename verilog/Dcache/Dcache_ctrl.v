@@ -209,7 +209,7 @@ module Dcache_ctrl (
 	//-----------------------------------------------------
 	// mshr_rsp to Dcache write signals
 	assign mshr_rsp_wr_en_o		= bus2Dctrl_rsp_vld_i && (Dctrl_cpu_id_i == bus2Dctrl_rsp_id_i) &&
-								 ~mshr_rsp_wr_dty_i; // stall if evict
+								 ~mshr_iss_st_en_o; // stall if evict
 	assign mshr_rsp_wr_tag_o	= mshr_rsp_tag_o;
 	assign mshr_rsp_wr_idx_o	= mshr_rsp_idx_o;
 	assign mshr_rsp_wr_data_o	= bus2Dctrl_rsp_data_i;
@@ -343,7 +343,7 @@ module Dcache_ctrl (
 	// entry allocation
 	always_comb begin
 		mshr_rsp_alloc_en	= 1'b0;
-		if (bus2Dctrl_req_ack_i && mshr_iss_message_o == GET_S) begin
+		if (bus2Dctrl_req_ack_i && bus2Dctrl_req_message_i == GET_S) begin
 			mshr_rsp_alloc_en = 1'b1;
 		end
 	end

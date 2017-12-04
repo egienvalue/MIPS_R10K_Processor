@@ -142,7 +142,6 @@ module Dcachemem (
 	// store queue write port out, evict data due to miss
 	// combinational write back data out, tag, evict_en, hit
 	assign sq_wr_hit_o	= sq_wr_hit_w != 0;
-	assign sq_wr_dty_o	= dty_r[sel_r[sq_wr_idx_i]][sq_wr_idx_i];
 
 	always_comb begin
 		for (int i = 0; i < `DCACHE_WAY_NUM; i++) begin
@@ -151,6 +150,18 @@ module Dcachemem (
 							  (tag_r[i][sq_wr_idx_i] == sq_wr_tag_i);
 		end
 	end
+
+	always_comb begin
+		sq_wr_dty_o	= dty_r[sel_r[sq_wr_idx_i]][sq_wr_idx_i];
+		if (sq_wr_hit_o) begin
+			for (int i = 0; i < `DCACHE_WAY_NUM; i++) begin
+				if (sq_wr_hit_w[i]) begin
+					sq_wr_dty_o	= dty_r[i][sq_wr_idx_i];
+				end
+			end
+		end
+	end
+
 
 /*	always_comb begin
 		sq_wb_tag_o		= `DCACHE_TAG_W'h0;
@@ -173,7 +184,7 @@ module Dcachemem (
 */
 
 	//-----------------------------------------------------
-	// bus read portmshr_wr_data_i
+	// bus read port
 	// send requested block in S or M state
 	always_comb begin
 		for (int i = 0; i < `DCACHE_WAY_NUM; i++) begin
@@ -196,7 +207,7 @@ module Dcachemem (
 
 
 	//-----------------------------------------------------
-	// mshr_iss port
+	// mshr_iss port !!!
 	// check if the dty of the issuing block
 	//assign mshr_iss_dty_o		= dty_r[sel_r[mshr_iss_idx_i]][mshr_iss_idx_i];
 
@@ -220,7 +231,7 @@ module Dcachemem (
 	end
 
 	//-----------------------------------------------------
-	// mshr_rsp wr port
+	// mshr_rsp wr port !!!
 	// check if the dty of the ld block, evict if dty
 	// assign mshr_rsp_wr_dty_o	= dty_r[sel_r[mshr_rsp_wr_idx_i]][mshr_rsp_wr_idx_i];
 	
@@ -245,9 +256,9 @@ module Dcachemem (
 
 
 	//-----------------------------------------------------
-	// mshr evict port
-	assign mshr_evict_tag_o	= tag_r[sel_r[mshr_iss_idx_i]][mshr_iss_idx_i];
-	assign mshr_evict_data_o= data_r[sel_r[mshr_iss_idx_i]][mshr_iss_idx_i];
+	// mshr evict port <12/3> Modified idx
+	assign mshr_evict_tag_o	= tag_r[sel_r[mshr_evict_idx_i]][mshr_evict_idx_i];
+	assign mshr_evict_data_o= data_r[sel_r[mshr_evict_idx_i]][mshr_evict_idx_i];
 
 
 	//-----------------------------------------------------
@@ -358,9 +369,10 @@ module Dcachemem (
 		if (mshr_iss_st_en_i) begin // higher priority
 			if (mshr_iss_hit) begin
 				for (int i = 0; i < `DCACHE_WAY_NUM; i++) begin
-					if (mshr_iss_hit_w[i]) 
+					if (mshr_iss_hit_w[i])  begin
 						data_r_nxt[i][mshr_iss_idx_i]	= mshr_iss_data_i;
 						tag_r_nxt[i][mshr_iss_idx_i]	= mshr_iss_tag_i;
+					end
 				end
 			end else begin
 				data_r_nxt[sel_r[mshr_iss_idx_i]][mshr_iss_idx_i]	= mshr_iss_data_i;

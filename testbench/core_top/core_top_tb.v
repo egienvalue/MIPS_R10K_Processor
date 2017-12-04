@@ -199,7 +199,7 @@ module core_top_tb;
 				core_top.core0.rs.opa_tag_vec[i], core_top.core0.rs.opa_rdy_vec[i],
 				core_top.core0.rs.opb_tag_vec[i], core_top.core0.rs.opb_rdy_vec[i], 
 				core_top.core0.rs.dest_tag_vec[i], core_top.core0.rs.fu_sel_vec[i],
-				core_top.core0.rs.IR_vec[i], core_top.core0.rs.rob_idx_vec[i], 
+				core_top.core0.rs.IR_vec[i], core_top.core0.rs.rob_idx_vec[i][`ROB_IDX_W-1:0], 
 				core_top.core0.rs.br_mask_vec[i], core_top.core0.rs.avail_vec[i],rs_instr_str[i]);
 		end
 
@@ -355,7 +355,7 @@ module core_top_tb;
 
 	
 	initial begin // for step by step debug
-		for (int i = 0; i < 170; i++) begin
+		for (int i = 0; i < 5000; i++) begin
 			@(negedge clk);
 		end
 		$display("@@@\n@@");
