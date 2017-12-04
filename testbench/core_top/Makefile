@@ -16,7 +16,8 @@
 #
 #t
 
-VCS = SW_VCS=2015.09 vcs -sverilog +vc -Mupdate -line -full64
+#VCS = SW_VCS=2015.09 vcs -sverilog +vc -Mupdate -line -full64 
+VCS = SW_VCS=2015.09 vcs -sverilog +vc -Mupdate -line -full64 +define+CLOCK_PERIOD=$(CLOCK_PERIOD)
 LIB = /afs/umich.edu/class/eecs470/lib/verilog/lec25dscc25.v
 
 
@@ -71,7 +72,8 @@ SIMFILES =	$(SOURCE_DIR)/$(MODULE).v	\
 			$(SOURCE_DIR)/../Dmem_ctrl/Dmem_ctrl.v
 
 SOURCE_FILES= $(SOURCE_DIR)/$(MODULE).v	\
-			$(SOURCE_DIR)/../Icache/Icache.v	\
+			  $(SOURCE_DIR)/core.v	\
+			  $(SOURCE_DIR)/../Icache/Icache.v	\
 			$(SOURCE_DIR)/../Icache/Icache_ctrl.v	\
 			$(SOURCE_DIR)/../Icache/rps4.v	\
 			$(SOURCE_DIR)/../Icache/prefetch.v	\
@@ -81,6 +83,7 @@ SOURCE_FILES= $(SOURCE_DIR)/$(MODULE).v	\
 			$(SOURCE_DIR)/../id_stage.v	\
 			$(SOURCE_DIR)/../rs/pe.v	\
 			$(SOURCE_DIR)/../rs/ps.v	\
+			$(SOURCE_DIR)/../rs/oldest_finder.v \
 			$(SOURCE_DIR)/../rs/rs1.v	\
 			$(SOURCE_DIR)/../rs/rs.v	\
 			$(SOURCE_DIR)/../rob/rob.v	\
@@ -118,6 +121,15 @@ TESTBENCH = $(MODULE)_tb.v	\
 SYNFILES = ../../synth/$(MODULE)/$(MODULE).vg
 SYN_DIR = ../../synth/$(MODULE)
 
+# SYNTHESIS CONFIG
+export HEADERS
+export SOURCE_FILES 
+# Passed through to .tcl scripts:
+export CLOCK_NET_NAME = clk
+export RESET_NET_NAME = rst
+export CLOCK_PERIOD = 9	# TODO: You will want to make this more aggresive
+export CORE_NAME	= $(MODULE)
+
 all:	simv
 	./simv | tee program.out
 
@@ -145,10 +157,11 @@ syn_dve:	$(HEADERS) $(SYNFILES) $(TESTBENCH)
 clean:
 	rm -rf simv simv.daidir csrc vcs.key program.out
 	rm -rf vis_simv vis_simv.daidir
-	#rm -rf dve*
+	rm -rf dve*
 	rm -rf syn_simv syn_simv.daidir syn_program.out
 	rm -rf synsimv synsimv.daidir csrc vcdplus.vpd vcs.key synprog.out pipeline.out writeback.out vc_hdrs.h
 	rm -rf ucli.key
+	rm -rf DVEfiles
 	rm -rf ./*.out
 
 nuke:	clean

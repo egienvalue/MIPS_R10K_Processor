@@ -17,7 +17,7 @@ module branch_pred(
 	logic	is_hit;
 	logic	is_cond;
 	logic	dirp_pred;
-	logic	PCp_four = if_pc_i + 4;
+	//logic	PCp_four = if_pc_i + 4;
 
 	// comb assign to btb_target_o, pred_o
 	always_comb begin
