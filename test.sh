@@ -11,10 +11,12 @@ for file in test_progs/*.s; do
     echo "Assembling $filename"
     ./vs-asm < $file > program.mem
     echo "Running $filename"
-    ./testbench/core_top/simv | tee program.out
+	cd testbench/core_top
+    ./simv | tee program.out
     echo "Saving $filename output"
-    mkdir new_out/$filename
-    mv *.out new_out/$filename
+    mkdir ../../new_out/$filename
+    mv *.out ../../new_out/$filename
+	cd ../..
 
     diff golden/"${filename}.writeback.out" new_out/$filename/writeback.out > new_out/$filename/wbdiffresult
     if test -s new_out/$filename/wbdiffresult; then

@@ -325,6 +325,13 @@ module core_top_tb;
 			// deal with any halting conditions
 			if(core_error_status!=`NO_ERROR)
 			begin
+				// freeze clk_count, run 5 more cycles to let data in coherence mshr pipeline
+				// write to D-cache in the end
+				`SD freeze_clk_count = 1'b1;
+				for (int i; i < 5; i++) begin
+					@(negedge clk);
+				end
+
 				$display(	"@@@ Unified Memory contents hex on left, decimal on right: ");
 							show_mem_with_decimal(0,`MEM_64BIT_LINES - 1); 
 				// 8Bytes per line, 16kB total
@@ -355,7 +362,7 @@ module core_top_tb;
 
 	
 	initial begin // for step by step debug
-		for (int i = 0; i < 50000; i++) begin
+		for (int i = 0; i < 60000; i++) begin
 			@(negedge clk);
 		end
 		$display("@@@\n@@");

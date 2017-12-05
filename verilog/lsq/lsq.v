@@ -310,7 +310,7 @@ module lsq (
 
 	assign lsq_lq_com_rdy_o = lq_com_rdy & lq_vld_r[lq_head_r];
 
-	assign lsq_ld_done_o = (Dcache_hit_i | st2ld_forward_vld) & ld_vld_i;
+	assign lsq_ld_done_o = (Dcache_hit_i | st2ld_forward_vld) & ld_vld_i & ~Dcache_mshr_vld_i;
 
 	assign ld_miss = (ld_vld_i || (ld_hold_r_state == BUSY)) && ~Dcache_hit_i && ~st2ld_forward_vld && Dcache_mshr_ld_ack_i;//
 

@@ -184,8 +184,8 @@ module	rob (
 	assign rob_head_retire_rdy_o 		= (done_r[head_r[`HT_W-1:0]]==1) && (head_r!=tail_r);
 	assign rob_head_st_instr_o			= wr_mem_r[head_r[`HT_W-1:0]];
 	assign rob_stall_dp_o				= ((head_r^tail_r)==6'b100000)&&(~rob_head_retire_rdy_o);
-    assign rob_halt_o                   = halt_r[head_r[`HT_W-1:0]]&(head_r!=tail_r);
-    assign rob_illegal_o                = illegal_r[head_r[`HT_W-1:0]]&(head_r!=tail_r);
+    assign rob_halt_o                   = halt_r[head_r[`HT_W-1:0]] && (head_r!=tail_r);
+    assign rob_illegal_o                = illegal_r[head_r[`HT_W-1:0]] && (head_r!=tail_r);
 	assign head_r_nxt					= rob_head_retire_rdy_o ? (head_r+1) : head_r;
 	assign tail_r_nxt 					= br_recovery_rdy_o ? (br_recovery_idx_i+1) : dispatch_en ? (tail_r+1) : tail_r;
 
@@ -331,7 +331,7 @@ module	rob (
 		end
 	end
 
-	always_comb begin
+/*	always_comb begin
 		if(fu2rob_done_signal_i) begin
 			fu_done_r_nxt				= 1;
             fu_br_taken_r_nxt			= fu2rob_br_taken_i;
@@ -346,6 +346,7 @@ module	rob (
 			fu_br_taken_r_nxt			= br_taken_r[fu2rob_idx_i[`ROB_IDX_W-1:0]];
 		end
 	end
+*/
 
 	`ifdef DEBUG_OUT
 	
@@ -445,9 +446,10 @@ module	rob (
 			IR_r[tail_r[`HT_W-1:0]]				<= `SD t_IR_r_nxt;
 			vld_r[tail_r[`HT_W-1:0]]			<= `SD t_vld_r_nxt;
 			done_r[tail_r[`HT_W-1:0]]			<= `SD t_done_r_nxt;
-
-			br_taken_r[fu2rob_idx_i[`HT_W-1:0]]	<= `SD fu_br_taken_r_nxt;
-			done_r[fu2rob_idx_i[`HT_W-1:0]]		<= `SD fu_done_r_nxt;
+			if (fu2rob_done_signal_i) begin
+				br_taken_r[fu2rob_idx_i[`HT_W-1:0]]	<= `SD fu2rob_br_taken_i;
+				done_r[fu2rob_idx_i[`HT_W-1:0]]		<= `SD 1'b1;
+			end
 		end 
 	end
 	
