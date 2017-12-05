@@ -86,6 +86,7 @@ module fu_main(
 	logic		[`PRF_IDX_W-1:0]	br_dest_tag;
 	logic		[`ROB_IDX_W:0] 		br_rob_idx;
     logic       [63:0]              br_pc;
+	logic		[`BR_MASK_W-1:0]	br_br_mask;
 	
 	logic		[63:0]				mult_result;
 	logic							mult_done_pre;
@@ -129,7 +130,8 @@ module fu_main(
 	assign fu2preg_wr_idx_o		= cdb_tag;
 	assign fu2preg_wr_value_o	= fu2preg_wr_value;
 
-	assign lsq_lq_com_rdy_stall = lsq_lq_com_rdy & (alu_done_pre | mult_done_pre | ex_unit_en[3] | ex_unit_en[4]);
+	assign lsq_lq_com_rdy_stall = (lsq_lq_com_rdy & (alu_done_pre | mult_done_pre | ex_unit_en[3] | ex_unit_en[4]))
+								  | (Dcache_mshr_vld_i & ex_unit_en[3]);
 	assign lsq_lq_com_rdy_stall_o = lsq_lq_com_rdy_stall;
 
 	always_comb begin
@@ -210,13 +212,16 @@ module fu_main(
 			.inst_i					(rs2fu_IR_i),
 			.dest_tag_i				(rs2fu_dest_tag_i),
 			.rob_idx_i				(rs2fu_rob_idx_i),
+			.br_mask_i				(rs2fu_br_mask_i),
 			.rob_br_recovery_i		(rob_br_recovery_i),
+			.rob_br_tag_fix_i		(rob_br_tag_fix_i),
 			.done_o					(br_done),
 			//.br_target_o			(br_target),
 			.br_result_o			(br_taken),
 			.br_wr_en_o				(br_wr_en),
 			.dest_tag_o				(br_dest_tag),
 			.rob_idx_o				(br_rob_idx),
+			.br_mask_o				(br_br_mask),
             .br_pc_o				(br_pc),
 
 			.br_recovery_taken_o	(fu2rob_br_recovery_taken_o),

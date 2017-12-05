@@ -127,7 +127,7 @@ export SOURCE_FILES
 # Passed through to .tcl scripts:
 export CLOCK_NET_NAME = clk
 export RESET_NET_NAME = rst
-export CLOCK_PERIOD = 9	# TODO: You will want to make this more aggresive
+export CLOCK_PERIOD = 8.8	# TODO: You will want to make this more aggresive
 export CORE_NAME	= $(MODULE)
 
 all:	simv

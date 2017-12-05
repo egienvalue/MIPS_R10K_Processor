@@ -38,7 +38,9 @@ module fu_br (
 		input		[31:0]  		inst_i,
 		input		[`PRF_IDX_W-1:0]dest_tag_i,
 		input		[`ROB_IDX_W:0]	rob_idx_i,
+		input		[`BR_MASK_W-1:0]br_mask_i,
 		input						rob_br_recovery_i,
+		input		[`BR_MASK_W-1:0]rob_br_tag_fix_i,
 
 		output	logic					done_o,
 		//output	logic	[63:0]		br_target_o,
@@ -46,6 +48,7 @@ module fu_br (
 		output	logic					br_wr_en_o,
 		output	logic	[`PRF_IDX_W-1:0]dest_tag_o,
 		output	logic	[`ROB_IDX_W:0]	rob_idx_o,
+		output	logic	[`BR_MASK_W-1:0]br_mask_o,
         output  logic   [63:0]      	br_pc_o,
 
 		output	logic					br_recovery_taken_o,
@@ -82,30 +85,32 @@ module fu_br (
 		br_wr_en_nxt = 0;
         br_target_nxt = npc_i;
         cond_br = 0;
-		case({inst_i[31:29], 3'b0})
-			6'h18:// JMP, JSR, RET, and JSR_CO
-				begin
-					br_target_nxt = {opb_i[63:2], 2'b00};
-					br_wr_en_nxt = (dest_tag_i == `ZERO_REG) ? 1'b0 : 1'b1;
-					cond_br  = 0;
-				end
-			6'h30, 6'h38:
-				begin
-					br_target_nxt = npc_i + br_disp;
-					case (inst_i[31:26])
-						`BR_INST, `BSR_INST: 
-							begin
-								cond_br  = 0;
-								br_wr_en_nxt = (dest_tag_i == `ZERO_REG) ? 1'b0 : 1'b1;
-							end
-						default: 
-							begin
-								cond_br  = 1;
-							end
-						endcase
-				end            
+		if (start_i) begin
+			case({inst_i[31:29], 3'b0})
+				6'h18:// JMP, JSR, RET, and JSR_CO
+					begin
+						br_target_nxt = {opb_i[63:2], 2'b00};
+						br_wr_en_nxt = (dest_tag_i == `ZERO_REG) ? 1'b0 : 1'b1;
+						cond_br  = 0;
+					end
+				6'h30, 6'h38:
+					begin
+						br_target_nxt = npc_i + br_disp;
+						case (inst_i[31:26])
+							`BR_INST, `BSR_INST: 
+								begin
+									cond_br  = 0;
+									br_wr_en_nxt = (dest_tag_i == `ZERO_REG) ? 1'b0 : 1'b1;
+								end
+							default: 
+								begin
+									cond_br  = 1;
+								end
+							endcase
+					end            
 			endcase
 		end
+	end
 			
 	brcond brcond (// Inputs
 		.opa(opa_i),       // always check regA value
@@ -123,6 +128,16 @@ module fu_br (
 			dest_tag_o	<= `SD 0;
 			rob_idx_o	<= `SD 0;
             br_pc_o     <= `SD 0;
+			br_mask_o	<= `SD 0;
+		end else if (rob_br_recovery_i && ((br_mask_o & rob_br_tag_fix_i) != 0)) begin
+			done_o 		<= `SD 0;
+			br_result_o <= `SD 0;
+			br_wr_en_o	<= `SD 0;
+			//br_target_o <= `SD 0;
+			dest_tag_o	<= `SD 0;
+			rob_idx_o	<= `SD 0;
+            br_pc_o     <= `SD 0;
+			br_mask_o	<= `SD 0;
 		end else if (~rob_br_recovery_i) begin
 			done_o 		<= `SD start_i;
 			br_result_o <= `SD br_result_nxt;
@@ -131,6 +146,7 @@ module fu_br (
 			dest_tag_o	<= `SD dest_tag_i;
 			rob_idx_o	<= `SD rob_idx_nxt;
             br_pc_o     <= `SD npc_i;
+			br_mask_o	<= `SD br_mask_i;
 		end
 	end
 
