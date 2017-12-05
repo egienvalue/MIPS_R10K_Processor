@@ -209,7 +209,7 @@ module Dcache_ctrl (
 	//-----------------------------------------------------
 	// mshr_rsp to Dcache write signals
 	assign mshr_rsp_wr_en_o		= bus2Dctrl_rsp_vld_i && (Dctrl_cpu_id_i == bus2Dctrl_rsp_id_i) &&
-								 ~mshr_iss_st_en_o; // stall if evict
+								 ~mshr_rsp_evict_en; // stall if evict, <12/4> modified from ~mshr_iss_st_en_o
 	assign mshr_rsp_wr_tag_o	= mshr_rsp_tag_o;
 	assign mshr_rsp_wr_idx_o	= mshr_rsp_idx_o;
 	assign mshr_rsp_wr_data_o	= bus2Dctrl_rsp_data_i;

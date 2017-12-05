@@ -117,8 +117,8 @@ module core_top	(
 	logic		[`DCACHE_IDX_W-1:0]			bus_req_idx_i;
 	message_t								bus_req_message_i;
 	logic		[`DCACHE_WORD_IN_BITS-1:0]	bus_req_data_i;
-	logic									bus_req_core_ack_i;
 
+	logic									bus_req_core_ack_i;
 	logic									bus_req_ack_i;
 
 	logic									bus_rsp_vld_i;	
@@ -298,6 +298,7 @@ module core_top	(
 		.Dmem_ctrl_rsp_ptr_i	(Dmem_ctrl_rsp_ptr_i),
 		.Dmem_ctrl_rsp_data_i	(Dmem_ctrl_rsp_data_i),
 		.bus2Dmem_ctrl_rsp_ptr_o(bus2Dmem_ctrl_rsp_ptr_o),
+
 		.bus2Dmem_ctrl_core_req_o(bus2Dmem_ctrl_core_req_o),
 		.bus2Dmem_ctrl_req_ack_o(bus2Dmem_ctrl_req_ack_o),
 
