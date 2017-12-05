@@ -181,7 +181,7 @@ module	rob (
 	assign rob2fl_tag_o					= rob_head_retire_rdy_o ? old_dest_tag_r[head_r[`HT_W-1:0]]	: 0;
 	assign rob2arch_map_tag_o			= rob_head_retire_rdy_o ? dest_tag_r[head_r[`HT_W-1:0]]	: 0;
 	assign rob2arch_map_logic_dest_o	= rob_head_retire_rdy_o ? logic_dest_r[head_r[`HT_W-1:0]] : 0;
-	assign rob_head_retire_rdy_o 		= (done_r[head_r[`HT_W-1:0]]==1);
+	assign rob_head_retire_rdy_o 		= (done_r[head_r[`HT_W-1:0]]==1) && (head_r!=tail_r);
 	assign rob_head_st_instr_o			= wr_mem_r[head_r[`HT_W-1:0]];
 	assign rob_stall_dp_o				= ((head_r^tail_r)==6'b100000)&&(~rob_head_retire_rdy_o);
     assign rob_halt_o                   = halt_r[head_r[`HT_W-1:0]]&(head_r!=tail_r);

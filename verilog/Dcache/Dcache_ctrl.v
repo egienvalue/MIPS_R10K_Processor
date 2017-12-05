@@ -129,6 +129,11 @@ module Dcache_ctrl (
 
 	wire									lq_addr_hit;
 
+
+	// <12/4> lq and st address check
+	logic									lq_addr_vld;
+	logic									sq_addr_vld;
+
 	mshr_iss mshr_iss (
 		.clk						(clk),
 		.rst						(rst),
@@ -181,6 +186,14 @@ module Dcache_ctrl (
 		.mshr_rsp_sq_hit_o		(mshr_rsp_sq_hit),
 		.mshr_rsp_full_o		(mshr_rsp_full)
 	);
+
+	//-----------------------------------------------------
+	// LSQ addr vld check
+	assign lq_addr_vld	= (lq2Dctrl_addr_i[2:0]==3'b0) &&
+						 (lq2Dctrl_addr_i<`MEM_SIZE_IN_BYTES);
+	assign sq_addr_vld	= (sq2Dctrl_addr_i[2:0]==3'b0) &&
+						 (sq2Dctrl_addr_i<`MEM_SIZE_IN_BYTES);
+
 
 	//-----------------------------------------------------
 	// Dctrl to lq load signals
@@ -300,10 +313,10 @@ module Dcache_ctrl (
 		if (lq2Dctrl_en_i && (~sq2Dctrl_en_i || (Dcache_sq_wr_hit_i && Dcache_sq_wr_dty_i))) begin
 			if (lq_addr_hit) begin
 				Dctrl2lq_ack_o		= (mshr_rsp_lq_fwd && mshr_rsp_wr_en_o) ? 1'b0 : 1'b1;
-				mshr_iss_alloc_en	= 1'b0;
+				//mshr_iss_alloc_en	= 1'b0; // <12/4> commented
 			end else if (~mshr_iss_full) begin // load miss, GET_S
 				Dctrl2lq_ack_o		= 1'b1;
-				mshr_iss_alloc_en	= 1'b1;
+				mshr_iss_alloc_en	= lq_addr_vld;
 				mshr_iss_tag_i		= Dcache_lq_rd_tag_o;
 				mshr_iss_idx_i		= Dcache_lq_rd_idx_o;
 				mshr_iss_data_i		= 64'h0;
@@ -317,10 +330,10 @@ module Dcache_ctrl (
 			end else */
 			if ((Dcache_sq_wr_hit_i && Dcache_sq_wr_dty_i) /*| mshr_iss_lq_hit*/) begin
 				Dctrl2sq_ack_o		= 1'b1;
-				mshr_iss_alloc_en	= 1'b0;
+				//mshr_iss_alloc_en	= 1'b0; <12/4> commented
 			end else if (~mshr_iss_full) begin  // GET_M
 				Dctrl2sq_ack_o		= 1'b1;
-				mshr_iss_alloc_en	= 1'b1;
+				mshr_iss_alloc_en	= sq_addr_vld;
 				mshr_iss_tag_i		= Dcache_sq_wr_tag_o;
 				mshr_iss_idx_i		= Dcache_sq_wr_idx_o;
 				mshr_iss_data_i		= Dcache_sq_wr_data_o;
