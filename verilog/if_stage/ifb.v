@@ -31,8 +31,8 @@ module ifb(
 	logic	[(`TAG_SIZE-1):0]	ifb_tail;
 	logic	[(`TAG_SIZE-1):0]	ifb_head_nxt;
 	logic	[(`TAG_SIZE-1):0]	ifb_tail_nxt;
-	logic	h_round;
-	logic	t_round;
+	logic	h_round, h_round_nxt;
+	logic	t_round, t_round_nxt;
 
 	logic	[`IFB_SIZE-1:0][63:0] PC_array;
 	logic	[`IFB_SIZE-1:0][31:0] insn_array;

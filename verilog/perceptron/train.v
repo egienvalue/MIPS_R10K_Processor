@@ -19,7 +19,7 @@ module train (
 	logic	signed	[`WEIGHT_W-1:0]	y_out[`PT_W-1:0];
 	logic	signed	[`WEIGHT_W-1:0]	y_out_nxt;
 	logic	[`BHR_W:0]	x;	
-	logic	traning_stop;
+	logic	training_stop;
 	assign tr2pt_wr_en_o	= training_en_i;
 	assign y_out_nxt		= (y_vld_i) ? y_out_i : y_out[if_br_PC_i[`PT_IDX_W-1:0]];
 	assign tr2pt_wr_idx_o	= fu_br_PC_i[`PT_W-1:0];
