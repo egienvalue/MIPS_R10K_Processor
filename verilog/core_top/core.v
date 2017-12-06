@@ -26,6 +26,12 @@ module core (
 		// may need more ports for testbench!!!
 		output	logic	[3:0]							core_retired_instrs,
 		output	logic	[3:0]							core_error_status,
+
+		// <12/6>
+		output	logic	[63:0]							retire_PC_tb_o,
+		output	logic	[`LRF_IDX_W-1:0]				retire_areg_tb_o,
+		output	logic	[63:0]							retire_areg_val_tb_o,
+
 		// ports for writeback all dty data from Dcache to mem
 		input			[`DCACHE_WAY_NUM-1:0]			Dcache_way_idx_tb_i,
 		input			[`DCACHE_IDX_W-1:0]				Dcache_set_idx_tb_i,
@@ -204,6 +210,9 @@ module core (
 	//---------------------------------------------------------------
 	// signals for ROB
 	//---------------------------------------------------------------
+	// <12/6> ports for wb in tb
+	logic	[`PRF_IDX_W-1:0]	retire_preg_tb_o;
+
 	logic	[`PRF_IDX_W-1:0]	fl2rob_tag_i;
 	logic	[`PRF_IDX_W-2:0]	fl2rob_cur_head_i;
 	logic	[`PRF_IDX_W-1:0]	map2rob_tag_i;
@@ -356,6 +365,9 @@ module core (
 	logic	[63:0]				wr_data_i;
 
 	logic	[63:0]				rda_data_o, rdb_data_o;
+
+	// <12/6> ports for wb in tb
+	logic	[`PRF_IDX_W-1:0]	retire_preg_idx_tb_i;
 
 	//---------------------------------------------------------------
 	// signals for early branch recovery (br stack)
@@ -697,6 +709,11 @@ module core (
 		.clk						(clk),
 		.rst						(rst),
 
+		// <12/6> ports for writeback in tb
+		.retire_PC_tb_o				(retire_PC_tb_o),
+		.retire_areg_tb_o			(retire_areg_tb_o),
+		.retire_preg_tb_o			(retire_preg_tb_o),
+
 		.fl2rob_tag_i				(fl2rob_tag_i),
 		.fl2rob_cur_head_i			(fl2rob_cur_head_i),
 		.map2rob_tag_i				(map2rob_tag_i),
@@ -904,6 +921,9 @@ module core (
 	assign wr_idx_i		= fu2preg_wr_idx_o; // !! Tnew from rob, wr preg
 	assign wr_data_i	= fu2preg_wr_value_o; // need value from fu
 
+	// <12/6>
+	assign retire_preg_idx_tb_i	= retire_preg_tb_o;
+
 	preg_file preg_file (
 		.clk		(clk),
 		.rst		(rst),
@@ -914,7 +934,11 @@ module core (
 		.wr_data_i	(wr_data_i),
 
 		.rda_data_o	(rda_data_o), 
-		.rdb_data_o	(rdb_data_o)
+		.rdb_data_o	(rdb_data_o),
+
+		// <12/6> ports for writeback
+		.retire_preg_idx_tb_i	(retire_preg_idx_tb_i),
+		.retire_areg_val_tb_o	(retire_areg_val_tb_o),
 	);
 
 

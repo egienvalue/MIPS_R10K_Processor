@@ -16,6 +16,11 @@ module	rob (
 		input					clk,
 		input					rst,
 
+		// port for writeback in tb <12/6>
+		output	logic	[63:0]							retire_PC_tb_o,
+		output	logic	[`LRF_IDX_W-1:0]				retire_areg_tb_o,
+		output	logic	[`PRF_IDX_W-1:0]				retire_preg_tb_o,
+
 		//----------------------------------------------------------------------
 		//Dispatch Signal Input
 		//----------------------------------------------------------------------
@@ -171,10 +176,21 @@ module	rob (
 	logic						fu_done_r_nxt;
 
 	logic						br_recovery_mark_r; // <12/1>
-
-	wire dispatch_en					= rob_dispatch_en_i;
+	
+	wire 						dispatch_en
 	// <11/14>
-	wire br_predict_wrong				= ((br_pretaken_r[br_recovery_idx_i[`ROB_IDX_W-1:0]] != br_recovery_taken_i) |
+	wire 						br_predict_wrong
+
+	
+	// <12/6> ports for writeback
+	assign retire_PC_tb_o	= PC_r[head_r[`HT_W-1:0]];
+	assign retire_areg_tb_o	= logic_dest_r[head_r[`HT_W-1:0]];
+	assign retire_preg_tb_o	= dest_tag_r[head_r[`HT_W-1:0]];
+
+
+	assign dispatch_en					= rob_dispatch_en_i;
+	// <11/14>
+	assign br_predict_wrong				= ((br_pretaken_r[br_recovery_idx_i[`ROB_IDX_W-1:0]] != br_recovery_taken_i) |
 										  (br_recovery_target_i != br_target_r[br_recovery_idx_i[`ROB_IDX_W-1:0]]));
 
 	assign rob2rs_tail_idx_o			= tail_r;
