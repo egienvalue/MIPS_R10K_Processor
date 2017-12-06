@@ -26,6 +26,7 @@ module core_top	(
 		output	logic	[63:0]					retire_PC_tb_o,
 		output	logic	[`LRF_IDX_W-1:0]		retire_areg_tb_o,
 		output	logic	[63:0]					retire_areg_val_tb_o,
+		output	logic							retire_rdy_tb_o,
 
 		// ports for writeback all dty data from Dcache to mem
 		input			[`DCACHE_WAY_NUM-1:0]	Dcache_way_idx_tb_i,
@@ -205,7 +206,8 @@ module core_top	(
 
 		.retire_PC_tb_o				(retire_PC_tb_o),
 		.retire_areg_tb_o			(retire_areg_tb_o),
-		.retire_areg_val_tb_o		(retire_areg_val_tb_o)
+		.retire_areg_val_tb_o		(retire_areg_val_tb_o),
+		.retire_rdy_tb_o			(retire_rdy_tb_o),
 
 		// ports for writeback all dty data from Dcache to mem
 		.Dcache_way_idx_tb_i		(Dcache_way_idx_tb_i),

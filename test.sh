@@ -6,7 +6,7 @@ make clean
 make simv
 cd ../..
 echo "@@@ Starting test!" | tee test.rep
-for file in test_progs/*.s; do
+for file in decaf_test/*.s; do
     filename=$(echo $file | cut -d'.' -f1 | cut -d'/' -f2)
     echo "Assembling $filename"
     ./vs-asm < $file > program.mem
@@ -18,12 +18,12 @@ for file in test_progs/*.s; do
     mv *.out ../../new_out/$filename
 	cd ../..
 
-    diff golden/"${filename}.writeback.out" new_out/$filename/writeback.out > new_out/$filename/wbdiffresult
+    diff decaf_golden/"${filename}.writeback.out" new_out/$filename/writeback.out > new_out/$filename/wbdiffresult
     if test -s new_out/$filename/wbdiffresult; then
         echo "@@@ Failed at test $filename, writeback.out doesn't match!" | tee -a test.rep
         #exit 1
     fi
-    grep "@@@" golden/"${filename}.program.out" > goldenpr_trim
+    grep "@@@" decaf_golden/"${filename}.program.out" > goldenpr_trim
     grep "@@@" new_out/$filename/program.out > newpr_trim
     diff goldenpr_trim newpr_trim > new_out/$filename/prdiffresult
     if test -s new_out/$filename/prdiffresult; then

@@ -20,6 +20,7 @@ module	rob (
 		output	logic	[63:0]							retire_PC_tb_o,
 		output	logic	[`LRF_IDX_W-1:0]				retire_areg_tb_o,
 		output	logic	[`PRF_IDX_W-1:0]				retire_preg_tb_o,
+		output	logic									retire_rdy_tb_o,
 
 		//----------------------------------------------------------------------
 		//Dispatch Signal Input
@@ -177,16 +178,16 @@ module	rob (
 
 	logic						br_recovery_mark_r; // <12/1>
 	
-	wire 						dispatch_en
+	wire 						dispatch_en;
 	// <11/14>
-	wire 						br_predict_wrong
+	wire 						br_predict_wrong;
 
 	
 	// <12/6> ports for writeback
 	assign retire_PC_tb_o	= PC_r[head_r[`HT_W-1:0]];
 	assign retire_areg_tb_o	= logic_dest_r[head_r[`HT_W-1:0]];
 	assign retire_preg_tb_o	= dest_tag_r[head_r[`HT_W-1:0]];
-
+	assign retire_rdy_tb_o	= rob_head_retire_rdy_o;
 
 	assign dispatch_en					= rob_dispatch_en_i;
 	// <11/14>

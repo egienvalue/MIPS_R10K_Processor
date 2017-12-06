@@ -31,6 +31,7 @@ module core (
 		output	logic	[63:0]							retire_PC_tb_o,
 		output	logic	[`LRF_IDX_W-1:0]				retire_areg_tb_o,
 		output	logic	[63:0]							retire_areg_val_tb_o,
+		output	logic									retire_rdy_tb_o,
 
 		// ports for writeback all dty data from Dcache to mem
 		input			[`DCACHE_WAY_NUM-1:0]			Dcache_way_idx_tb_i,
@@ -713,6 +714,7 @@ module core (
 		.retire_PC_tb_o				(retire_PC_tb_o),
 		.retire_areg_tb_o			(retire_areg_tb_o),
 		.retire_preg_tb_o			(retire_preg_tb_o),
+		.retire_rdy_tb_o			(retire_rdy_tb_o),
 
 		.fl2rob_tag_i				(fl2rob_tag_i),
 		.fl2rob_cur_head_i			(fl2rob_cur_head_i),
@@ -937,8 +939,8 @@ module core (
 		.rdb_data_o	(rdb_data_o),
 
 		// <12/6> ports for writeback
-		.retire_preg_idx_tb_i	(retire_preg_idx_tb_i),
-		.retire_areg_val_tb_o	(retire_areg_val_tb_o),
+		.retire_preg_idx_tb_i(retire_preg_idx_tb_i),
+		.retire_areg_val_tb_o(retire_areg_val_tb_o)
 	);
 
 

@@ -116,7 +116,7 @@ SOURCE_FILES= $(SOURCE_DIR)/$(MODULE).v	\
 			$(SOURCE_DIR)/../Dmem_ctrl/Dmem_ctrl.v
 
 HEADERS = ../../sys_defs.vh
-TESTBENCH = $(MODULE)_tb.v	\
+TESTBENCH = $(MODULE)_syn_tb.v	\
 			../mem.v
 SYNFILES = ../../synth/$(MODULE)/$(MODULE).vg
 SYN_DIR = ../../synth/$(MODULE)
@@ -127,7 +127,7 @@ export SOURCE_FILES
 # Passed through to .tcl scripts:
 export CLOCK_NET_NAME = clk
 export RESET_NET_NAME = rst
-export CLOCK_PERIOD = 8.8	# TODO: You will want to make this more aggresive
+export CLOCK_PERIOD = 30	# TODO: You will want to make this more aggresive
 export CORE_NAME	= $(MODULE)
 
 all:	simv
@@ -157,11 +157,9 @@ syn_dve:	$(HEADERS) $(SYNFILES) $(TESTBENCH)
 clean:
 	rm -rf simv simv.daidir csrc vcs.key program.out
 	rm -rf vis_simv vis_simv.daidir
-	rm -rf dve*
 	rm -rf syn_simv syn_simv.daidir syn_program.out
 	rm -rf synsimv synsimv.daidir csrc vcdplus.vpd vcs.key synprog.out pipeline.out writeback.out vc_hdrs.h
 	rm -rf ucli.key
-	rm -rf DVEfiles
 	rm -rf ./*.out
 
 nuke:	clean

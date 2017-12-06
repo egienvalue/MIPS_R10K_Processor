@@ -9,8 +9,8 @@ module preg_file(
 		output	logic	[63:0]		rda_data_o, rdb_data_o,
 
 		// <12/6> ports for writeback in tb
-		input	[`PRF_IDX_W-1:0]	retire_preg_idx_tb_i;
-		output	logic	[63:0]		retire_areg_val_tb_o;
+		input	[`PRF_IDX_W-1:0]	retire_preg_idx_tb_i,
+		output	logic	[63:0]		retire_areg_val_tb_o
 	
 		);
 
