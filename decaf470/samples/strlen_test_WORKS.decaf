@@ -1,0 +1,14 @@
+void main()
+{
+    string a, b;
+
+    a = "apple";
+    b = "bob";
+    x = (a != b);
+    y = a.length();
+    z = b  .  length();
+}
+
+bool x;
+unsigned int y;
+ushort z;

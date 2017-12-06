@@ -1,0 +1,50 @@
+int[] ReadArray() {
+	int i;
+	int[] arr;
+	int numScores;
+
+	Print("How many scores? ");
+	numScores = ReadInteger();
+	arr = NewArray(numScores, int);
+
+	for(i = 0; i < arr.length(), i++) {
+		Print("Enter next number: ");
+		arr[i] = ReadInteger();
+	}
+	return arr;
+}
+
+
+void Sort(int[] arr) {
+	int i;
+	int val;
+	for(i = 1; i < arr.length(); i++) {
+		int j;
+		val = arr[i];
+		for(j = i - 1; j >= 0; j--) {
+			if(val >= arr[j]) break;
+			arr[j+1] = arr[j];
+		}
+		arr[j+1] = val;
+	}
+}
+
+
+void PrintArray(int[] arr) {
+	int i;
+	Print("Sorted results: ");
+	for(i = 0; i < arr.length(); i++)
+		Print(arr[i], " ");
+	Print("\n");
+}
+
+
+void main() {
+	int[] arr;
+
+	Print("\nThis program will read in a bunch of numbers and print them\n");
+	Print("back out in sorted order.\n\n");
+	arr = ReadArray();
+	Sort(arr);
+	PrintArray(arr);
+}

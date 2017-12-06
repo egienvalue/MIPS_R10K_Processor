@@ -1,0 +1,18 @@
+void main() {
+    string str; // strings are built-in types, no need for #include <string>
+    str = "Hel\
+lo "
+            "World!";
+    /* comprehensive preprocessing of escape characters,
+       and implicit string literal concatenation */
+    // btw, you can't nest block-comments
+
+    for(i = 0; i < 10; i++) // where is 'i' declared?
+        func(i); // where is func declared?
+}
+
+void func(int x) {
+    return;
+}
+
+int i;

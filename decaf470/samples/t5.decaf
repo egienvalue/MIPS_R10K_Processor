@@ -1,0 +1,25 @@
+bool Wild(string[] names, string answer) {
+	int i;
+	for(i = 0; i < names.length(); i++)
+		if(names[i] == answer) 
+			return true;
+	return false;
+}
+
+void main(){
+	string[] names;
+	names = NewArray(4, string);
+	names[0] = "Brian";
+	names[1] = "Cam";
+	names[2] = "Gavan";
+	names[3] = "Julie";
+
+	while(true) {
+		Print("\nWho is your favorite CS143 staff member? ");
+		if(Wild(names, ReadLine())) {
+			Print("You just earned 1000 bonus points!\n");
+			break;
+		}
+		Print("That's not a good way to make points. Try again!\n");
+	}
+}

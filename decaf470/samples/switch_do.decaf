@@ -1,0 +1,10 @@
+void main() {
+    switch(2) {
+        case 0:
+        case 1:
+        case 2: break;
+        default:
+    }
+
+    do;
+}

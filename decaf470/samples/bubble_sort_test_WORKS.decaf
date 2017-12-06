@@ -1,0 +1,49 @@
+// this is "test_progs/sort.s" converted to Decaf
+// it performs a (stable, non-adaptive) bubble sort algorithm
+// oh, and it sorts decending for some reason...
+/*
+	TEST PROGRAM #7: bubble sort
+
+	long a[] = { 3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5, 8, 9, 7, 9, 3 };
+
+	main(void)
+	{
+	  for (i = 0; i < 16; ++i)
+	    for (j = 0; j < (16-i); ++j)
+	    {
+	      if (a[j] < a[j+1])
+	      {
+		temp = a[j+1];
+		a[j+1] = a[j];
+		a[j] = temp;
+	      }
+	    }
+	}
+*/
+// notice the off-by-1 bug in the above peodocode,
+// the two "16" should be "15"
+// I want to know who wrote that original code...
+
+long[] a;
+
+void main()
+{
+	unsigned int i, j;
+	signed long temp;
+	long[] input; // needed to split these lines, since we don't have Initailizers in Decaf (yet)
+	input = {3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5, 8, 9, 7, 9, 3}; // 16 elements
+	// try this with negative numbers, it should work too
+
+	// populate it into heap, since "input" is const/literal array
+	a = NewArray(input.length(), long);
+	for(i = 0U; i < input.length(); i += 1U)
+		a[i] = input[i];
+
+	for(i = 0U; i < (a.length() - 1U); ++i) // btw, pre-inc gives more efficient asm code
+		for(j = 0U; j < (a.length()-i-1U); ++j)
+			if(a[j] < a[j+1U]) {
+				temp = a[j+1U];
+				a[j+1U] = a[j];
+				a[j] = temp;
+			}
+}

@@ -1,0 +1,23 @@
+class QueueItem {
+    int data;
+    QueueItem next;
+    QueueItem prev;
+
+    void Init(int data, QueueItem next, QueueItem prev)
+    {
+        this.data = data;
+        this.next = next;
+        next.prev = this;
+        this.prev = prev;
+        prev.next = this;
+    }
+
+    int GetData()
+    {
+        return this.data;
+    }
+}  
+
+void main()
+{
+}

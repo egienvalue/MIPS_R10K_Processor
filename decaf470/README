@@ -1,0 +1,68 @@
+DCC is a compiler for the Decaf470 language, a variant of standard Decaf. 
+(Although the executable is named 'dcc', the official name of the compiler itself 
+is also "Decaf470", and it depends on the context if you are referring to the 
+language or the compiler itself.)
+
+Invoke the compiler using
+	./dcc filename.decaf > filename.s
+to produce the commented assembly, or go directly to machine code using: 
+	./dcc filename.decaf | ./vs-asm > filename.mem
+
+Also try
+	./dcc -d preprocessor filename.decaf
+to see a preprocessing pass only. It has very powerful preprocessing 
+capabilities, and supports #define, #undef, #ifdef, #ifndef, #else, and #endif. 
+However, note that #defines BLAH, should later be used as #BLAH (all #defines 
+must be all caps).
+
+Use
+	./dcc -d tokenizer filename.decaf
+to see the tokens being scanned in, but this shouldn't be very useful at all.
+
+Look though the provided *.decaf testcases for some example code, but note that 
+those involving I/O do not compile due to the nature of the 470 ISA. I may have 
+included testcases which are not legal Decaf470 -- ignore those (it's hard to 
+find interesting examples when I/O is restricted). The ones with "_WORKS" 
+suffix should compile fine.
+
+This is a super nifty command that compiles, assembles, and simulates in one go, 
+and also dumps out the program.out:
+    ./dcc samples/bubble_sort_test_WORKS.decaf | vs-asm | ../sim470/sim470 /dev/stdin && cat program.out
+
+
+
+For a quick overview of the language, there is an attached pdf, within which you 
+should focus on the "Example Code" section starting on page 3. It lists 
+all supported keywords, all supported types, all supported operators, and some 
+other information such as operator precedence. But as a big warning, the 
+generated code is full of register spills and fills. The register allocation 
+pass is locked out of of v0.1 to get a stable build. Only teams with good LSQ,
+store-to-load forwarding to run its longer output. But for all 470 teams, a good 
+variety of "New()" and "Delete()" calls to fragment the 'heap' will serve as a 
+difficult test case to pass, due to the density of back-to-back dependent code.
+
+
+
+It injects 'call_pal 0xDECAF' for runtime exceptions, which cause a 470 
+pipeline to 'halt on illegal instruction. This include but are not limited to 
+the types of runtime exceptions typically dealt with in Java.
+
+This is v0.1, the first semi-public release. It is currently closed source, but 
+I will readily e-mail you whatever binary you desire. Many features are locked 
+out, due to not being fully validated. So refrain from using 'initializers' 
+(such as "int i = 0;"), where you declare and initialize in the same statement 
+(instead do "int i; i=0;"). Refrain from floating point types and values.
+Refrain from I/O function calls ("cin", "cout", "printf()", "getline()", or the 
+equivalent standard-Decaf analogs).
+
+Luckily, the I/O of reading and writing strings may be simulated by reading
+from some global literal (globals will never be optimized out), and writing to
+the heap. Then you must be creative about converting memory contents from hex to
+ascii text, with correct endian. (I wrote a simple C++ program that does this, 
+which I have included source code for.)
+
+E-mail me at DougCube@gmail.com for any bugs, suggestions, comments, feature 
+requests or anything!
+
+
+-Doug Li

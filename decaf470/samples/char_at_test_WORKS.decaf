@@ -1,0 +1,21 @@
+char[] array1, array2;
+
+void main()
+{
+	unsigned int i;
+	string str;
+	str = "Hello World!";
+
+	array1 = NewArray(str.length(), char);
+	array2 = NewArray(str.length(), char);
+
+	for(i = 0u; i < array1.length(); i++)
+		array1[i] = str[i];
+
+	str[0x6] = 'w'; // this is bad,
+	// it is allowing a write to the read-only data-segment,
+	// need notion of 'const'
+
+	for(i = 0U; i < array2.length(); i++)
+		array2[i] = str.charAt(i);
+}

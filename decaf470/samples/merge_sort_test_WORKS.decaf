@@ -1,0 +1,82 @@
+// classic merge sort in Decaf
+// should also try this using strings, since the comparison operators
+// are overloaded to compare them
+
+void main()
+{
+	uint i;
+	long[] input, output;
+	input = { // 100 truly random (not pseudo) in the interval [-1024, 1023]
+		/*-714,-683,-790,-542,-1014,495,986,-615,813,847,
+		950,-353,310,-666,-470,-752,-357,982,-1017,768,
+		-596,388,-317,-567,-661,980,-343,-539,-6,-920,
+		504,783,-198,851,-57,-993,636,171,-674,308,
+		635,623,373,-308,926,586,550,478,863,46,
+		140,-425,-423,977,995,-145,-220,243,-554,-850,
+		-953,-650,-406,978,462,-159,950,-498,85,-1019,
+		401,926,11,-948,482,993,-200,564,119,-398,*/
+		895,-613,166,89,303,392,-300,465,-690,-334,
+		-207,868,752,-64,646,258,26,-699,108,-472};
+		// okay, so no negative-literals in Decaf (yet)
+		/*714,683,790,542,1014,495,986,615,813,847,
+		950,353,310,666,470,752,357,982,1017,768,
+		596,388,317,567,661,980,343,539,6,920,
+		504,783,198,851,57,993,636,171,674,308,
+		635,623,373,308,926,586,550,478,863,46,
+		140,425,423,977,995,145,220,243,554,850,
+		953,650,406,978,462,159,950,498,85,1019,
+		401,926,11,948,482,993,200,564,119,398,
+		895,613,166,89,303,392,300,465,690,334,
+		207,868,752,64,646,258,26,699,108,472};*/
+		// btw, it is this lengthy crap, that makes my compiler seg-fault
+
+	output = NewArray(input.length(), long);
+	for(i = 0U; i < input.length(); i++)
+		output[i] = input[i];
+
+	mergeSort(output);
+}
+
+
+void mergeSort(long[] array)
+{
+	uint i, mid, end;
+	long[] left, right;
+
+	end = array.length();
+	if(end <= 1U) return; // base cases
+	mid = end >> 1U; // lack of divide operator
+
+	left = NewArray(mid, long);
+	for(i = 0U; i < mid; ++i) left[i] = array[i];
+	mergeSort(left);
+
+	right = NewArray(end-mid, long);
+	for(i = 0U; i < end-mid; ++i) right[i] = array[mid + i];
+	mergeSort(right);
+
+	merge(left, right, array);
+	DeleteArray(left);
+	DeleteArray(right);
+}
+
+
+void merge(long[] a, long[] b, long[] whole)
+{
+	uint posA, posB;
+	posA = 0U; posB = 0U;
+
+	while(posA < a.length() && posB < b.length())
+		if(a[posA] <= b[posB]) {
+			whole[posA + posB] = a[posA];
+			++posA; // prefix faster than postfix in asm
+		}
+		else {
+			whole[posA + posB] = b[posB];
+			++posB; // prefix faster than postfix in asm
+		}
+	for(; posA < a.length(); ++posA)
+		whole[posA + posB] = a[posA];
+	for(; posB < b.length(); ++posB)
+		whole[posA + posB] = b[posB];
+}

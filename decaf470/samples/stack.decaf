@@ -1,0 +1,34 @@
+class Stack {
+	int sp;
+	int[] elems;
+
+	void Init() {
+		sp = 0;
+		elems = NewArray(100, int);
+		Push(3);
+	}
+
+	void Push(int i) {
+		elems[sp++] = i;
+	}
+
+	int Pop() {
+		return elems[sp--];
+	}
+
+	int NumElems() {
+		return sp;
+	}
+}
+
+
+void main() {
+	Stack s;
+	s = New(Stack);
+	s.Init();
+
+	s.Push(3);
+	s.Push(7);
+	s.Push(4);
+	Print(s.NumElems(), " ", s.Pop(), " ", s.Pop(), " ", s.Pop(), " ", s.NumElems());
+}

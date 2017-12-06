@@ -1,0 +1,22 @@
+#define PROCEDURE void
+#define BEGIN {
+#define END }
+#define BINKY 2 + 2 * 10
+
+#ifdef PROCEDURE
+#PROCEDURE not_main()
+#BEGIN
+    int x;;
+    x = #BINKY;
+    return;
+#END
+#endif
+
+#ifndef PROCEDURE
+#PROCEDURE not_main_either()
+#BEGIN
+    int y;
+    y = #BINKY;
+    return;
+#END
+#endif

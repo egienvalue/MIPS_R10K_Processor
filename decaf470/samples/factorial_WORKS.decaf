@@ -1,0 +1,17 @@
+unsigned int[] results;
+
+unsigned int factorial(unsigned int N)
+{
+	if(N < 2U) return 1U;
+	return N * factorial(N - 1U);
+}
+
+void main()
+{
+	uint i;
+
+	results = NewArray(15, uint);
+	for(i = 1U; i <= 15U; i++)
+		//Print("Factorial(", i , ") = ", factorial(i), "\n");
+		results[i-1U] = factorial(i-1U);
+}

@@ -1,0 +1,7 @@
+void main()
+{
+	int[] arr;
+
+	arr = NewArray(-5, int);
+	return; // should not reach
+}

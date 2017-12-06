@@ -1,0 +1,46 @@
+// eventually there will be a built in strcpy() and append(),
+// would would have much less overhead, but until then here's a demo:
+
+void strcpy(string dst, string src, uint offset)
+{
+	uint i;
+	for(i = 0U; i < src.length(); i++)
+		dst[i + offset] = src.charAt(i);
+	// src[i] also works, but dst.charAt() does not (RValue vs. LValue)
+	dst[i + offset] = '\0';
+}
+
+void main()
+{
+	string a, b, c;
+	string d;
+
+	a = "Hello";
+	b = " World!";
+	c = NewString(a.length() + b.length() + 1U); // +1 for null-char
+
+	strcpy(c, a, 0U);
+	strcpy(c, b, a.length());
+
+	/* smart enough to keep null-chars to asm code? */
+	//d = "blah\0blah"; // no, certain assembler limitations (requires massive workaround to support)
+
+	/* try this: */
+	//d = "blah blah";
+	//d[4] = '\0'; // ops, would cause runtime-exception, writting to a literal
+
+	/* a correct way: */
+	d = NewString("blah blah".length() + 1U); // isn't this cool syntax?
+	strcpy(d, "blah blah", 0U);
+	d[4] = '\0';
+
+	signed int x;
+	x = 5;
+	x = x*31; // x<<5 - x
+
+
+	//DeleteString(a); // not in heap section, would cause a runtime exception
+	//DeleteString(b); // not in heap section, would cause a runtime exception
+	DeleteString(c);
+	//DeleteString(d); // should do this, but more interesting TC without it
+}

@@ -1,0 +1,9 @@
+void main() {
+  string a;
+  string b;
+  bool matches;
+
+  a = "hel" "lo San Francisco12345";
+  b = "hello San Francisco1234";
+  matches = (a == b);
+}
