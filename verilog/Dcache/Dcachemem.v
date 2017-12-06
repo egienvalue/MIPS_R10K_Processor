@@ -37,6 +37,7 @@ module Dcachemem (
 		input			[`DCACHE_IDX_W-1:0]				mshr_iss_idx_i,
 		input			[`DCACHE_WORD_IN_BITS-1:0]		mshr_iss_data_i,
 		output	logic									mshr_iss_dty_o,
+		output	logic									mshr_iss_hit_o,
 
 		input											mshr_evict_en_i,
 		input			[`DCACHE_IDX_W-1:0]				mshr_evict_idx_i,
@@ -210,6 +211,7 @@ module Dcachemem (
 	// mshr_iss port !!!
 	// check if the dty of the issuing block
 	//assign mshr_iss_dty_o		= dty_r[sel_r[mshr_iss_idx_i]][mshr_iss_idx_i];
+	assign mshr_iss_hit_o	= mshr_iss_hit;
 
 	always_comb begin
 		for (int i = 0; i < `DCACHE_WAY_NUM; i++) begin
@@ -262,16 +264,9 @@ module Dcachemem (
 
 
 	//-----------------------------------------------------
-	// vld_r update, vld_r_nxt
+	// vld_r update, vld_r_nxt... priority matters
 	always_comb begin
 		vld_r_nxt	= vld_r;
-		// invld vld bit can be overwrite by others
-		if (bus_invld_i && bus_rd_hit_o) begin
-			for (int i = 0; i < `DCACHE_WAY_NUM; i++) begin
-				if (bus_rd_hit_w[i])
-					vld_r_nxt[i][bus_rd_idx_i]	= 1'b0;
-			end
-		end
 		if (mshr_rsp_wr_en_i) begin
 			if (mshr_rsp_hit) begin
 				for (int i = 0; i < `DCACHE_WAY_NUM; i++) begin
@@ -302,15 +297,31 @@ module Dcachemem (
 				vld_r_nxt[sel_r[mshr_iss_idx_i]][mshr_iss_idx_i] = 1'b1;
 			end
 		end
+		if (bus_invld_i && bus_rd_hit_o) begin
+			for (int i = 0; i < `DCACHE_WAY_NUM; i++) begin
+				if (bus_rd_hit_w[i])
+					vld_r_nxt[i][bus_rd_idx_i]	= 1'b0;
+			end
+		end
 		if (mshr_evict_en_i) begin
 			vld_r_nxt[sel_r[mshr_evict_idx_i]][mshr_evict_idx_i] = 1'b0;
 		end
 	end
 	
 	//-----------------------------------------------------
-	// dty_r update, dty_r_nxt	
+	// dty_r update, dty_r_nxt... <12/5> priority matters	
 	always_comb begin
 		dty_r_nxt	 = dty_r;
+		if (mshr_iss_st_en_i) begin
+			if (mshr_iss_hit) begin
+				for (int i = 0; i < `DCACHE_WAY_NUM; i++) begin
+					if (mshr_iss_hit_w[i]) 
+						dty_r_nxt[i][mshr_iss_idx_i] = 1'b1;
+				end
+			end else begin
+				dty_r_nxt[sel_r[mshr_iss_idx_i]][mshr_iss_idx_i] = 1'b1;
+			end
+		end
 		// invld and down grade can be overwrite if block
 		// conflict in cachemem, bus_rd_idx_i = mshr_iss_idx_i
 		if (bus_downgrade_i && bus_rd_hit_o) begin
@@ -327,16 +338,6 @@ module Dcachemem (
 		end
 		if (mshr_evict_en_i) begin
 			dty_r_nxt[sel_r[mshr_evict_idx_i]][mshr_evict_idx_i] = 1'b0;
-		end
-		if (mshr_iss_st_en_i) begin
-			if (mshr_iss_hit) begin
-				for (int i = 0; i < `DCACHE_WAY_NUM; i++) begin
-					if (mshr_iss_hit_w[i]) 
-						dty_r_nxt[i][mshr_iss_idx_i] = 1'b1;
-				end
-			end else begin
-				dty_r_nxt[sel_r[mshr_iss_idx_i]][mshr_iss_idx_i] = 1'b1;
-			end
 		end
 	end
 

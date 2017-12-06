@@ -107,10 +107,10 @@ typedef enum logic[1:0] {
 `define			BR_PR_CORRECT		2'b10
 `define			BR_NONE			2'b00
 `define			BR_STATE_W		2
-`define         BHR_W           10
+`define         BHR_W           8
 `define         PT_W            32
 `define         PT_IDX_W        ($clog2(`PT_W))
-`define         THRESHOLD       32
+`define         THRESHOLD       256
 `define         WEIGHT_W        ($clog2(`THRESHOLD)+1)
 `define			PERCEPTRON
 
@@ -124,12 +124,12 @@ typedef enum logic[1:0] {
 `define			FL_PTR_W		$clog2(`FL_NUM)
 `define			PC_IDX_W		5
 `define			BHT_NUM			2**`PC_IDX_W
-`define			BHT_W			5
+`define			BHT_W			2
 `define			PHT_NUM			2**`BHT_W
 
 `define			BTB_TAG_W		10		//BTB
 `define			BTB_VAL_W		12
-`define			BTB_SEL_W		5
+`define			BTB_SEL_W		9
 `define			BTB_NUM			2**`BTB_SEL_W
 
 

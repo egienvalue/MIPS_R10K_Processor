@@ -82,6 +82,7 @@ module Dcache (
 	logic		[`DCACHE_IDX_W-1:0]				Dctrl2Dcache_mshr_iss_idx;
 	logic		[`DCACHE_WORD_IN_BITS-1:0]		Dctrl2Dcache_mshr_iss_data;
 	logic										Dcache2Dctrl_mshr_iss_dty;
+	logic										Dcache2Dctrl_mshr_iss_hit;
 
 	logic										Dctrl2Dcache_evict_en;
 	logic		[`DCACHE_IDX_W-1:0]				Dctrl2Dcache_evict_idx;
@@ -134,6 +135,7 @@ module Dcache (
 		.mshr_iss_idx_i		(Dctrl2Dcache_mshr_iss_idx),
 		.mshr_iss_data_i	(Dctrl2Dcache_mshr_iss_data),
 		.mshr_iss_dty_o		(Dcache2Dctrl_mshr_iss_dty),
+		.mshr_iss_hit_o		(Dcache2Dctrl_mshr_iss_hit),
 
 		.mshr_evict_en_i	(Dctrl2Dcache_evict_en),
 		.mshr_evict_idx_i	(Dctrl2Dcache_evict_idx),
@@ -193,6 +195,7 @@ module Dcache (
 		.mshr_rsp_wr_data_o			(Dctrl2Dcache_mshr_wr_data),
 
 		// from/to cachemem
+		.mshr_iss_hit_i				(Dcache2Dctrl_mshr_iss_hit),
 		.mshr_iss_dty_i				(Dcache2Dctrl_mshr_iss_dty),
 		.mshr_iss_st_en_o			(Dctrl2Dcache_mshr_st_en),
 		.mshr_iss_tag_o				(Dctrl2Dcache_mshr_iss_tag),

@@ -175,7 +175,7 @@ module lsq (
 	always_comb begin
 		st_retire_rdy_r_nxt = st_retire_rdy_r;
 
-		if (rob_st_retire_en_i & ~Dcache_mshr_st_ack_i)
+		if (rob_st_retire_en_i && (~Dcache_mshr_st_ack_i || (sq_head_q_r != sq_retire_head_q_r)))
 			st_retire_rdy_r_nxt[sq_retire_head_r] = 1'b1;
 
 		if (sq_retire_en)
@@ -231,20 +231,21 @@ module lsq (
 		st2ld_forward_data2 = 32'b0;
 		st2ld_forward_vld1 = 1'b0;
 		st2ld_forward_vld2 = 1'b0;
-		
-		for (j = 0; j < `SQ_ENT_NUM; j = j + 1) begin
-			if ((ex_ld_position_i >= sq_head_r) && (~lsq_sq_full_o || (ex_ld_position_i != sq_tail_r))) begin
-				if ((j >= sq_head_r) && (j < ex_ld_position_i) && (addr_i == st_addr_r[j])) begin
-					st2ld_forward_data1 = st_data_r[j];
-					st2ld_forward_vld1 = 1'b1;
-				end
-			end else begin
-				if ((j < ex_ld_position_i) && (addr_i == st_addr_r[j])) begin
-					st2ld_forward_data1 = st_data_r[j];
-					st2ld_forward_vld1 = 1'b1;
-				end else if ((j >= sq_head_r) && (addr_i == st_addr_r[j])) begin
-					st2ld_forward_data2 = st_data_r[j];
-					st2ld_forward_vld2 = 1'b1;
+		if (ld_vld_i) begin
+			for (j = 0; j < `SQ_ENT_NUM; j = j + 1) begin
+				if ((ex_ld_position_i >= sq_head_r) && (~lsq_sq_full_o || (ex_ld_position_i != sq_tail_r))) begin
+					if ((j >= sq_head_r) && (j < ex_ld_position_i) && (addr_i == st_addr_r[j])) begin
+						st2ld_forward_data1 = st_data_r[j];
+						st2ld_forward_vld1 = 1'b1;
+					end
+				end else begin
+					if ((j < ex_ld_position_i) && (addr_i == st_addr_r[j])) begin
+						st2ld_forward_data1 = st_data_r[j];
+						st2ld_forward_vld1 = 1'b1;
+					end else if ((j >= sq_head_r) && (addr_i == st_addr_r[j])) begin
+						st2ld_forward_data2 = st_data_r[j];
+						st2ld_forward_vld2 = 1'b1;
+					end
 				end
 			end
 		end

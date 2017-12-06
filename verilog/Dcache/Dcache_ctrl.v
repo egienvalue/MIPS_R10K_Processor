@@ -45,6 +45,7 @@ module Dcache_ctrl (
 		output	logic	[`DCACHE_WORD_IN_BITS-1:0]		mshr_rsp_wr_data_o,
 
 		// from/to cachemem
+		input											mshr_iss_hit_i,
 		input											mshr_iss_dty_i,
 		output	logic									mshr_iss_st_en_o,
 		output	logic	[`DCACHE_TAG_W-1:0]				mshr_iss_tag_o,
@@ -126,6 +127,7 @@ module Dcache_ctrl (
 	// signals for evict
 	logic									mshr_iss_evict_en;
 	logic									mshr_rsp_evict_en;
+	logic									mshr_iss_silent_st_en;
 
 	wire									lq_addr_hit;
 
@@ -230,7 +232,8 @@ module Dcache_ctrl (
 
 	//-----------------------------------------------------
 	// mshr_iss to Dcache write signals
-	assign mshr_iss_st_en_o	= bus2Dctrl_req_ack_i && (bus2Dctrl_req_message_i == GET_M);
+	assign mshr_iss_silent_st_en	= mshr_iss_hit_i && mshr_iss_dty_i && mshr_iss_en;
+	assign mshr_iss_st_en_o			= (bus2Dctrl_req_ack_i && (bus2Dctrl_req_message_i == GET_M)) | mshr_iss_silent_st_en;
 
 
 	//-----------------------------------------------------
@@ -269,14 +272,22 @@ module Dcache_ctrl (
 			Dctrl2bus_req_data_o	= Dcache_evict_data_i;
 			Dctrl2bus_req_message_o = PUT_M;
 		end else if (mshr_iss_en && mshr_iss_message_o == GET_M && mshr_iss_dty_i) begin
-			mshr_iss_evict_en		= 1'b1;
-			Dctrl2bus_req_en_o		= 1'b1;
-			Dctrl2bus_req_tag_o		= Dcache_evict_tag_i;
-			Dctrl2bus_req_idx_o		= Dcache_evict_idx_o;
-			Dctrl2bus_req_data_o	= Dcache_evict_data_i;
-			Dctrl2bus_req_message_o = PUT_M;
+			if (~mshr_iss_hit_i) begin // <12/5>
+				mshr_iss_evict_en		= 1'b1;
+				Dctrl2bus_req_en_o		= 1'b1;
+				Dctrl2bus_req_tag_o		= Dcache_evict_tag_i;
+				Dctrl2bus_req_idx_o		= Dcache_evict_idx_o;
+				Dctrl2bus_req_data_o	= Dcache_evict_data_i;
+				Dctrl2bus_req_message_o = PUT_M;
+			end else begin // <12/5> silent
+				Dctrl2bus_req_en_o		= 1'b0;
+				Dctrl2bus_req_tag_o		= 0;
+				Dctrl2bus_req_idx_o		= 0;
+				Dctrl2bus_req_data_o	= 0;
+				Dctrl2bus_req_message_o = NONE;
+			end
 		end else begin
-			Dctrl2bus_req_en_o		= mshr_iss_en && ~mshr_rsp_full;
+			Dctrl2bus_req_en_o		= mshr_iss_en && (~mshr_rsp_full | mshr_iss_message_o != GET_S);
 			Dctrl2bus_req_tag_o		= mshr_iss_tag_o;
 			Dctrl2bus_req_idx_o		= mshr_iss_idx_o;
 			Dctrl2bus_req_data_o	= mshr_iss_data_o;
@@ -299,7 +310,8 @@ module Dcache_ctrl (
 
 	//-----------------------------------------------------
 	// mshr_iss request entry allocation, and clear @head
-	assign mshr_iss_req_ack	= bus2Dctrl_req_ack_i && (bus2Dctrl_req_message_i != PUT_M);
+	assign mshr_iss_req_ack	= (bus2Dctrl_req_ack_i && (bus2Dctrl_req_message_i != PUT_M)) | 
+							  (mshr_iss_silent_st_en && mshr_iss_message_o == GET_M);
 	assign lq_addr_hit		= Dcache_lq_rd_hit_i | mshr_iss_lq_hit | mshr_rsp_lq_hit;
 
 	always_comb begin
