@@ -166,9 +166,9 @@ module lsq (
 
 	assign lsq2Dcache_st_data_o = lsq2Dcache_stc_flag_o ? 64'b1 : st_data_r[sq_head_r];
 
-	assign lsq2Dcache_stc_flag_o = stc_flag_r[sq_head_r];
+	assign lsq2Dcache_stc_flag_o = stc_flag_r[sq_head_r] & lsq2Dcache_st_en_o;
 
-	assign lsq2Dcache_st_en_o = (rob_st_retire_en_i & ~stc_flag_r[sq_head_r]) | st_retire_rdy_r[sq_head_r] | (stc_flag_r[sq_head_r] & ~stc_acknowledged_r);
+	assign lsq2Dcache_st_en_o = (rob_st_retire_en_i & ~stc_flag_r[sq_head_r]) | st_retire_rdy_r[sq_head_r] | (stc_flag_r[sq_head_r] & ~stc_acknowledged_r & st_addr_vld_r[sq_head_r]);
 
 	assign sq_retire_en = ((rob_st_retire_en_i | st_retire_rdy_r[sq_head_r]) & Dcache_mshr_st_ack_i)
 						  | (rob_st_retire_en_i & stc_flag_r[sq_head_r]);
@@ -386,7 +386,7 @@ module lsq (
 	assign lsq_rob_idx_o = lsq_stc_com_rdy_o ? st_rob_idx_r[sq_head_r] :
 						   lsq_lq_com_rdy_o ? lq_rob_idx_r[lq_head_r] : rob_idx_i;
 
-	assign lsq_dest_tag_o = lsq_stc_com_rdy_o ? st_dest_rag_r[sq_head_r] :
+	assign lsq_dest_tag_o = lsq_stc_com_rdy_o ? st_dest_tag_r[sq_head_r] :
 						    lsq_lq_com_rdy_o ? lq_dest_tag_r[lq_head_r] : dest_tag_i;
 
 	assign lsq_br_mask_o = lsq_lq_com_rdy_o ? lq_br_mask_r[lq_head_r] : bs_br_mask_i;

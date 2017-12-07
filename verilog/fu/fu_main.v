@@ -14,6 +14,8 @@ module fu_main(
 		input		[31:0]					rs2fu_IR_i,
 		input		[`FU_SEL_W-1:0]			rs2fu_sel_i,
 		input								rs2fu_iss_vld_i,
+
+		// <12/6>
 		input								id_stc_mem_i,
 
 		input		[`SQ_IDX_W-1:0]			rs2lsq_sq_idx_i,
@@ -36,6 +38,7 @@ module fu_main(
 		input								Dcache_mshr_st_ack_i,
 		input								Dcache_mshr_vld_i,
 		input								Dcache_mshr_stall_i,
+		// <12/6>
 		input								Dcache_stc_success_i,
 		input								Dcache_stc_fail_i,
 
@@ -62,6 +65,7 @@ module fu_main(
 		output	logic	[63:0]				lsq2Dcache_st_addr_o,
 		output	logic	[63:0]				lsq2Dcache_st_data_o,
 		output	logic						lsq2Dcache_st_en_o,
+		// <12/6>
 		output	logic						lsq2Dcache_stc_flag_o,
 
 		output	logic						lsq_lq_com_rdy_stall_o, // stall??

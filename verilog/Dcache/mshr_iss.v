@@ -106,6 +106,7 @@ module mshr_iss (
 		idx_r_nxt		= idx_r;
 		data_r_nxt		= data_r;
 		message_r_nxt	= message_r;
+		stq_c_flag_r_nxt= stq_c_flag_r;
 		if (mshr_iss_alloc_en_i) begin // allocate mshr entry
 			vld_r_nxt[tail_r]		= 1'b1;
 			tag_r_nxt[tail_r]		= mshr_iss_tag_i;

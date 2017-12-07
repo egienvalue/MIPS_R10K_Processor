@@ -306,6 +306,9 @@ module core (
 	logic	[`FU_SEL_W-1:0]		rs2fu_sel_i;
 	logic						rs2fu_iss_vld_i;
 
+	// <12/6>
+	logic						id_stc_mem_i;
+
 	logic	[`SQ_IDX_W-1:0]		rs2lsq_sq_idx_i;
 	logic						rob2lsq_st_retire_en_i;
 	logic						st_dp_en_i;
@@ -326,6 +329,10 @@ module core (
 	logic						Dcache_mshr_st_ack_i;
 	logic						Dcache_mshr_vld_i;
 	logic						Dcache_mshr_stall_i;
+
+	// <12/6>
+	logic						Dcache_stc_success_i;
+	logic						Dcache_stc_fail_i;
 
 	logic						fu2preg_wr_en_o;
 	logic 	[`PRF_IDX_W-1:0]	fu2preg_wr_idx_o;
@@ -351,6 +358,9 @@ module core (
 	logic	[63:0]				lsq2Dcache_st_addr_o;
 	logic	[63:0]				lsq2Dcache_st_data_o;
 	logic						lsq2Dcache_st_en_o;
+
+	// <12/6>
+	logic						lsq2Dcache_stc_flag_o;
 
 	logic						lsq_lq_com_rdy_stall_o;
 	logic						lsq_sq_full_o;
@@ -395,6 +405,9 @@ module core (
 	// signals for Dcache
 	//---------------------------------------------------------------
 	// core side signals
+	logic									sq2Dcache_is_stq_c_i;
+	logic									Dcache2sq_stq_c_fail_o;
+	logic									Dcache2sq_stq_c_succ_o;
 
 	logic									lq2Dcache_en_i;
 	logic	[63:0]							lq2Dcache_addr_i;
@@ -826,6 +839,8 @@ module core (
 	assign rs2fu_sel_i			= rs_iss_fu_sel_o;
 	assign rs2fu_iss_vld_i		= rs_iss_vld_o;
 
+	assign id_stc_mem_i			= id_stc_mem_o;
+
 	assign rs2lsq_sq_idx_i			= rs_iss_sq_position_o;
 	assign rob2lsq_st_retire_en_i	= rob_head_st_instr_o && rob_head_retire_rdy_o;
 	assign st_dp_en_i				= dispatch_st_en; // !!
@@ -847,6 +862,10 @@ module core (
 	assign Dcache_mshr_vld_i		= Dcache2lq_mshr_data_vld_o;
 	assign Dcache_mshr_stall_i		= 1'b0; // never stall
 
+	assign Dcache_stc_success_i		= Dcache2sq_stq_c_succ_o;
+	assign Dcache_stc_fail_i		= Dcache2sq_stq_c_fail_o;
+	
+
 	fu_main fu_main (
 		.clk					(clk),
 		.rst					(rst),
@@ -861,6 +880,8 @@ module core (
 		.rs2fu_IR_i				(rs2fu_IR_i),
 		.rs2fu_sel_i			(rs2fu_sel_i),
 		.rs2fu_iss_vld_i		(rs2fu_iss_vld_i),
+		// <12/6>
+		.id_stc_mem_i			(id_stc_mem_i),
 
 		.rs2lsq_sq_idx_i		(rs2lsq_sq_idx_i),
 		.rob2lsq_st_retire_en_i	(rob2lsq_st_retire_en_i),
@@ -882,6 +903,9 @@ module core (
 		.Dcache_mshr_st_ack_i	(Dcache_mshr_st_ack_i),
 		.Dcache_mshr_vld_i		(Dcache_mshr_vld_i),
 		.Dcache_mshr_stall_i	(Dcache_mshr_stall_i),
+		// <12/6>
+		.Dcache_stc_success_i	(Dcache_stc_success_i),
+		.Dcache_stc_fail_i		(Dcache_stc_fail_i),
 
 		.fu2preg_wr_en_o		(fu2preg_wr_en_o),
 		.fu2preg_wr_idx_o		(fu2preg_wr_idx_o),
@@ -906,6 +930,9 @@ module core (
 		.lsq2Dcache_st_addr_o	(lsq2Dcache_st_addr_o),
 		.lsq2Dcache_st_data_o	(lsq2Dcache_st_data_o),
 		.lsq2Dcache_st_en_o		(lsq2Dcache_st_en_o),
+
+		// <12/6>
+		.lsq2Dcache_stc_flag_o	(lsq2Dcache_stc_flag_o),
 
 		.lsq_lq_com_rdy_stall_o	(lsq_lq_com_rdy_stall_o),
 		.lsq_sq_full_o			(lsq_sq_full_o),
@@ -989,6 +1016,9 @@ module core (
 	//===============================================================
 	// Dcache instantiation
 	//===============================================================
+	// <12/5>
+	assign sq2Dcache_is_stq_c_i		= lsq2Dcache_stc_flag_o;
+
 	assign lq2Dcache_en_i			= lsq2Dcache_ld_en_o;
 	assign lq2Dcache_addr_i			= lsq2Dcache_ld_addr_o;
 	assign sq2Dcache_en_i			= lsq2Dcache_st_en_o;
@@ -999,6 +1029,11 @@ module core (
 		.clk						(clk),
 		.rst						(rst),
 
+		// <12/6>
+		.sq2Dcache_is_stq_c_i		(sq2Dcache_is_stq_c_i),
+		.Dcache2sq_stq_c_fail_o		(Dcache2sq_stq_c_fail_o),
+		.Dcache2sq_stq_c_succ_o		(Dcache2sq_stq_c_succ_o),
+		
 		// ports for tb
 		.Dcache_way_idx_tb_i		(Dcache_way_idx_tb_i),
 		.Dcache_set_idx_tb_i		(Dcache_set_idx_tb_i),
