@@ -14,6 +14,7 @@ module fu_main(
 		input		[31:0]					rs2fu_IR_i,
 		input		[`FU_SEL_W-1:0]			rs2fu_sel_i,
 		input								rs2fu_iss_vld_i,
+		input								id_stc_mem_i,
 
 		input		[`SQ_IDX_W-1:0]			rs2lsq_sq_idx_i,
 		input								rob2lsq_st_retire_en_i,
@@ -35,6 +36,8 @@ module fu_main(
 		input								Dcache_mshr_st_ack_i,
 		input								Dcache_mshr_vld_i,
 		input								Dcache_mshr_stall_i,
+		input								Dcache_stc_success_i,
+		input								Dcache_stc_fail_i,
 
 		// ------------------ Output -----------------------
 		output	logic						fu2preg_wr_en_o,
@@ -59,6 +62,7 @@ module fu_main(
 		output	logic	[63:0]				lsq2Dcache_st_addr_o,
 		output	logic	[63:0]				lsq2Dcache_st_data_o,
 		output	logic						lsq2Dcache_st_en_o,
+		output	logic						lsq2Dcache_stc_flag_o,
 
 		output	logic						lsq_lq_com_rdy_stall_o, // stall??
 		output	logic						lsq_sq_full_o,
@@ -98,14 +102,16 @@ module fu_main(
 	logic		[`PRF_IDX_W-1:0]	mult_dest_tag;
 	logic		[`BR_MASK_W-1:0]	mult_br_mask;
 
-	logic		[63:0]				ld_result;
+	logic		[63:0]				ldst_result;
 	logic							ld_done_pre;
 	logic							ld_done;
 	logic							st_done_pre;
 	logic							st_done;
+	logic							stc_done;
 	logic		[`ROB_IDX_W:0]		ldst_rob_idx;
-	logic		[`PRF_IDX_W-1:0]	ld_dest_tag;
+	logic		[`PRF_IDX_W-1:0]	ldst_dest_tag;
 	logic							lsq_lq_com_rdy;
+	logic							lsq_stc_com_rdy;
 	logic							lq_done;
 	logic		[`BR_MASK_W-1:0]	ld_br_mask;
 	logic							lsq_lq_com_rdy_stall;
@@ -117,9 +123,10 @@ module fu_main(
 
 	assign fu2rob_br_recovery_done_o = br2rob_done;
 
-	assign fu2rob_done_o 		= (alu_done | br_done | mult_done | st_done | ld_done | lq_done) && 
+	assign fu2rob_done_o 		= (alu_done | br_done | mult_done | st_done | ld_done | lq_done | stc_done) && 
 								  ~rob_br_recovery_i; // lsq	
 	assign fu2rob_idx_o			= br_done ? br_rob_idx : 
+								  stc_done ? ldst_rob_idx :
 								  lq_done ? ldst_rob_idx :
 	   							  alu_done ? alu_rob_idx :
 								  mult_done ? mult_rob_idx : 
@@ -133,7 +140,7 @@ module fu_main(
 	assign fu2preg_wr_idx_o		= cdb_tag;
 	assign fu2preg_wr_value_o	= fu2preg_wr_value;
 
-	assign lsq_lq_com_rdy_stall = (lsq_lq_com_rdy & (alu_done_pre | mult_done_pre | ex_unit_en[3] | ex_unit_en[4]))
+	assign lsq_lq_com_rdy_stall = ((lsq_lq_com_rdy | lsq_stc_com_rdy) & (alu_done_pre | mult_done_pre | ex_unit_en[3] | ex_unit_en[4]))
 								  | (Dcache_mshr_vld_i & ex_unit_en[3]);
 	assign lsq_lq_com_rdy_stall_o = lsq_lq_com_rdy_stall;
 
@@ -142,10 +149,14 @@ module fu_main(
 			cdb_tag				= br_dest_tag;
 			cdb_vld				= 1;
 			fu2preg_wr_value	= br_pc;
-		end else if (lq_done) begin
-			cdb_tag				= ld_dest_tag;
+		end else if (stc_done) begin
+			cdb_tag				= ldst_dest_tag;
 			cdb_vld				= 1;
-			fu2preg_wr_value	= ld_result;
+			fu2preg_wr_value	= ldst_result;
+		end else if (lq_done) begin
+			cdb_tag				= ldst_dest_tag;
+			cdb_vld				= 1;
+			fu2preg_wr_value	= ldst_result;
         end else if (alu_done) begin
 			cdb_tag				= alu_dest_tag;
             cdb_vld       		= 1;
@@ -155,9 +166,9 @@ module fu_main(
             cdb_vld       		= 1;
             fu2preg_wr_value	= mult_result;
 		end else if (ld_done) begin
-			cdb_tag				= ld_dest_tag;
+			cdb_tag				= ldst_dest_tag;
 			cdb_vld				= 1;
-			fu2preg_wr_value	= ld_result;
+			fu2preg_wr_value	= ldst_result;
         end else begin
 			cdb_tag				= `ZERO_REG;
             cdb_vld       		= 0;
@@ -266,6 +277,7 @@ module fu_main(
 		.inst_i					(rs2fu_IR_i),
 		.dest_tag_i				(rs2fu_dest_tag_i),
 		.rob_idx_i				(rs2fu_rob_idx_i),
+		.id_stc_mem_i			(id_stc_mem_i),
 
 		.st_vld_i				(ex_unit_en[4]),
 		.ld_vld_i				(ex_unit_en[3]),
@@ -282,6 +294,8 @@ module fu_main(
 		.Dcache_mshr_st_ack_i	(Dcache_mshr_st_ack_i),
 		.Dcache_mshr_vld_i		(Dcache_mshr_vld_i),
 		.Dcache_mshr_stall_i	(Dcache_mshr_stall_i),
+		.Dcache_stc_success_i	(Dcache_stc_success_i),
+		.Dcache_stc_fail_i		(Dcache_stc_fail_i),
 
 		.bs_br_mask_i			(rs2fu_br_mask_i),
 		.bs_sq_tail_recovery_i	(bs_sq_tail_recovery_i),
@@ -292,8 +306,8 @@ module fu_main(
 
 		.stall_i				(lsq_lq_com_rdy_stall),
 
-		.result_o				(ld_result),
-		.dest_tag_o				(ld_dest_tag),
+		.result_o				(ldst_result),
+		.dest_tag_o				(ldst_dest_tag),
 		.rob_idx_o				(ldst_rob_idx),
 
 		.lsq_sq_tail_o			(lsq_sq_tail_o),
@@ -303,13 +317,16 @@ module fu_main(
 		.lsq2Dcache_st_addr_o	(lsq2Dcache_st_addr_o),
 		.lsq2Dcache_st_data_o	(lsq2Dcache_st_data_o),
 		.lsq2Dcache_st_en_o		(lsq2Dcache_st_en_o),
+		.lsq2Dcache_stc_flag_o	(lsq2Dcache_stc_flag_o),
 		.lsq_lq_com_rdy_o		(lsq_lq_com_rdy),
+		.lsq_stc_com_rdy_o		(lsq_stc_com_rdy),
 		.lsq_sq_full_o			(lsq_sq_full_o),
 
 		.br_mask_o				(ld_br_mask),
 		.st_done_o				(st_done),
 		.ld_done_o				(ld_done),
-		.lq_done_o				(lq_done)
+		.lq_done_o				(lq_done),
+		.stc_done_o				(stc_done)
 	);
 	
 endmodule	  

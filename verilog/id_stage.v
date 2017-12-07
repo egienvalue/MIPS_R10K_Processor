@@ -3,8 +3,6 @@
 // Discription: Instruction Decode Pipeline Stage
 // Author: Lu Liu
 // Version History:
-// 10/25/2017 - initially created, with scheduler at issue to avoid conflicts 
-// 		during completion
 // intial creation: 10/25/2017
 // ***************************************************************************
 //
@@ -164,7 +162,7 @@ module decoder(// Inputs
 							rd_mem = `TRUE;
 							ldl_mem = `TRUE;
 							dest_reg = `DEST_IS_REGA;
-							fu_sel = `FU_SEL_LOAD; // TODO: currently unimplemented
+							fu_sel = `FU_SEL_LOAD;
 						end // case: `LDQ_L_INST
 						`STQ_INST:
 						begin
@@ -178,7 +176,7 @@ module decoder(// Inputs
 							wr_mem = `TRUE;
 							stc_mem = `TRUE;
 							dest_reg = `DEST_IS_REGA;
-							fu_sel = `FU_SEL_STORE; // TODO: currently unimplemented
+							fu_sel = `FU_SEL_STORE;
 						end // case: `STQ_INST
 						default:       illegal = `TRUE;
 					endcase // case(inst[31:26])
