@@ -342,7 +342,7 @@ module core_top_tb;
 				// freeze clk_count, run 5 more cycles to let data in coherence mshr pipeline
 				// write to D-cache in the end
 				`SD freeze_clk_count = 1'b1;
-				for (int i; i < 50; i++) begin
+				for (int i=0; i < 50; i++) begin
 					@(negedge clk);
 				end
 

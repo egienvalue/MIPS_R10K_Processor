@@ -127,7 +127,7 @@ export SOURCE_FILES
 # Passed through to .tcl scripts:
 export CLOCK_NET_NAME = clk
 export RESET_NET_NAME = rst
-export CLOCK_PERIOD = 30	# TODO: You will want to make this more aggresive
+export CLOCK_PERIOD = 12	# TODO: You will want to make this more aggresive
 export CORE_NAME	= $(MODULE)
 
 all:	simv
@@ -140,7 +140,7 @@ dve:	$(HEADERS) $(SIMFILES) $(TESTBENCH)
 	$(VCS) +memcbk $(HEADERS) $(TESTBENCH) $(SIMFILES) -o dve -R -gui
 .PHONY:	dve
 
-simv_syn:	$(HEADERS) $(SYNFILES) $(TESTBENCH)
+syn_simv:	$(HEADERS) $(SYNFILES) $(TESTBENCH)
 	$(VCS) $(HEADERS) $(TESTBENCH) $(SYNFILES) $(LIB) -o syn_simv 
 	./syn_simv | tee syn_program.out
 

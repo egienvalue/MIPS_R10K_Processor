@@ -255,7 +255,13 @@ module lsq (
 
 	// ---------------------- Load Queue ----------------------------
 	always_comb begin
-		if (ld_vld_i & ~lsq_ld_done_o & ~Dcache_mshr_ld_ack_i) begin
+		if (rob_br_recovery_i && ((ld_br_mask_hold_r & rob_br_tag_fix_i) != 0)) begin
+			ld_hold_r_state_nxt		= IDLE;
+			ld_addr_hold_r_nxt		= 0;
+			ld_rob_idx_hold_r_nxt	= 0;
+			ld_dest_tag_hold_r_nxt	= 0;
+			ld_br_mask_hold_r_nxt	= 0;
+		end else if (ld_vld_i & ~lsq_ld_done_o & ~Dcache_mshr_ld_ack_i) begin
 			ld_hold_r_state_nxt		= BUSY;
 			ld_addr_hold_r_nxt		= addr_i;
 			ld_rob_idx_hold_r_nxt	= rob_idx_i;
