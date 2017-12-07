@@ -26,12 +26,12 @@
 `define		ICACHE_LINE_IN_BITS		64
 `define		ICACHE_DATA_IN_BITS		64
 `define		ICACHE_WAY_NUM			1
-`define		ICACHE_LINE_IN_BYTES	(`ICACHE_LINE_IN_BITS/8)
-`define		ICACHE_DAT_NUM			(`ICACHE_LINE_IN_BITS/`ICACHE_DATA_IN_BITS)
-`define		ICACHE_D				(`ICACHE_SIZE_IN_BITS/(`ICACHE_LINE_IN_BITS*`ICACHE_WAY_NUM))
-`define		ICACHE_IDX_W			($clog2(`ICACHE_D))
-`define		ICACHE_TAG_W			(`IMEM_ADDR_W-`ICACHE_IDX_W-$clog2(`ICACHE_LINE_IN_BYTES))
-`define		ICACHE_BLK_OFFSET_W		($clog2(`ICACHE_LINE_IN_BITS/8))
+`define		ICACHE_LINE_IN_BYTES	8
+`define		ICACHE_DAT_NUM			1
+`define		ICACHE_D				32
+`define		ICACHE_IDX_W			5
+`define		ICACHE_TAG_W			56
+`define		ICACHE_BLK_OFFSET_W		3
 
 //*********************************************************************//
 // defines for Dcache												   //

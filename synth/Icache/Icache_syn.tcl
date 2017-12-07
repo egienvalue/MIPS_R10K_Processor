@@ -25,7 +25,7 @@ set module Icache
 read_file -f sverilog [list "../../sys_defs.vh" "../../verilog/$module/cachemem.v" "../../verilog/$module/Icache_ctrl.v" "../../verilog/$module/rps4.v" "../../verilog/$module/prefetch.v"  "../../verilog/$module/$module.v"]
 set design_name $module
 set clock_name clk
-set CLK_PERIOD 6
+set CLK_PERIOD 10
 
 
 

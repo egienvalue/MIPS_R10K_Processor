@@ -40,43 +40,54 @@ module cachemem (
 	logic	[3:0]									vt_vld_r;
 	logic	[1:0]									vt_wr_ptr_r;
 
+	logic	[3:0][`ICACHE_LINE_IN_BITS-1:0]			vt_data_line_w;
 	logic	[`ICACHE_LINE_IN_BITS-1:0]				vt_data_line;
 	logic	[`ICACHE_LINE_IN_BITS-1:0]				vt_pf_data_line;
+
 	wire											vt_update;
 	wire											vt_wr_en;
+
+	logic	[3:0]									vt_rd_hit_w;
 	logic											vt_rd_hit;
 
 	// prefetch
-	wire											pf_main_hit;
+	logic	[3:0]									pf_vt_hit_w;
 	logic											pf_vt_hit;
+	wire											pf_main_hit;
 	wire											pf_vt_wr_en;
 
 	// combinational read out
-	assign rd_data_o = vt_rd_hit ? vt_data_line : data_r[rd_idx_i];
+	assign rd_data_o = main_rd_hit ? data_r[rd_idx_i] : vt_data_line;
 	assign rd_hit_o	 = main_rd_hit | vt_rd_hit;
 	assign main_rd_hit = vld_r[rd_idx_i] && (tag_r[rd_idx_i]==rd_tag_i);
 
 	// victim cache signals
 	// <11/15> vt_rd_hit initiation has glitches
-	// 		   can use vt_rd_hit = |vt_match[3:0]
+	// 		   can use vt_rd_hit = |vt_match[3:0] -> done <12/7>
+	assign vt_rd_hit	= |vt_rd_hit_w;
+	assign pf_vt_hit	= |pf_vt_hit_w;
+
 	always_comb begin
-		vt_rd_hit		= 1'b0;
-		vt_data_line	= `ICACHE_LINE_IN_BITS'b0;
-		pf_vt_hit		= 1'b0;
-		vt_pf_data_line = `ICACHE_LINE_IN_BITS'b0;
 		for (int i = 0; i < 4; i++) begin
-			if ({rd_tag_i,rd_idx_i,1'b1} ==
-				{vt_tag_r[i],vt_idx_r[i],vt_vld_r[i]}) begin
-				vt_rd_hit		= 1'b1;
-				vt_data_line	= vt_data_r[i];
-			end
-			if ({pf_tag_i,pf_idx_i,1'b1} ==
-				{vt_tag_r[i],vt_idx_r[i],vt_vld_r[i]}) begin
-				pf_vt_hit		= 1'b1;
-				vt_pf_data_line	= vt_data_r[i];
-			end
+			vt_rd_hit_w[i]	= {rd_tag_i,rd_idx_i,1'b1} ==
+							   {vt_tag_r[i],vt_idx_r[i],vt_vld_r[i]};
+			pf_vt_hit_w[i]	= {pf_tag_i,pf_idx_i,1'b1} ==
+							  {vt_tag_r[i],vt_idx_r[i],vt_vld_r[i]};
+			vt_data_line_w[i]= vt_data_r[i];
 		end
 	end
+
+	always_comb begin
+		vt_data_line	= vt_data_line_w[0];
+		vt_pf_data_line	= vt_data_line_w[0];
+		for (int i = 0; i < 4; i++) begin
+			if (vt_rd_hit_w[i])
+				vt_data_line	= vt_data_line_w[i];
+			if (pf_vt_hit_w[i])
+				vt_pf_data_line	= vt_data_line_w[i];
+		end
+	end
+
 	
 	assign vt_update	= wr_en_i && vld_r[wr_idx_i];
 	assign vt_wr_en		= ~main_rd_hit && vt_rd_hit;
@@ -91,6 +102,8 @@ module cachemem (
 	always_ff @(posedge clk) begin
 		if (rst) begin
 			vld_r		<= `SD 0;
+			data_r		<= `SD {`ICACHE_D{64'h0}};
+			tag_r		<= `SD {`ICACHE_D{`ICACHE_TAG_W'b0}};
 		end else begin
 			if (wr_en_i) begin // data from maim memory
 				vld_r[wr_idx_i]		<= `SD 1'b1;
@@ -112,8 +125,11 @@ module cachemem (
 	// synopsys sync_set_reset "rst"
 	always_ff @(posedge clk) begin
 		if (rst) begin
-			vt_vld_r	<= `SD 4'b0;
 			vt_wr_ptr_r	<= `SD 2'b0;
+			vt_vld_r	<= `SD 4'b0;
+			vt_data_r	<= `SD {4{64'h0}};
+			vt_tag_r	<= `SD {4{`ICACHE_TAG_W'b0}};
+			vt_idx_r	<= `SD {4{`ICACHE_IDX_W'b0}};
 		end else if (vt_update) begin // vcache capture date evicted
 			vt_wr_ptr_r				<= `SD vt_wr_ptr_r + 1;
 			vt_vld_r[vt_wr_ptr_r]	<= `SD 1'b1;

@@ -52,7 +52,7 @@ dve:	$(HEADERS) $(SIMFILES) $(TESTBENCH)
 	$(VCS) +memcbk $(HEADERS) $(TESTBENCH) $(SIMFILES) -o dve -R -gui
 .PHONY:	dve
 
-simv_syn:	$(HEADERS) $(SYNFILES) $(TESTBENCH)
+syn_simv:	$(HEADERS) $(SYNFILES) $(TESTBENCH)
 	$(VCS) $(HEADERS) $(TESTBENCH) $(SYNFILES) $(LIB) -o syn_simv 
 	./syn_simv | tee syn_program.out
 
