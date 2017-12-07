@@ -2,6 +2,9 @@
 module fu_main(
 		input 								clk,
 		input 								rst,
+
+		// <12/6> for 2-core program jump
+		input								cpuid_i,
 		                                	
 		input		[63:0]					rob2fu_NPC_i,
 		input 		[`ROB_IDX_W:0]			rs2fu_rob_idx_i,
@@ -205,6 +208,7 @@ module fu_main(
 	fu_br fu_br (
 			.clk					(clk),
 			.rst					(rst),
+			.cpuid_i				(cpuid_i),
 			.start_i				(ex_unit_en[1]),
 			.npc_i					(rob2fu_NPC_i),
 			.opa_i					(prf2fu_ra_value_i),

@@ -30,6 +30,16 @@ module coreS	(
 		output	logic	[3:0]					core1_retired_instrs
 		output	logic	[3:0]					core1_error_status,
 
+		output	logic	[63:0]					core0_retire_PC_tb_o,
+		output	logic	[`LRF_IDX_W-1:0]		core0_retire_areg_tb_o,
+		output	logic	[63:0]					core0_retire_areg_val_tb_o,
+		output	logic							core0_retire_rdy_tb_o,
+
+		output	logic	[63:0]					core1_retire_PC_tb_o,
+		output	logic	[`LRF_IDX_W-1:0]		core1_retire_areg_tb_o,
+		output	logic	[63:0]					core1_retire_areg_val_tb_o,
+		output	logic							core1_retire_rdy_tb_o,
+
 		// ports for writeback all dty data from Dcache to mem
 		input			[`DCACHE_WAY_NUM-1:0]	Dcache0_way_idx_tb_i,
 		input			[`DCACHE_IDX_W-1:0]		Dcache0_set_idx_tb_i,
@@ -280,6 +290,12 @@ module coreS	(
 		.core_retired_instrs		(core0_retired_instrs),
 		.core_error_status			(core0_error_status),
 
+		//
+		.retire_PC_tb_o				(core0_retire_PC_tb_o),
+		.retire_areg_tb_o			(core0_retire_areg_tb_o),
+		.retire_areg_val_tb_o		(core0_retire_areg_val_tb_o),
+		.retire_rdy_tb_o			(core0_retire_rdy_tb_o),
+
 		// ports for writeback all dty data from Dcache to mem
 		.Dcache_way_idx_tb_i		(Dcache0_way_idx_tb_i),
 		.Dcache_set_idx_tb_i		(Dcache0_set_idx_tb_i),
@@ -344,6 +360,11 @@ module coreS	(
 		// may need more ports for testbench!!!
 		.core_retired_instrs		(core1_retired_instrs),
 		.core_error_status			(core1_error_status),
+
+		.retire_PC_tb_o				(core1_retire_PC_tb_o),
+		.retire_areg_tb_o			(core1_retire_areg_tb_o),
+		.retire_areg_val_tb_o		(core1_retire_areg_val_tb_o),
+		.retire_rdy_tb_o			(core1_retire_rdy_tb_o),		
 
 		// ports for writeback all dty data from Dcache to mem
 		.Dcache_way_idx_tb_i		(Dcache1_way_idx_tb_i),

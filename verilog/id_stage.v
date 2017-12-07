@@ -190,8 +190,13 @@ module decoder(// Inputs
 					opb_select = `ALU_OPB_IS_BR_DISP;
 					alu_func = `ALU_ADDQ;
 					case (inst[31:26])
+						`FBNE_INST: // <12/6> for 2-core program jump
+						begin
+							cond_branch = `TRUE;
+							fu_sel = `FU_SEL_UNCOND_BRANCH;
+						end 
 						`FBEQ_INST, `FBLT_INST, `FBLE_INST,
-						`FBNE_INST, `FBGE_INST, `FBGT_INST:
+						`FBGE_INST, `FBGT_INST:
 						begin
 							// FP conditionals not implemented
 							illegal = `TRUE;

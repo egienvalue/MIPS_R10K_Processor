@@ -395,7 +395,6 @@ module core (
 	// signals for Dcache
 	//---------------------------------------------------------------
 	// core side signals
-	logic									cpu_id_i;
 
 	logic									lq2Dcache_en_i;
 	logic	[63:0]							lq2Dcache_addr_i;
@@ -851,7 +850,9 @@ module core (
 	fu_main fu_main (
 		.clk					(clk),
 		.rst					(rst),
-		
+
+		.cpuid_i				(cpu_id_i),
+	
 		.rob2fu_NPC_i			(rob2fu_NPC_i),
 		.rs2fu_rob_idx_i		(rs2fu_rob_idx_i),
 		.prf2fu_ra_value_i		(prf2fu_ra_value_i),

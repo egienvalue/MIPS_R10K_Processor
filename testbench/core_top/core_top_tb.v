@@ -325,7 +325,7 @@ module core_top_tb;
 			// deal with any halting conditions
 			if(core_error_status!=`NO_ERROR)
 			begin
-				// freeze clk_count, run 5 more cycles to let data in coherence mshr pipeline
+				// freeze clk_count, run 50 more cycles to let data in coherence mshr pipeline
 				// write to D-cache in the end
 				`SD freeze_clk_count = 1'b1;
 				for (int i; i < 50; i++) begin
