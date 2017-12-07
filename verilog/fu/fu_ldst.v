@@ -15,6 +15,7 @@ module fu_ldst(
 		input			[31:0]				inst_i,
 		input			[`PRF_IDX_W-1:0]	dest_tag_i,
 		input			[`ROB_IDX_W:0]		rob_idx_i,
+		input								id_stc_mem_i,
 
 		input								st_vld_i,
 		input								ld_vld_i,
@@ -31,6 +32,8 @@ module fu_ldst(
 		input								Dcache_mshr_st_ack_i,
 		input								Dcache_mshr_vld_i,
 		input								Dcache_mshr_stall_i,
+		input								Dcache_stc_success_i,
+		input								Dcache_stc_fail_i,
 
 		// branch recovery signals
 		input			[`BR_MASK_W-1:0]	bs_br_mask_i,
@@ -53,12 +56,15 @@ module fu_ldst(
 		output	logic	[63:0]				lsq2Dcache_st_addr_o,
 		output	logic	[63:0]				lsq2Dcache_st_data_o,
 		output	logic						lsq2Dcache_st_en_o,
+		output	logic						lsq2Dcache_stc_flag_o,
 		output	logic						lsq_lq_com_rdy_o,
+		output	logic						lsq_stc_com_rdy_o,
 		output	logic						lsq_sq_full_o,
 		output	logic	[`BR_MASK_W-1:0]	br_mask_o,
 		output	logic						st_done_o,
 		output	logic						ld_done_o,
-		output	logic						lq_done_o
+		output	logic						lq_done_o,
+		output	logic						stc_done_o
 );
 
 		logic	[63:0]						mem_disp;
@@ -83,6 +89,7 @@ module fu_ldst(
 					ld_done_o		<= `SD 1'b0;
 					st_done_o		<= `SD 1'b0;
 					lq_done_o		<= `SD 1'b0;
+					stc_done_o		<= `SD 1'b0;
 					br_mask_o		<= `SD 0;
 				end else if (rob_br_recovery_i && ((br_mask_o & rob_br_tag_fix_i) != 0)) begin
 					result_o		<= `SD 0;
@@ -91,6 +98,7 @@ module fu_ldst(
 					ld_done_o		<= `SD 1'b0;
 					st_done_o		<= `SD 1'b0;
 					lq_done_o		<= `SD 1'b0;
+					stc_done_o		<= `SD 1'b0;
 					br_mask_o		<= `SD 0;
 				end else if (~rob_br_recovery_i) begin
 					result_o		<= `SD result;
@@ -99,6 +107,7 @@ module fu_ldst(
 					ld_done_o		<= `SD ld_done;
 					st_done_o		<= `SD st_done;
 					lq_done_o		<= `SD lsq_lq_com_rdy_o;
+					stc_done_o		<= `SD lsq_stc_com_rdy_o;
 					br_mask_o		<= `SD rob_br_pred_correct_i ? (br_mask & ~rob_br_tag_fix_i) : br_mask;
 				end
 		end		
@@ -113,6 +122,7 @@ module fu_ldst(
 				.sq_idx_i				(sq_idx_i),
 				.rob_st_retire_en_i		(rob_st_retire_en_i),
 				.dp_en_i				(dp_en_i),
+				.id_stc_mem_i			(id_stc_mem_i),
 
 				.rob_idx_i				(rob_idx_i),
 				.dest_tag_i				(dest_tag_i),
@@ -127,6 +137,8 @@ module fu_ldst(
 				.Dcache_mshr_st_ack_i	(Dcache_mshr_st_ack_i),
 				.Dcache_mshr_vld_i		(Dcache_mshr_vld_i),
 				.Dcache_mshr_stall_i	(Dcache_mshr_stall_i),
+				.Dcache_stc_success_i	(Dcache_stc_success_i),
+				.Dcache_stc_fail_i		(Dcache_stc_fail_i),
 
 				.bs_br_mask_i			(bs_br_mask_i),
 				.bs_sq_tail_recovery_i	(bs_sq_tail_recovery_i),
@@ -142,12 +154,14 @@ module fu_ldst(
 				.lsq2Dcache_st_addr_o	(lsq2Dcache_st_addr_o),
 				.lsq2Dcache_st_data_o	(lsq2Dcache_st_data_o),
 				.lsq2Dcache_st_en_o		(lsq2Dcache_st_en_o),
+				.lsq2Dcache_stc_flag_o	(lsq2Dcache_stc_flag_o),
 				.lsq_ld_done_o			(ld_done),
-				.lsq_ld_data_o			(result),
-				.lsq_ld_rob_idx_o		(rob_idx),
-				.lsq_ld_dest_tag_o		(dest_tag),
-				.lsq_ld_br_mask_o		(br_mask),
+				.lsq_data_o				(result),
+				.lsq_rob_idx_o			(rob_idx),
+				.lsq_dest_tag_o			(dest_tag),
+				.lsq_br_mask_o			(br_mask),
 				.lsq_lq_com_rdy_o		(lsq_lq_com_rdy_o),
+				.lsq_stc_com_rdy_o		(lsq_stc_com_rdy_o),
 				.lsq_sq_full_o			(lsq_sq_full_o)
 		);
 
