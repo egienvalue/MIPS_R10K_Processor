@@ -127,7 +127,7 @@ export SOURCE_FILES
 # Passed through to .tcl scripts:
 export CLOCK_NET_NAME = clk
 export RESET_NET_NAME = rst
-export CLOCK_PERIOD = 12	# TODO: You will want to make this more aggresive
+export CLOCK_PERIOD = 30	# TODO: You will want to make this more aggresive
 export CORE_NAME	= $(MODULE)
 
 all:	simv
@@ -161,6 +161,7 @@ clean:
 	rm -rf synsimv synsimv.daidir csrc vcdplus.vpd vcs.key synprog.out pipeline.out writeback.out vc_hdrs.h
 	rm -rf ucli.key
 	rm -rf ./*.out
+	rm -rf dve*
 
 nuke:	clean
 	rm -f $(SYN_DIR)/*.vg $(SYN_DIR)/*.rep $(SYN_DIR)/*.ddc $(SYN_DIR)/*.chk $(SYN_DIR)/command.log

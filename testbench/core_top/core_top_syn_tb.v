@@ -175,7 +175,7 @@ module core_top_tb;
 		@(posedge clk);
 		@(posedge clk);
 
-		$readmemh("../../program.mem", memory.unified_memory);
+		$readmemh("program.mem", memory.unified_memory);
 
 		@(posedge clk);
 		@(posedge clk);
