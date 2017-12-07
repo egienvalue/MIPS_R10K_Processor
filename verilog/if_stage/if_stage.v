@@ -110,7 +110,7 @@ module if_stage(
 /*
 	// This FF controls the stall signal that artificially forces
 	// fetch to stall until the previous instruction has completed
-	// synopsys sync_set_rst "rst"
+	// synopsys sync_set_reset "rst"
 	always_ff @(posedge clk)
 	begin
 		if (rst)

@@ -143,6 +143,7 @@ module map_table(
 			end
 		end
 */
+		// synopsys sync_set_reset "rst"
 		always_ff@(posedge clk) begin								// Use for loop going over through every registers to make sequential assignments
 			if (rst) begin
 				for (int i=0; i<`MT_NUM; i++) begin

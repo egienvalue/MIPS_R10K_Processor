@@ -75,6 +75,7 @@ module BTB(
 
 	// Writing part.
 	// Seq write TAGS and VALS
+	// synopsys sync_set_reset "rst"
 	always_ff @(posedge clk) begin
 		if (rst) begin
 			TAGS <= `SD 0;

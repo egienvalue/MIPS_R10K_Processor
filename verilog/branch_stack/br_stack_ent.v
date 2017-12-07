@@ -57,6 +57,7 @@ module br_stack_ent(
 	assign fixed_nxt_fhs	= fl_head_stack;
 	assign fixed_nxt_sts	= sq_tail_stack;
 
+	// synopsys sync_set_reset "rst"
 	always_ff@(posedge clk) begin						// Always fresh copies whose mask is 0
 		if (rst) begin
 			map_table_stack	<= `SD 0;

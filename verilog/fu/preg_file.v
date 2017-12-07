@@ -33,7 +33,7 @@ module preg_file(
 		else
 			rdb_data_o = rdb_reg;
 	end
-
+	// synopsys sync_set_reset "rst"
 	always_ff @(posedge clk) begin
 		if(rst)
 			reg_data_r <= `SD {`PRF_NUM{64'h0}};

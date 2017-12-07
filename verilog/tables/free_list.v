@@ -80,6 +80,7 @@ module free_list(
 		
 
 		//write FL
+		// synopsys sync_set_reset "rst"
 		always_ff @(posedge clk) begin
 			if (rst) begin
 				for (int i=0;i<`FL_NUM;i++) begin

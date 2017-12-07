@@ -1,11 +1,11 @@
 // This is an 8 stage (9 depending on how you look at it) pipelined 
 // multiplier that multiplies 2 64-bit integers and returns the low 64 bits 
 // of the result.  This is not an ideal multiplier but is sufficient to 
-// allow a faster clock period than straight *
+// allow a faster clk period than straight *
 // This module instantiates 8 pipeline stages as an array of submodules.
 // 
 module mult_stage (
-					input clock, reset, start,
+					input clk, rst, start,
 					input [63:0] product_in, mplier_in, mcand_in,
 					input rob_br_recovery_i,
 					input rob_br_pred_correct_i,
@@ -36,9 +36,9 @@ module mult_stage (
 	assign next_mplier = {tmp, mplier_in[63:BITS_OF_STAGE]};
 	assign next_mcand = {mcand_in[63-BITS_OF_STAGE:0], tmp};
 
-	//synopsys sync_set_reset "reset"
-	always_ff @(posedge clock) begin
-		if (reset) begin
+	//synopsys sync_set_reset "rst"
+	always_ff @(posedge clk) begin
+		if (rst) begin
 			done			 <= `SD 1'b0;
 			prod_in_reg		 <= `SD 0;
 			partial_prod_reg <= `SD 0;
@@ -69,9 +69,9 @@ module mult_stage (
 	end
 
 	/*
-	// synopsys sync_set_reset "reset"
-	always_ff @(posedge clock) begin
-		if(reset)
+	// synopsys sync_set_reset "rst"
+	always_ff @(posedge clk) begin
+		if(rst)
 			done <= `SD 1'b0;
 		else
 			done <= `SD start;
@@ -120,8 +120,8 @@ module fu_mult (
 	assign done_pre_o = internal_dones[NUM_OF_STAGE-2];
 
 	mult_stage #(.BITS_OF_STAGE(64/NUM_OF_STAGE)) mstage[NUM_OF_STAGE-1:0]  (
-		.clock(clk),
-		.reset(rst),
+		.clk(clk),
+		.rst(rst),
 		.product_in({internal_products,64'h0}),
 		.mplier_in({internal_mpliers,mplier}),
 		.mcand_in({internal_mcands,mcand}),

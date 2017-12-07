@@ -118,7 +118,7 @@ module fu_br (
 		// Output
 		.cond(brcond_result)
 		);
-		
+	// synopsys sync_set_reset "rst"
 	always_ff @(posedge clk) begin
 		if(rst) begin
 			done_o 		<= `SD 0;

@@ -69,7 +69,7 @@ module ifb(
 
 
 
-
+	// synopsys sync_set_reset "rst"
 	always_ff @(posedge clk) begin
 		if(rst) begin
 			ifb_head	<= `SD 0;

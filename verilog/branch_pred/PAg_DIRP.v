@@ -39,6 +39,7 @@ module PAg_DIRP(
 	end
 
 	// Seq change the state of resolved PHT entry
+	// synopsys sync_set_reset "rst"
 	always_ff @(posedge clk) begin
 		if (rst) begin
 			PHT <=`SD 0;

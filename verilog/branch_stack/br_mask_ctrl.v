@@ -94,7 +94,7 @@ module br_mask_ctrl(
 			end
 		end
 	
-
+		// synopsys sync_set_reset "rst"
 		always_ff @(posedge clk) begin						// Always_ff assign mask
 			if (rst) begin
 				mask <= `SD 0;

@@ -114,7 +114,7 @@ always_comb begin
 		default: result_o_nxt = 64'hdeadbeefbaadbeef;
 	endcase
 end
-
+// synopsys sync_set_reset "rst"
 always_ff @(posedge clk) begin
 	if (rst) begin
 		done_o		<= `SD 0;		

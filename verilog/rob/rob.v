@@ -402,7 +402,7 @@ module	rob (
 	end
 
 
-
+	// synopsys sync_set_reset "rst"
 	always_ff @(posedge clk) begin
 		if (rst) begin
 			head_r			<= `SD 0;
