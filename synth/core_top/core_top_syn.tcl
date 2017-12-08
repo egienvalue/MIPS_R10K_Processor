@@ -21,6 +21,7 @@ suppress_message {"VER-130"}
 #/***********************************************************/
 # search for module, and change it to your module name
 #
+lappend search_path ../../
 set module [getenv CORE_NAME]
 set headers [getenv HEADERS]
 set sources [getenv SOURCE_FILES]
@@ -97,7 +98,7 @@ set netlist_file [format "%s%s"  [format "%s%s"  $SYN_DIR $design_name] ".vg"]
 set ddc_file [format "%s%s"  [format "%s%s"  $SYN_DIR $design_name] ".ddc"]
 set rep_file [format "%s%s"  [format "%s%s"  $SYN_DIR $design_name] ".rep"]
 set dc_shell_status [ set chk_file [format "%s%s"  [format "%s%s"  $SYN_DIR $design_name] ".chk"] ]
-
+set hdlin_ff_always_sync_set_reset true
 #/* if we didnt find errors at this point, run */
 if {  $dc_shell_status != [list] } {
    current_design $design_name

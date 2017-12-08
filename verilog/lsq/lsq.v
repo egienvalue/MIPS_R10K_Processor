@@ -182,8 +182,12 @@ module lsq (
 			st_retire_rdy_r_nxt[sq_head_r] = 1'b0;
 	end
 
+	// synopsys sync_set_reset "rst"
 	always_ff @(posedge clk) begin
-		if (st_vld_i) begin
+		if(rst) begin/////
+			st_addr_r			<= `SD {`SQ_ENT_NUM{64'b0}};
+			st_data_r			<= `SD {`SQ_ENT_NUM{64'b0}};
+		end else if (st_vld_i) begin
 			st_addr_r[sq_idx_i]		<= `SD addr_i;
 			st_data_r[sq_idx_i]		<= `SD st_data_i;
 		end
@@ -227,8 +231,8 @@ module lsq (
 	// generate forward_vld and forward_data
 	integer j;
 	always_comb begin
-		st2ld_forward_data1 = 32'b0;
-		st2ld_forward_data2 = 32'b0;
+		st2ld_forward_data1 = 64'b0;
+		st2ld_forward_data2 = 64'b0;
 		st2ld_forward_vld1 = 1'b0;
 		st2ld_forward_vld2 = 1'b0;
 		if (ld_vld_i) begin
@@ -254,7 +258,7 @@ module lsq (
 	end
 
 	// ---------------------- Load Queue ----------------------------
-	always_comb begin
+	always_comb begin//TODO: zero delay LOOP here !!! 
 		if (rob_br_recovery_i && ((ld_br_mask_hold_r & rob_br_tag_fix_i) != 0)) begin
 			ld_hold_r_state_nxt		= IDLE;
 			ld_addr_hold_r_nxt		= 0;
@@ -328,7 +332,7 @@ module lsq (
 	assign lsq_ld_data_o = (lq_head_match && lq_vld_r[lq_head_r] && (lq_head_q_r != lq_tail_q_r)) ? Dcache_data_i :
 		                   (lq_rdy_r[lq_head_r] && lq_vld_r[lq_head_r] && (lq_head_q_r != lq_tail_q_r)) ? lq_data_r[lq_head_r] :
 						   st2ld_forward_vld ? st2ld_forward_data :
-						   Dcache_hit_i ? Dcache_data_i : 32'b0;
+						   Dcache_hit_i ? Dcache_data_i : 64'b0;
 
 	assign lsq_ld_rob_idx_o = lsq_lq_com_rdy_o ? lq_rob_idx_r[lq_head_r] : rob_idx_i;
 
@@ -396,8 +400,8 @@ module lsq (
 		if (rst) begin
 			lq_vld_r		<= `SD {`LQ_ENT_NUM{1'b1}};
 			lq_rdy_r		<= `SD 0;
-			lq_data_r		<= `SD 'b0;
-			lq_br_mask_r	<= `SD 'b0;
+			lq_data_r		<= `SD {`LQ_ENT_NUM{64'h0}};
+			lq_br_mask_r	<= `SD {`LQ_ENT_NUM{`BR_MASK_W'b0}};
 		end else begin
 			lq_vld_r		<= `SD lq_vld_r_nxt;
 			lq_rdy_r		<= `SD lq_rdy_r_nxt;
@@ -409,9 +413,9 @@ module lsq (
 	// synopsys sync_set_reset "rst"
 	always_ff @(posedge clk) begin
 		if (rst) begin
-			lq_addr_r					<= `SD 'b0;
-			lq_rob_idx_r				<= `SD 'b0;
-			lq_dest_tag_r				<= `SD 'b0;
+			lq_addr_r					<= `SD {`LQ_ENT_NUM{64'h0}};
+			lq_rob_idx_r				<= `SD {`LQ_ENT_NUM{6'h0}};
+			lq_dest_tag_r				<= `SD {`LQ_ENT_NUM{6'h0}};
 		end else if (ld_miss) begin
 			lq_addr_r[lq_tail_r]		<= `SD ld_vld_i ? addr_i : ld_addr_hold_r;
 			lq_rob_idx_r[lq_tail_r]		<= `SD ld_vld_i ? rob_idx_i : ld_rob_idx_hold_r;

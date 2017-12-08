@@ -26,7 +26,7 @@ LIB = /afs/umich.edu/class/eecs470/lib/verilog/lec25dscc25.v
 # and submodule1/2... names
 ############################
 MODULE=core_top
-SOURCE_DIR= ./verilog/$(MODULE)
+SOURCE_DIR= verilog/$(MODULE)
 SIMFILES =	$(SOURCE_DIR)/$(MODULE).v	\
 			$(SOURCE_DIR)/core.v	\
 			$(SOURCE_DIR)/../Icache/Icache.v	\
@@ -115,19 +115,19 @@ SOURCE_FILES= $(SOURCE_DIR)/$(MODULE).v	\
 			$(SOURCE_DIR)/../bus/bus.v	\
 			$(SOURCE_DIR)/../Dmem_ctrl/Dmem_ctrl.v
 
-HEADERS = sys_defs.vh
-TESTBENCH = ./testbench/$(MODULE)/$(MODULE)_syn_tb.v	\
+HEADERS= sys_defs.vh
+TESTBENCH= testbench/$(MODULE)/$(MODULE)_syn_tb.v	\
 			./testbench/mem.v
-SYNFILES = ./synth/$(MODULE)/$(MODULE).vg
-SYN_DIR = ./synth/$(MODULE)
+SYNFILES= ./synth/$(MODULE)/$(MODULE).vg
+SYN_DIR= ./synth/$(MODULE)
 
 # SYNTHESIS CONFIG
 export HEADERS
 export SOURCE_FILES 
 # Passed through to .tcl scripts:
-export CLOCK_NET_NAME = clk
-export RESET_NET_NAME = rst
-export CLOCK_PERIOD = 30	# TODO: You will want to make this more aggresive
+export CLOCK_NET_NAME	= clk
+export RESET_NET_NAME	= rst
+export CLOCK_PERIOD	= 30	# TODO: You will want to make this more aggresive
 export CORE_NAME	= $(MODULE)
 
 all:	simv
@@ -144,10 +144,10 @@ syn_simv:	$(HEADERS) $(SYNFILES) $(TESTBENCH)
 	$(VCS) $(HEADERS) $(TESTBENCH) $(SYNFILES) $(LIB) -o syn_simv 
 	./syn_simv | tee syn_program.out
 
-syn:	$(SOURCE_FILES) $(SYN_DIR)/$(MODULE)_syn.tcl
+syn:	$(HEADERS) $(SOURCE_FILES) $(SYN_DIR)/$(MODULE)_syn.tcl
 	cd $(SYN_DIR)/ && dc_shell-t -f ./$(MODULE)_syn.tcl | tee $(MODULE)_synth.out
 
-rsyn:	nuke $(SIMFILES) $(SYN_DIR)/$(MODULE)_syn.tcl
+rsyn:	nuke $(HEADERS) $(SOURCE_FILES) $(SYN_DIR)/$(MODULE)_syn.tcl
 	cd $(SYN_DIR)/ && dc_shell-t -f ./$(MODULE)_syn.tcl | tee $(MODULE)_synth.out
 
 syn_dve:	$(HEADERS) $(SYNFILES) $(TESTBENCH)
@@ -162,7 +162,7 @@ clean:
 	rm -rf ucli.key
 	rm -rf ./*.out
 
-nuke:	clean
+nuke:
 	rm -f $(SYN_DIR)/*.vg $(SYN_DIR)/*.rep $(SYN_DIR)/*.ddc $(SYN_DIR)/*.chk $(SYN_DIR)/command.log
 	rm -f $(SYN_DIR)/*.out command.log $(SYN_DIR)/*.db $(SYN_DIR)/*.svf
 

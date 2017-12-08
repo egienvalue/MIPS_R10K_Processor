@@ -100,7 +100,7 @@ typedef enum logic[1:0] {
 
 // jun
 `define			ROB_W			32
-`define			ROB_IDX_W		($clog2(`ROB_W))
+`define			ROB_IDX_W		5
 `define			HT_W 			($clog2(`ROB_W))
 `define			EX_UNIT_W		5
 `define			BR_PR_WRONG		2'b01
@@ -112,7 +112,7 @@ typedef enum logic[1:0] {
 `define         PT_IDX_W        ($clog2(`PT_W))
 `define         THRESHOLD       256
 `define         WEIGHT_W        ($clog2(`THRESHOLD)+1)
-//`define			PERCEPTRON
+`define			PERCEPTRON
 
 // Chuan
 `define			PRF_NUM			64
