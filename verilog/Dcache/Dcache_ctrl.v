@@ -144,6 +144,13 @@ module Dcache_ctrl (
 	logic									lq_addr_vld;
 	logic									sq_addr_vld;
 
+
+	// <12/7> st address hit bus input requesting addr
+	// to avoid 2 different events on the same block:
+	// Own silent st, and OtherGetS
+	logic									sq_bus_addr_match;
+
+
 	mshr_iss mshr_iss (
 		.clk						(clk),
 		.rst						(rst),
@@ -199,6 +206,13 @@ module Dcache_ctrl (
 		.mshr_rsp_full_o		(mshr_rsp_full)
 	);
 
+	
+	//-----------------------------------------------------
+	// SQ input addr hit on the bus input request addr
+	assign sq_bus_addr_match	= (Dcache_sq_wr_tag_o == bus2Dctrl_req_tag_i) &&
+								  (Dcache_sq_wr_idx_o == bus2Dctrl_req_idx_i);
+
+
 	//-----------------------------------------------------
 	// LSQ addr vld check
 	assign lq_addr_vld	= (lq2Dctrl_addr_i[2:0]==3'b0) &&
@@ -219,7 +233,8 @@ module Dcache_ctrl (
 
 	//-----------------------------------------------------
 	// Dctrl to Dcache sq store signals
-	assign Dcache_sq_wr_en_o	= sq2Dctrl_en_i && Dcache_sq_wr_hit_i && Dcache_sq_wr_dty_i;
+	assign Dcache_sq_wr_en_o	= sq2Dctrl_en_i && Dcache_sq_wr_hit_i && Dcache_sq_wr_dty_i && 
+								 ~sq2Dctrl_is_stq_c_i && ~sq_bus_addr_match;
 	assign Dcache_sq_wr_tag_o	= sq2Dctrl_addr_i[63:63-`DCACHE_TAG_W+1];
 	assign Dcache_sq_wr_idx_o	= sq2Dctrl_addr_i[63-`DCACHE_TAG_W:63-`DCACHE_TAG_W-`DCACHE_IDX_W+1];
 	assign Dcache_sq_wr_data_o	= sq2Dctrl_data_i;
@@ -304,7 +319,7 @@ module Dcache_ctrl (
 			Dctrl2bus_req_message_o = mshr_iss_message_o;
 		end
 		// <12/6> store fail, no message
-		if (mshr_iss_stq_c_flag_o) begin
+		if (Dctrl2sq_stq_c_fail_o) begin
 			Dctrl2bus_req_en_o		= 1'b0;
 			Dctrl2bus_req_tag_o		= 0;
 			Dctrl2bus_req_idx_o		= 0;
@@ -343,7 +358,8 @@ module Dcache_ctrl (
 		mshr_iss_idx_i		= `DCACHE_IDX_W'b0;
 		mshr_iss_data_i		= 64'h0;
 		mshr_iss_message_i	= NONE;
-		if (lq2Dctrl_en_i && (~sq2Dctrl_en_i || (Dcache_sq_wr_hit_i && Dcache_sq_wr_dty_i))) begin
+		if (lq2Dctrl_en_i && (~sq2Dctrl_en_i || 
+			(Dcache_sq_wr_hit_i && Dcache_sq_wr_dty_i && ~sq_bus_addr_match))) begin
 			if (lq_addr_hit) begin
 				Dctrl2lq_ack_o		= (mshr_rsp_lq_fwd && mshr_rsp_wr_en_o) ? 1'b0 : 1'b1;
 				//mshr_iss_alloc_en	= 1'b0; // <12/4> commented
@@ -361,8 +377,17 @@ module Dcache_ctrl (
 				Dctrl2sq_ack_o		= 1'b0;
 				mshr_iss_alloc_en	= 1'b0;
 			end else */
-			if ((Dcache_sq_wr_hit_i && Dcache_sq_wr_dty_i) /*| mshr_iss_lq_hit*/) begin
+			// !!! TODO: sq_bus_addr_match?
+			if ((Dcache_sq_wr_hit_i && Dcache_sq_wr_dty_i && ~sq_bus_addr_match) /*| mshr_iss_lq_hit*/) begin
 				Dctrl2sq_ack_o			= 1'b1;
+				if (sq2Dctrl_is_stq_c_i) begin
+					Dctrl2sq_ack_o		= ~mshr_iss_full;
+					mshr_iss_alloc_en	= ~mshr_iss_full;
+					//mshr_iss_tag_i		= Dcache_sq_wr_tag_o;
+					//mshr_iss_idx_i		= Dcache_sq_wr_idx_o;
+					//mshr_iss_data_i		= Dcache_sq_wr_data_o;
+					//mshr_iss_message_i	= GET_M;
+				end				
 				//mshr_iss_alloc_en	= 1'b0; <12/4> commented
 			end else if (~mshr_iss_full) begin  // GET_M
 				Dctrl2sq_ack_o		= 1'b1;

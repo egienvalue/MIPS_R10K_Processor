@@ -20,6 +20,7 @@ module fu_main(
 
 		input		[`SQ_IDX_W-1:0]			rs2lsq_sq_idx_i,
 		input								rob2lsq_st_retire_en_i,
+		input		[`ROB_IDX_W:0]			rob_head_i,
 		input								st_dp_en_i,
 		input		[`SQ_IDX_W-1:0]			rs_ld_position_i,
 		input		[`SQ_IDX_W-1:0]			rs_iss_ld_position_i,
@@ -287,6 +288,7 @@ module fu_main(
 		.ld_vld_i				(ex_unit_en[3]),
 		.sq_idx_i				(rs2lsq_sq_idx_i),
 		.rob_st_retire_en_i		(rob2lsq_st_retire_en_i),
+		.rob_head_i				(rob_head_i),
 		.dp_en_i				(st_dp_en_i),
 		.rs_ld_position_i		(rs_ld_position_i),
 		.ex_ld_position_i		(rs_iss_ld_position_i),

@@ -250,6 +250,7 @@ module core (
 	logic						rob_stall_dp_o;//signal show
 	logic						rob_head_retire_rdy_o;//the
 	logic						rob_head_st_instr_o; 
+	logic	[`ROB_IDX_W:0]		rob_head_o;
 
 	logic						br_recovery_rdy_o;//ready to
 	logic	[`PRF_IDX_W-2:0]	rob2fl_recover_head_o;
@@ -311,6 +312,7 @@ module core (
 
 	logic	[`SQ_IDX_W-1:0]		rs2lsq_sq_idx_i;
 	logic						rob2lsq_st_retire_en_i;
+	logic	[`ROB_IDX_W:0]		rob_head_i;
 	logic						st_dp_en_i;
 	logic	[`SQ_IDX_W-1:0]		rs_ld_position_i;
 	logic	[`SQ_IDX_W-1:0]		rs_iss_ld_position_i;
@@ -764,6 +766,7 @@ module core (
 		.rob_stall_dp_o				(rob_stall_dp_o),
 		.rob_head_retire_rdy_o		(rob_head_retire_rdy_o),
 		.rob_head_st_instr_o		(rob_head_st_instr_o),
+		.rob_head_o					(rob_head_o),
 
 		.br_recovery_rdy_o			(br_recovery_rdy_o),
 		.rob2fl_recover_head_o		(rob2fl_recover_head_o),
@@ -843,6 +846,7 @@ module core (
 
 	assign rs2lsq_sq_idx_i			= rs_iss_sq_position_o;
 	assign rob2lsq_st_retire_en_i	= rob_head_st_instr_o && rob_head_retire_rdy_o;
+	assign rob_head_i				= rob_head_o;
 	assign st_dp_en_i				= dispatch_st_en; // !!
 	assign rs_ld_position_i			= rs_sq_position_o;
 	assign rs_iss_ld_position_i		= rs_iss_sq_position_o;
@@ -885,6 +889,7 @@ module core (
 
 		.rs2lsq_sq_idx_i		(rs2lsq_sq_idx_i),
 		.rob2lsq_st_retire_en_i	(rob2lsq_st_retire_en_i),
+		.rob_head_i				(rob_head_i),
 		.st_dp_en_i				(st_dp_en_i),
 		.rs_ld_position_i		(rs_ld_position_i),
 		.rs_iss_ld_position_i	(rs_iss_ld_position_i),

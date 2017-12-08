@@ -21,6 +21,7 @@ module fu_ldst(
 		input								ld_vld_i,
 		input			[`SQ_IDX_W-1:0]		sq_idx_i,
 		input								rob_st_retire_en_i,
+		input			[`ROB_IDX_W:0]		rob_head_i,
 		input								dp_en_i,
 		input			[`SQ_IDX_W-1:0]		rs_ld_position_i,
 		input			[`SQ_IDX_W-1:0]		ex_ld_position_i,
@@ -78,7 +79,6 @@ module fu_ldst(
 
 		assign mem_disp			= { {48{inst_i[15]}}, inst_i[15:0] };
 		assign addr				= opb_i + mem_disp;
-		assign st_done			= st_vld_i;
 
 		// synopsys sync_set_reset "rst"
 		always_ff @(posedge clk) begin
@@ -121,6 +121,7 @@ module fu_ldst(
 				.st_vld_i				(st_vld_i),
 				.sq_idx_i				(sq_idx_i),
 				.rob_st_retire_en_i		(rob_st_retire_en_i),
+				.rob_head_i				(rob_head_i),
 				.dp_en_i				(dp_en_i),
 				.id_stc_mem_i			(id_stc_mem_i),
 
@@ -156,6 +157,7 @@ module fu_ldst(
 				.lsq2Dcache_st_en_o		(lsq2Dcache_st_en_o),
 				.lsq2Dcache_stc_flag_o	(lsq2Dcache_stc_flag_o),
 				.lsq_ld_done_o			(ld_done),
+				.lsq_st_done_o			(st_done),
 				.lsq_data_o				(result),
 				.lsq_rob_idx_o			(rob_idx),
 				.lsq_dest_tag_o			(dest_tag),

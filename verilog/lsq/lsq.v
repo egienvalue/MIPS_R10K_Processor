@@ -16,6 +16,7 @@ module lsq (
 		input								st_vld_i,
 		input			[`SQ_IDX_W-1:0]		sq_idx_i,
 		input								rob_st_retire_en_i,
+		input			[`ROB_IDX_W:0]		rob_head_i,
 		input								dp_en_i,
 		input								id_stc_mem_i, // is store conditional inst
 
@@ -55,6 +56,7 @@ module lsq (
 		output	logic						lsq2Dcache_st_en_o,
 		output	logic						lsq2Dcache_stc_flag_o,
 		output	logic						lsq_ld_done_o,
+		output	logic						lsq_st_done_o,
 		output	logic	[63:0]				lsq_data_o,
 		output	logic	[`ROB_IDX_W:0]		lsq_rob_idx_o,
 		output	logic	[`PRF_IDX_W-1:0]	lsq_dest_tag_o,
@@ -168,7 +170,9 @@ module lsq (
 
 	assign lsq2Dcache_stc_flag_o = stc_flag_r[sq_head_r] & lsq2Dcache_st_en_o;
 
-	assign lsq2Dcache_st_en_o = (rob_st_retire_en_i & ~stc_flag_r[sq_head_r]) | st_retire_rdy_r[sq_head_r] | (stc_flag_r[sq_head_r] & ~stc_acknowledged_r & st_addr_vld_r[sq_head_r]);
+	assign lsq2Dcache_st_en_o = (rob_st_retire_en_i && ~stc_flag_r[sq_head_r]) || st_retire_rdy_r[sq_head_r] 
+								|| (stc_flag_r[sq_head_r] && (st_rob_idx_r[sq_head_r] == rob_head_i) && 
+								~stc_acknowledged_r && st_addr_vld_r[sq_head_r] && (sq_head_q_r != sq_tail_q_r));
 
 	assign sq_retire_en = ((rob_st_retire_en_i | st_retire_rdy_r[sq_head_r]) & Dcache_mshr_st_ack_i)
 						  | (rob_st_retire_en_i & stc_flag_r[sq_head_r]);
@@ -176,6 +180,8 @@ module lsq (
 	assign stc_com_rdy = Dcache_stc_success_i | Dcache_stc_fail_i;
 
 	assign lsq_stc_com_rdy_o = stc_com_rdy | stc_success_hold_r | stc_fail_hold_r;
+
+	assign lsq_st_done_o = st_vld_i & ~stc_flag_r[sq_idx_i];
 
 	assign lsq_sq_full_o = ((sq_head_r == sq_tail_r) && (sq_head_msb_r != sq_tail_msb_r));
 
@@ -196,6 +202,8 @@ module lsq (
 		stc_flag_r_nxt = stc_flag_r;
 		if (dp_en_i & id_stc_mem_i)
 			stc_flag_r_nxt[sq_tail_r] = 1'b1;
+		else if (dp_en_i)
+			stc_flag_r_nxt[sq_tail_r] = 1'b0;
 
 		if (sq_retire_en)
 			stc_flag_r_nxt[sq_head_r] = 1'b0;

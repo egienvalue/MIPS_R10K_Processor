@@ -114,8 +114,8 @@ module Dmem_ctrl(
 	//-----------------------------------------------------
 	// bus requesting block state signals assign
 	assign bus_req_addr	= {bus_req_tag_i, bus_req_idx_i, 3'b0};
-	assign bus_req_vld	= vld_r[bus_req_addr];
-	assign bus_req_dty	= dty_r[bus_req_addr];
+	assign bus_req_vld	= vld_r[bus_req_addr[15:3]];
+	assign bus_req_dty	= dty_r[bus_req_addr[15:3]];
 	
 
 	//-----------------------------------------------------
@@ -233,7 +233,7 @@ module Dmem_ctrl(
 				Dmem_ctrl_rsp_ack_o	= 1'b1; // IorS->M
 				mshr_iss_wr_en		= 1'b0;
 
-				dty_nxt[bus_req_addr]	= 1'b1;
+				dty_nxt[bus_req_addr[15:3]]	= 1'b1;
 			end else if (bus_req_message_i == GET_S && ~bus_req_core_ack_i) begin // !!! IorS
 				Dmem_ctrl_rsp_ack_o	= ~mshr_iss_stall;
 				mshr_iss_wr_en		= bus_req_ack_i; // allocate a LD entry
@@ -248,12 +248,12 @@ module Dmem_ctrl(
 				mshr_iss_wr_en		= bus_req_ack_i; // allocate a ST entry
 
 				//vld_nxt[bus_req_addr]	= mshr_iss_stall;
-				dty_nxt[bus_req_addr]	= bus_req_ack_i;
+				dty_nxt[bus_req_addr[15:3]]	= bus_req_ack_i;
 			end else if (bus_req_message_i == GET_S) begin
 				Dmem_ctrl_rsp_ack_o	= ~mshr_iss_stall; // M->IorS_D, wait data
 				mshr_iss_wr_en		= bus_req_ack_i; // allocate a ST entry
 
-				dty_nxt[bus_req_addr]	= ~bus_req_ack_i;
+				dty_nxt[bus_req_addr[15:3]]	= ~bus_req_ack_i;
 			end else if (bus_req_message_i == GET_M) begin // M->M
 				Dmem_ctrl_rsp_ack_o	= 1'b1;
 				mshr_iss_wr_en		= 1'b0;
@@ -302,8 +302,7 @@ module Dmem_ctrl(
 	// synopsys sync_set_reset "rst"
 	always_ff @(posedge clk) begin 
 		if (rst) begin
-			vld_r			<= `SD 0;
-			dty_r			<= `SD 0;
+			dty_r			<= `SD 8192'h0;
 			mshr_iss_vld_r	<= `SD `DMEM_MSHR_NUM'b0;
 			mshr_iss_rdy_r	<= `SD `DMEM_MSHR_NUM'b0;
 			mshr_iss_cmd_r	<= `SD {`DMEM_MSHR_NUM{`BUS_NONE}};
@@ -322,7 +321,6 @@ module Dmem_ctrl(
 			mshr_rsp_tail_r	<= `SD 0;
 			mshr_rsp_tmsb_r	<= `SD 0;
 		end else begin
-			vld_r			<= `SD vld_nxt;
 			dty_r			<= `SD dty_nxt;
 			mshr_iss_vld_r	<= `SD mshr_iss_vld_nxt;
 			mshr_iss_rdy_r	<= `SD mshr_iss_rdy_nxt;
