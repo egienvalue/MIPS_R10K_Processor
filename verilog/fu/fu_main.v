@@ -2,6 +2,16 @@
 module fu_main(
 		input 								clk,
 		input 								rst,
+
+		// 12/07 optimiza critical path
+		input		[63:0]					rs2fu_NPC_i,
+		input								rs2fu_br_pre_taken_i,
+		input		[63:0]					rs2fu_br_target_i,
+		input		[`BR_MASK_W-1:0]		rs2fu_br_mask_1hot_i,
+		output	logic						fu_br_wrong_o,
+		output	logic	[`BR_MASK_W-1:0]	fu_br_recovery_mask_1hot_o,
+		output	logic						fu_br_right_o,	
+
 		                                	
 		input		[63:0]					rob2fu_NPC_i,
 		input 		[`ROB_IDX_W:0]			rs2fu_rob_idx_i,
@@ -206,7 +216,15 @@ module fu_main(
 			.clk					(clk),
 			.rst					(rst),
 			.start_i				(ex_unit_en[1]),
-			.npc_i					(rob2fu_NPC_i),
+			.npc_i					(rs2fu_NPC_i),//!!! edit after change the core.v
+			// 12/07 optimize critical path
+			.br_pre_taken_i			(rs2fu_br_pre_taken_i),
+			.br_pre_target_i		(rs2fu_br_target_i),
+			.br_mask_1hot_i			(rs2fu_br_mask_1hot_i),
+			.br_wrong_o				(fu_br_wrong_o),
+			.br_recovery_mask_1hot_o(fu_br_recovery_mask_1hot_o),
+			.br_right_o				(fu_br_right_o),	
+
 			.opa_i					(prf2fu_ra_value_i),
 			.opb_i					(prf2fu_rb_value_i),
 			.inst_i					(rs2fu_IR_i),

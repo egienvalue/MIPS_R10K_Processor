@@ -15,7 +15,17 @@
 module	rs1 (
 		input				clk,
 		input				rst,
-		
+
+		// 12/07 optimize critical path
+		input		[63:0]				rs1_NPC_i,
+		input							rs1_br_pre_taken_i,
+		input		[63:0]				rs1_br_target_i,
+		input		[`BR_MASK_W-1:0]	rs1_br_mask_1hot_i,
+		output		[63:0]				rs1_NPC_o,
+		output							rs1_br_pre_taken_o,
+		output		[63:0]				rs1_br_target_o,
+		output		[`BR_MASK_W-1:0]	rs1_br_mask_1hot_o,
+
 		input		[`PRF_IDX_W-1:0]	rs1_dest_tag_i,
 		input		[`PRF_IDX_W-1:0]	rs1_cdb_tag_i,
 		input					rs1_cdb_vld_i,
@@ -52,6 +62,16 @@ module	rs1 (
 		`endif
 	);
 	
+	// 12/07 optimize critical path
+	logic		[63:0]					NPC_r;
+	logic								br_pre_taken_r;
+	logic		[63:0]					br_target_r;
+	logic		[`BR_MASK_W-1:0]		br_mask_1hot_r;
+	logic		[63:0]					NPC_r_nxt;
+	logic								br_pre_taken_r_nxt;
+	logic		[63:0]					br_target_r_nxt;
+	logic		[`BR_MASK_W-1:0]		br_mask_1hot_r_nxt;
+
 	logic		[`PRF_IDX_W-1:0]		opa_tag_r;
 	logic		[`PRF_IDX_W-1:0]		opb_tag_r;
 	logic						opa_rdy_r;
@@ -106,6 +126,12 @@ module	rs1 (
 				  
 	assign br_prmiss_fix	= rs1_br_recovery_i && ((rs1_br_tag_fix_i & br_mask_r) != 0);
 
+	// 12/07 optimize critical path
+	assign rs1_NPC_o				= NPC_r;
+	assign rs1_br_pre_taken_o	= br_pre_taken_r;
+	assign rs1_br_target_o		= br_target_r;
+	assign rs1_br_mask_1hot_o	= br_mask_1hot_r;
+
 	assign rs1_opa_tag_o 		= opa_tag_r;
 	assign rs1_opb_tag_o 		= opb_tag_r;
 	assign rs1_dest_tag_o		= dest_tag_r;
@@ -121,6 +147,12 @@ module	rs1 (
 	
 	always_comb begin
 		if (br_prmiss_fix) begin
+			// 12/07 optimize critical path
+			NPC_r_nxt			= 0;
+			br_pre_taken_r_nxt	= 0;
+			br_target_r_nxt		= 0;
+			br_mask_1hot_r_nxt	= 0;
+
 			opa_tag_r_nxt		= 0;
 			opb_tag_r_nxt		= 0;
 			dest_tag_r_nxt		= 0;
@@ -130,6 +162,12 @@ module	rs1 (
 			sq_position_r_nxt	= 0;
 			avail_r_nxt		= 1'b1;
 		end else if (rs1_load_i) begin
+			// 12/07 optimize critical path
+			NPC_r_nxt			= rs1_NPC_i;
+			br_pre_taken_r_nxt	= rs1_br_pre_taken_i;
+			br_target_r_nxt		= rs1_br_target_i;
+			br_mask_1hot_r_nxt	= rs1_br_mask_1hot_i;
+
 			opa_tag_r_nxt		= rs1_opa_tag_i;
 			opb_tag_r_nxt		= rs1_opb_tag_i;
 			dest_tag_r_nxt		= rs1_dest_tag_i;
@@ -139,6 +177,12 @@ module	rs1 (
 			sq_position_r_nxt	= rs1_sq_position_i;
 			avail_r_nxt		= 1'b0;
 		end else if (rs1_iss_en_i) begin
+			// 12/07 optimize critical path
+			NPC_r_nxt			= 0;
+			br_pre_taken_r_nxt	= 0;
+			br_target_r_nxt		= 0;
+			br_mask_1hot_r_nxt	= 0;
+
 			opa_tag_r_nxt		= 0;
 			opb_tag_r_nxt		= 0;
 			dest_tag_r_nxt		= 0;
@@ -148,6 +192,12 @@ module	rs1 (
 			sq_position_r_nxt	= 0;
 			avail_r_nxt		= 1'b1;
 		end else begin
+			// 12/07 optimize critical path
+			NPC_r_nxt			= NPC_r;
+			br_pre_taken_r_nxt	= br_pre_taken_r;
+			br_target_r_nxt		= br_target_r;
+			br_mask_1hot_r_nxt	= br_mask_1hot_r;
+
 			opa_tag_r_nxt		= opa_tag_r;
 			opb_tag_r_nxt		= opb_tag_r;
 			dest_tag_r_nxt		= dest_tag_r;
@@ -162,6 +212,12 @@ module	rs1 (
 	// synopsys sync_set_reset "rst"
 	always_ff @(posedge clk) begin
 		if (rst) begin
+			// 12/07 optimize critical path
+			NPC_r			<= `SD 0;
+			br_pre_taken_r	<= `SD 0;
+			br_target_r		<= `SD 0;
+			br_mask_1hot_r	<= `SD 0;
+
 			opa_tag_r  	<= `SD 0;
 			opb_tag_r  	<= `SD 0;
 			opa_rdy_r  	<= `SD 1'b0;
@@ -174,6 +230,12 @@ module	rs1 (
 			br_mask_r  	<= `SD 0;
 			sq_position_r	<= `SD 0;
 		end else begin
+			// 12/07 optimize critical path
+			NPC_r			<= `SD NPC_r_nxt;
+			br_pre_taken_r	<= `SD br_pre_taken_r_nxt;
+			br_target_r		<= `SD br_target_r_nxt;
+			br_mask_1hot_r	<= `SD br_mask_1hot_r_nxt;
+
 			opa_tag_r  	<= `SD opa_tag_r_nxt;
 			opb_tag_r  	<= `SD opb_tag_r_nxt;
 			opa_rdy_r  	<= `SD opa_rdy_r_nxt;

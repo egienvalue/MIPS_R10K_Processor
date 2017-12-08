@@ -103,6 +103,8 @@ module core (
 
 	logic [63:0]				proc2Imem_addr;
 	logic						if2Icache_req_o;
+	// 12/07 optimize critical path
+	logic	[63:0]				if_PC_plus_4_o;
 	logic [63:0]				if_PC_o;			
 	logic [63:0]				if_target_PC_o;	
 	logic						if_pred_bit_o;
@@ -175,6 +177,18 @@ module core (
 	//---------------------------------------------------------------
 	// signals for rs
 	//---------------------------------------------------------------
+	
+	// 12/07 optimize critical path
+	logic	[63:0]				if_NPC_i;
+	logic						if_br_pre_taken_i;
+	logic	[63:0]				if_br_target_i;
+	logic	[`BR_MASK_W-1:0]	id_br_mask_1hot_i;
+	logic	[63:0]				rs_iss_NPC_o;
+	logic						rs_iss_br_pre_taken_o;
+	logic	[63:0]				rs_iss_br_target_o;
+	logic	[`BR_MASK_W-1:0]	rs_iss_br_mask_1hot_o;
+
+
 	logic	[`PRF_IDX_W-1:0]	rat_dest_tag_i;
 	logic	[`PRF_IDX_W-1:0]	rat_opa_tag_i;
 	logic	[`PRF_IDX_W-1:0]	rat_opb_tag_i;
@@ -251,6 +265,9 @@ module core (
 	logic						rob_head_retire_rdy_o;//the
 	logic						rob_head_st_instr_o; 
 
+	// 12/07 optimize critical path
+	logic						fu2rob_br_wrong_i;
+
 	logic						br_recovery_rdy_o;//ready to
 	logic	[`PRF_IDX_W-2:0]	rob2fl_recover_head_o;
 	logic	[`BR_MASK_W-1:0]	br_recovery_mask_o;
@@ -297,6 +314,17 @@ module core (
 	//---------------------------------------------------------------
 	// signals for fu
 	//---------------------------------------------------------------
+	
+	// 12/07 optimize critical path
+	logic	[63:0]				rs2fu_NPC_i;
+	logic						rs2fu_br_pre_taken_i;
+	logic	[63:0]				rs2fu_br_target_i;
+	logic	[`BR_MASK_W-1:0]	rs2fu_br_mask_1hot_i;
+	logic						fu_br_wrong_o;
+	logic	[`BR_MASK_W-1:0]	fu_br_recovery_mask_1hot_o;
+	logic						fu_br_right_o;	
+
+
 	logic	[63:0]				rob2fu_NPC_i;
 	logic	[`ROB_IDX_W:0]		rs2fu_rob_idx_i;
 	logic	[63:0]				prf2fu_ra_value_i;
@@ -459,7 +487,7 @@ module core (
 
 	assign if2Icache_addr_i		= proc2Imem_addr;
 	assign if2Icache_req_i		= if2Icache_req_o;
-	assign if2Icache_flush_i	= br_recovery_rdy_o; // from rob
+	assign if2Icache_flush_i	= fu_br_wrong_o; // from rob
 	
 	Icache Icache (
 		.clk					(clk),
@@ -488,13 +516,12 @@ module core (
 	assign br_flush_target_PC_i		= fu2rob_br_recovery_target_o;
 	assign Imem2proc_data			= Icache2if_data_o;
 	assign Imem_valid				= Icache2if_vld_o;
-	assign br_flush_en_i			= br_recovery_rdy_o; // from rob
+	assign br_flush_en_i			= fu_br_wrong_o; // from rob
 	assign id_request_i				= dispatch_en; // dispatch_en
 
 	if_stage if_stage (
 			.clk					(clk),
 			.rst					(rst),
-
 			.bp2if_predict_i		(bp2if_predict_i),
 			.br_predict_target_PC_i	(br_predict_target_PC_i),
 			.br_flush_target_PC_i	(br_flush_target_PC_i),
@@ -505,6 +532,8 @@ module core (
 
 			.if2Icache_req_o		(if2Icache_req_o),
 			.proc2Imem_addr			(proc2Imem_addr),
+			// 12/07 optimize critical path
+			.if_PC_plus_4_o			(if_PC_plus_4_o),
 			.if_PC_o				(if_PC_o),	
 			.if_target_PC_o			(if_target_PC_o),	
 			.if_IR_o				(if_IR_o),
@@ -568,18 +597,18 @@ module core (
 	assign dispatch_rs_stall	= rs_full_o; //&& ~rs_iss_vld_o;
 	assign dispatch_rob_stall	= rob_stall_dp_o;
 	assign dispatch_fl_stall	= ~free_preg_vld_o && ~rob_head_retire_rdy_o;
-	assign dispatch_br_stk_stall= br_stack_full_o && ~br_right_o;
+	assign dispatch_br_stk_stall= br_stack_full_o && ~fu_br_right_o;
 	assign dispatch_lq_stall	= 1'b0; // LQ !!!
 	assign dispatch_sq_stall	= lsq_sq_full_o;
 	
 	assign dispatch_norm_en		= ~(dispatch_rs_stall | dispatch_rob_stall | 
-									dispatch_fl_stall | ~if_valid_inst_o) && ~br_recovery_rdy_o;
+									dispatch_fl_stall | ~if_valid_inst_o) && ~fu_br_wrong_o;
 	assign dispatch_br_en		= ~(dispatch_rs_stall | dispatch_rob_stall | dispatch_br_stk_stall) &&
-								   (id_cond_branch_o | id_uncond_branch_o) && ~br_recovery_rdy_o;
+								   (id_cond_branch_o | id_uncond_branch_o) && ~fu_br_wrong_o;
 	assign dispatch_ld_en		= dispatch_norm_en && ~dispatch_lq_stall && id_rd_mem_o &&
-								 ~br_recovery_rdy_o;
+								 ~fu_br_wrong_o;
 	assign dispatch_st_en		= ~(dispatch_rs_stall | dispatch_rob_stall | dispatch_sq_stall) && 
-									id_wr_mem_o && ~br_recovery_rdy_o;
+									id_wr_mem_o && ~fu_br_wrong_o;
 
 	assign dispatch_en			= //(id_illegal_o) ? 1'b0 :
 								  (id_cond_branch_o | id_uncond_branch_o) ? dispatch_br_en :
@@ -619,6 +648,13 @@ module core (
 	//===============================================================
 	// rs instantiation
 	//===============================================================
+	
+	// 12/07 optimize critical path
+	assign if_NPC_i				= if_PC_plus_4_o;
+	assign if_br_pre_taken_i	= if_pred_bit_o;
+	assign if_br_target_i		= if_target_PC_o;
+	assign id_br_mask_1hot_i	= br_mask_o;
+
 	assign rat_dest_tag_i		= free_preg_o; // from freelist
 	assign rat_opa_tag_i		= opa_preg_o;
 	assign rat_opb_tag_i		= opb_preg_o;
@@ -635,13 +671,23 @@ module core (
 	assign lsq_lq_com_rdy_stall_i = lsq_lq_com_rdy_stall_o;
 	assign stall_dp_i			= ~dispatch_en;
 	assign bmg_br_mask_i		= br_mask_o;
-	assign rob2rs_pred_correct_i= br_right_o;
-	assign rob2rs_br_recovery_i	= br_recovery_rdy_o;
+	assign rob2rs_pred_correct_i= fu_br_right_o;
+	assign rob2rs_br_recovery_i	= fu_br_wrong_o;
 	assign rob_br_tag_fix_i		= br_bit_o; // from branch stack
 
 	rs rs (
 			.clk					(clk),
 			.rst					(rst),
+
+			// 12/07 optimize critical path
+			.if_NPC_i				(if_NPC_i),
+			.if_br_pre_taken_i		(if_br_pre_taken_i),
+			.if_br_target_i			(if_br_target_i),
+			.id_br_mask_1hot_i		(id_br_mask_1hot_i),
+			.rs_iss_NPC_o			(rs_iss_NPC_o),
+			.rs_iss_br_pre_taken_o	(rs_iss_br_pre_taken_o),
+			.rs_iss_br_target_o		(rs_iss_br_target_o),
+			.rs_iss_br_mask_1hot_o	(rs_iss_br_mask_1hot_o),
 
 			.rat_dest_tag_i			(rat_dest_tag_i),
 			.rat_opa_tag_i			(rat_opa_tag_i),
@@ -679,6 +725,10 @@ module core (
 	//===============================================================
 	//rob instantiation
 	//===============================================================
+	
+	// 12/07 optimize critical path
+	assign fu2rob_br_wrong_i		= fu_br_wrong_o;
+
 	assign fl2rob_tag_i				= free_preg_o; // Tnew
 	assign fl2rob_cur_head_i		= free_preg_cur_head_o[`FL_PTR_W-1:0];
 	assign map2rob_tag_i			= dest_old_preg_o; // Told
@@ -709,7 +759,7 @@ module core (
 	rob rob (
 		.clk						(clk),
 		.rst						(rst),
-
+		.fu2rob_br_wrong_i			(fu2rob_br_wrong_i),
 		// <12/6> ports for writeback in tb
 		.retire_PC_tb_o				(retire_PC_tb_o),
 		.retire_areg_tb_o			(retire_areg_tb_o),
@@ -818,6 +868,13 @@ module core (
 	//===============================================================
 	// fu instantiation
 	//===============================================================
+	
+	// 12/07 optimize critical path
+	assign rs2fu_NPC_i			= rs_iss_NPC_o;
+	assign rs2fu_br_pre_taken_i	= rs_iss_br_pre_taken_o;
+	assign rs2fu_br_target_i	= rs_iss_br_target_o;
+	assign rs2fu_br_mask_1hot_i	= rs_iss_br_mask_1hot_o;
+
 	assign rob2fu_NPC_i			= rob2fu_rd_NPC_o; // !!!
 	assign rs2fu_rob_idx_i		= rs_iss_rob_idx_o;
 	assign prf2fu_ra_value_i	= rda_data_o; // !! from preg_file
@@ -834,8 +891,8 @@ module core (
 	assign rs_iss_ld_position_i		= rs_iss_sq_position_o;
 
 	assign rs2fu_br_mask_i			= rs_iss_br_mask_o;
-	assign rob2fu_pred_correct_i	= br_right_o;
-	assign rob2fu_br_recovery_i		= br_recovery_rdy_o;
+	assign rob2fu_pred_correct_i	= fu_br_right_o;
+	assign rob2fu_br_recovery_i		= fu_br_wrong_o;
 	assign br_stack_tag_fix_i		= br_bit_o; // from br_stack
 
 	assign bs_sq_tail_recovery_i	= rc_sq_tail_o;
@@ -851,6 +908,15 @@ module core (
 	fu_main fu_main (
 		.clk					(clk),
 		.rst					(rst),
+
+		// 12/07 optimize critical path
+		.rs2fu_NPC_i			(rs2fu_NPC_i),
+		.rs2fu_br_pre_taken_i	(rs2fu_br_pre_taken_i),
+		.rs2fu_br_target_i		(rs2fu_br_target_i),
+		.rs2fu_br_mask_1hot_i	(rs2fu_br_mask_1hot_i),
+		.fu_br_wrong_o			(fu_br_wrong_o),
+		.fu_br_recovery_mask_1hot_o	(fu_br_recovery_mask_1hot_o),
+		.fu_br_right_o			(fu_br_right_o),	
 		
 		.rob2fu_NPC_i			(rob2fu_NPC_i),
 		.rs2fu_rob_idx_i		(rs2fu_rob_idx_i),
@@ -950,9 +1016,9 @@ module core (
 	assign is_br_i				= dispatch_br_en;
 	assign is_cond_i			= id_cond_branch_o;
 	assign is_taken_i			= if_pred_bit_o; // from if pb prediction
-	assign br_state_i			= br_recovery_rdy_o ? `BR_PR_WRONG : 
-								  br_right_o ? `BR_PR_CORRECT : `BR_NONE; // 
-	assign br_dep_mask_i		= br_recovery_mask_o; // <12/3> modified (from rs, i.e. iss reg)
+	assign br_state_i			= fu_br_wrong_o ? `BR_PR_WRONG : 
+								  fu_br_right_o ? `BR_PR_CORRECT : `BR_NONE; // 
+	assign br_dep_mask_i		= fu_br_recovery_mask_1hot_o; // <12/3> modified (from rs, i.e. iss reg)
 	assign rs_iss2br_mask_i		= rs_iss_br_mask_o;
 	assign bak_mp_next_data_i	= bak_data_o;
 	assign bak_fl_head_i		= free_preg_cur_head_o;

@@ -33,6 +33,15 @@ module fu_br (
 		input						rst,
 		input						start_i,
 		input		[63:0]  		npc_i,
+
+		// 12/07 optimize critical path
+		input						br_pre_taken_i,
+		input		[63:0]			br_pre_target_i,
+		input		[`BR_MASK_W-1:0]br_mask_1hot_i,
+		output	logic				br_wrong_o,
+		output	logic	[`BR_MASK_W-1:0]	br_recovery_mask_1hot_o,
+		output	logic				br_right_o,	
+
 		input		[63:0]  		opa_i,//reg A value
 		input		[63:0]			opb_i,//reg B value
 		input		[31:0]  		inst_i,
@@ -68,7 +77,26 @@ module fu_br (
 		//logic	[`ROB_IDX_W-1:0]	rob_idx_r;
 		logic	[`ROB_IDX_W:0]		rob_idx_nxt;
 
+		logic						br_recovery_mark_r;// 12/07 
+
 		assign bp_br_cond_o			= cond_br;
+
+		// 12/07 optimize critical path
+		always_comb begin
+			br_recovery_mask_1hot_o = br_mask_1hot_i;
+			if(start_i) begin
+				if((br_pre_target_i!=br_recovery_target_o)|(br_recovery_taken_o!=br_pre_taken_i)) begin
+					br_wrong_o = br_recovery_mark_r;
+					br_right_o = 1'b0;
+				end else begin
+					br_wrong_o = 1'b0;
+					br_right_o = 1'b1;
+				end
+			end else begin
+				br_wrong_o = 1'b0;
+				br_right_o = 1'b0;
+			end
+		end
 
 		assign br_recovery_target_o = br_result_nxt ? br_target_nxt : npc_i;//!!the recovery target should be npc_i if the branch is not taken edited by Jun. 
 		assign br_recovery_taken_o	= br_result_nxt;
@@ -118,6 +146,19 @@ module fu_br (
 		// Output
 		.cond(brcond_result)
 		);
+
+	// 12/07 optimize critical path
+	// synopsys sync_set_reset "rst"
+	always_ff @(posedge clk) begin
+		if (rst) begin
+			br_recovery_mark_r	<= `SD 1'b1;
+		end else begin
+			if (br_wrong_o)
+				br_recovery_mark_r	<= `SD 1'b0;
+			else 
+				br_recovery_mark_r	<= `SD 1'b1;
+		end
+	end
 	// synopsys sync_set_reset "rst"
 	always_ff @(posedge clk) begin
 		if(rst) begin

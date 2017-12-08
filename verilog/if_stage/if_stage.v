@@ -14,6 +14,7 @@
 module if_stage(
 				  input			clk,                      // system clk
 				  input			rst,                      // system rst
+
 													        // makes pipeline behave as single-cycle
 				  input			bp2if_predict_i,
 				  
@@ -26,6 +27,8 @@ module if_stage(
 
 				  output logic	[63:0]	proc2Imem_addr,		// Address sent to Instruction memory
 				  output logic			if2Icache_req_o,
+				  // 12/07 optimize critical path
+				  output logic	[63:0]	if_PC_plus_4_o,
 				  output logic	[63:0]	if_PC_o,			// PC of instruction.
 				  output logic	[63:0]	if_target_PC_o,
 				  output logic	[31:0]	if_IR_o,			// fetched instruction out
@@ -94,6 +97,7 @@ module if_stage(
 
 	// Pass PC down pipeline w/instruction
 	assign if_PC_o			= ifb2if_PC_reg;
+	assign if_PC_plus_4_o	= ifb2if_PC_reg+4;
 
 	assign if_valid_inst_o = ~ifb2if_empty; //&& Imem_valid;//ready_for_valid & Imem_valid;
 

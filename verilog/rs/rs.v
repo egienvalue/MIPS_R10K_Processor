@@ -23,6 +23,15 @@
 module rs (
 		input			clk,
 		input			rst,
+		// 12/07 optimize critical path
+		input		[63:0]				if_NPC_i,
+		input							if_br_pre_taken_i,
+		input		[63:0]				if_br_target_i,
+		input		[`BR_MASK_W-1:0]	id_br_mask_1hot_i,
+		output	logic	[63:0]				rs_iss_NPC_o,
+		output	logic						rs_iss_br_pre_taken_o,
+		output	logic	[63:0]				rs_iss_br_target_o,
+		output	logic	[`BR_MASK_W-1:0]	rs_iss_br_mask_1hot_o,
 
 		input		[`PRF_IDX_W-1:0]	rat_dest_tag_i,
 		input		[`PRF_IDX_W-1:0]	rat_opa_tag_i,
@@ -67,6 +76,16 @@ module rs (
 	);
 
 	logic						dp_en;
+
+	// 12/07 optimize critical path
+	logic	[`RS_ENT_NUM-1:0][63:0]		NPC_vec;
+	logic	[`RS_ENT_NUM-1:0]			br_pre_taken_vec;
+	logic	[`RS_ENT_NUM-1:0][63:0]		br_target_vec;
+	logic	[`RS_ENT_NUM-1:0][`BR_MASK_W-1:0]	br_mask_1hot_vec;
+	logic	[63:0]						rs_iss_NPC;
+	logic								rs_iss_br_pre_taken;
+	logic	[63:0]						rs_iss_br_target;
+	logic	[`BR_MASK_W-1:0]			rs_iss_br_mask_1hot;
 
 	logic	[`RS_ENT_NUM-1:0]			avail_vec;
 	logic	[`RS_ENT_NUM-1:0]			load_vec;
@@ -116,6 +135,12 @@ module rs (
 	logic	[`SQ_IDX_W-1:0]				rs_iss_sq_position;
 	logic						rs_full;
 
+	// 12/07 optimize critical path
+	assign	rs_iss_NPC			= NPC_vec[iss_idx];
+	assign	rs_iss_br_pre_taken = br_pre_taken_vec[iss_idx];
+	assign	rs_iss_br_target	= br_target_vec[iss_idx];
+	assign	rs_iss_br_mask_1hot	= br_mask_1hot_vec[iss_idx];
+
 	assign	rs_iss_opa_tag		= opa_tag_vec[iss_idx];
 	assign	rs_iss_opb_tag		= opb_tag_vec[iss_idx];
 	assign	rs_iss_dest_tag		= dest_tag_vec[iss_idx];
@@ -132,6 +157,12 @@ module rs (
 	// synopsys sync_set_reset "rst"
 	always_ff @(posedge clk) begin
 		if (rst) begin
+			// 12/07 optimize critical path
+			rs_iss_NPC_o				<= `SD 0;
+			rs_iss_br_pre_taken_o	<= `SD 0;
+			rs_iss_br_target_o		<= `SD 0;
+			rs_iss_br_mask_1hot_o	<= `SD 0;
+
 			rs_iss_vld_o		<= `SD 1'b0;
 			rs_iss_opa_tag_o	<= `SD 0;
 			rs_iss_opb_tag_o	<= `SD 0;
@@ -142,6 +173,12 @@ module rs (
 			rs_iss_br_mask_o	<= `SD 0;
 			rs_iss_sq_position_o	<= `SD 0;
 		end else if (~lsq_lq_com_rdy_stall_i & ~rob_br_recovery_i) begin
+			// 12/07 optimize critical path
+			rs_iss_NPC_o				<= `SD rs_iss_NPC;
+			rs_iss_br_pre_taken_o	<= `SD rs_iss_br_pre_taken;
+			rs_iss_br_target_o		<= `SD rs_iss_br_target;
+			rs_iss_br_mask_1hot_o	<= `SD rs_iss_br_mask_1hot;
+			
 			rs_iss_vld_o		<= `SD rs_iss_vld;
 			rs_iss_opa_tag_o	<= `SD rs_iss_opa_tag;
 			rs_iss_opb_tag_o	<= `SD rs_iss_opb_tag;
@@ -161,6 +198,16 @@ module rs (
 			rs1 rs_ent (
 				.clk			(clk),
 				.rst			(rst),
+				// 12/07 optimize critical path
+				.rs1_NPC_i(if_NPC_i),
+				.rs1_br_pre_taken_i(if_br_pre_taken_i),
+				.rs1_br_target_i(if_br_target_i),
+				.rs1_br_mask_1hot_i(id_br_mask_1hot_i),
+				.rs1_NPC_o(NPC_vec[i]),
+				.rs1_br_pre_taken_o(br_pre_taken_vec[i]),
+				.rs1_br_target_o(br_target_vec[i]),
+				.rs1_br_mask_1hot_o(br_mask_1hot_vec[i]),
+
 
 				.rs1_dest_tag_i		(rat_dest_tag_i),
 				.rs1_cdb_tag_i		(cdb_tag_i),

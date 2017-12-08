@@ -16,6 +16,9 @@ module	rob (
 		input					clk,
 		input					rst,
 
+		// 12/07 optimize critical path
+		input							fu2rob_br_wrong_i,
+
 		// port for writeback in tb <12/6>
 		output	logic	[63:0]							retire_PC_tb_o,
 		output	logic	[`LRF_IDX_W-1:0]				retire_areg_tb_o,
@@ -204,7 +207,7 @@ module	rob (
     assign rob_halt_o                   = halt_r[head_r[`HT_W-1:0]] && (head_r!=tail_r);
     assign rob_illegal_o                = illegal_r[head_r[`HT_W-1:0]] && (head_r!=tail_r);
 	assign head_r_nxt					= rob_head_retire_rdy_o ? (head_r+1) : head_r;
-	assign tail_r_nxt 					= br_recovery_rdy_o ? (br_recovery_idx_i+1) : dispatch_en ? (tail_r+1) : tail_r;
+	assign tail_r_nxt 					= fu2rob_br_wrong_i ? (br_recovery_idx_i+1) : dispatch_en ? (tail_r+1) : tail_r;
 
     assign rob2fu_rd_NPC_o              = PC_r[rs2rob_rd_idx_i[`ROB_IDX_W-1:0]]+4; //sent the NPC to branch alu to calculate the branch target
 
