@@ -27,6 +27,11 @@ module mshr_iss (
 		output	logic									mshr_iss_stq_c_flag_o,
 		output	logic	[`MSHR_IDX_W-1:0]				mshr_iss_head_o,
 
+		// <12/8>
+		input			[`DCACHE_TAG_W-1:0]				sq2mshr_iss_tag_i,
+		input			[`DCACHE_IDX_W-1:0]				sq2mshr_iss_idx_i,
+		output	logic									mshr_iss_sq_hit_o,
+
 		input			[`DCACHE_TAG_W-1:0]				lq2mshr_iss_tag_i,
 		input			[`DCACHE_IDX_W-1:0]				lq2mshr_iss_idx_i,
 		output	logic									mshr_iss_lq_hit_o,
@@ -61,8 +66,58 @@ module mshr_iss (
 	logic												head_msb_r_nxt;
 	logic												tail_msb_r_nxt;
 
+
 	//-----------------------------------------------------
-	// check input if input tag and index hit on mshr st: TODO, fwd youngest st
+	// ADD fwd youngest st
+	//-----------------------------------------------------
+	logic	[`MSHR_NUM-1:0]								hit_vec;
+	logic	[`MSHR_NUM-1:0]								hit_req_vec;
+	logic	[`MSHR_NUM-1:0]								hit_gnt_vec;
+	logic	[`MSHR_NUM-1:0]								head_r_minus1;
+
+	rps4 rps4_fwd	(
+		.en_i (1'b1),
+		.req_i(hit_req_vec),
+		.ptr_i(head_r_minus1),
+		.gnt_o(hit_gnt_vec)
+	);
+
+	assign head_r_minus1	= (head_r == 0) ? (`MSHR_NUM - 1) : (head_r - 1);
+
+	always_comb begin
+		for (int i = 0; i < `MSHR_NUM; i++) begin
+			if (vld_r[i] && tag_r[i] == lq2mshr_iss_tag_i && idx_r[i] == lq2mshr_iss_idx_i &&
+				message_r[i] == GET_M && ~stq_c_flag_r[i]) begin
+				hit_vec[i]	= 1'b1;
+			end else begin
+				hit_vec[i]	= 1'b0;
+			end
+		end
+	end
+
+	always_comb begin
+		for (int i = 0; i < `MSHR_NUM; i++) begin
+			hit_req_vec[i]	= hit_vec[`MSHR_NUM - 1 - i];
+		end
+	end
+
+	always_comb begin
+		mshr_iss_lq_hit_o			= |hit_gnt_vec;
+		mshr_iss_lq_hit_data_o		= 64'h0;
+		mshr_iss_lq_hit_message_o	= NONE;
+		for (int i = 0; i < `MSHR_NUM; i++) begin
+			if (hit_req_vec[i]) begin
+				mshr_iss_lq_hit_o			= 1'b1;
+				mshr_iss_lq_hit_data_o		= data_r[`MSHR_NUM - 1 - i];
+				mshr_iss_lq_hit_message_o	= message_r[`MSHR_NUM - 1 - i];
+			end
+		end
+	end
+	//-----------------------------------------------------
+	//-----------------------------------------------------
+		
+/*	//-----------------------------------------------------
+	// check input if input tag and index hit on mshr st: TODO, fwd youngest st; Added, if wrong, don't use
 	always_comb begin
 		mshr_iss_lq_hit_o			= 1'b0;
 		mshr_iss_lq_hit_data_o		= 64'h0;
@@ -73,6 +128,19 @@ module mshr_iss (
 				mshr_iss_lq_hit_o			= 1'b1;
 				mshr_iss_lq_hit_data_o		= data_r[i];
 				mshr_iss_lq_hit_message_o	= message_r[i];
+			end
+		end
+	end
+*/
+
+	//-----------------------------------------------------
+	// <12/8> ADDED sq_hit on mshr_iss GET_M entry
+	always_comb begin
+		mshr_iss_sq_hit_o			= 1'b0;
+		for (int i = 0; i < `MSHR_NUM; i++) begin
+			if (vld_r[i] && tag_r[i] == sq2mshr_iss_tag_i && idx_r[i] == sq2mshr_iss_idx_i &&
+				message_r[i] == GET_M) begin
+				mshr_iss_sq_hit_o			= 1'b1;
 			end
 		end
 	end

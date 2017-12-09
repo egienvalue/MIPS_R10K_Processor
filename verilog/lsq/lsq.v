@@ -25,6 +25,7 @@ module lsq (
 		input			[`PRF_IDX_W-1:0]	dest_tag_i,
 		input								ld_vld_i,
 		input			[`SQ_IDX_W-1:0]		rs_ld_position_i,
+		input								rs_ld_is_ldl_i,
 		input			[`SQ_IDX_W-1:0]		ex_ld_position_i,
 
 		// Dcache signals
@@ -219,10 +220,11 @@ module lsq (
 			st_retire_rdy_r_nxt[sq_head_r] = 1'b0;
 	end
 
+	// synopsys sync_set_reset "rst"
 	always_ff @(posedge clk) begin
 		if (st_vld_i) begin
 			st_addr_r[sq_idx_i]		<= `SD addr_i;
-			st_data_r[sq_idx_i]		<= `SD st_data_i;
+			st_data_r[sq_idx_i]		<= `SD stc_flag_r[sq_idx_i] ? 64'b1 : st_data_i;
 			st_rob_idx_r[sq_idx_i]	<= `SD rob_idx_i;
 			st_dest_tag_r[sq_idx_i]	<= `SD dest_tag_i;
 		end
@@ -280,10 +282,10 @@ module lsq (
 
 		for (i = 0; i < `SQ_ENT_NUM; i = i + 1) begin
 			if ((rs_ld_position_i >= sq_head_r) && (~lsq_sq_full_o || (rs_ld_position_i != sq_tail_r))) begin
-				if ((i >= sq_head_r) && (i < rs_ld_position_i) && ~st_addr_vld_r[i])
+				if ((i >= sq_head_r) && (i < rs_ld_position_i) && (~st_addr_vld_r[i] || (rs_ld_is_ldl_i && stc_flag_r[i])))
 					ld_iss_en = 1'b0;
 			end else begin
-				if (((i < rs_ld_position_i) || (i >= sq_head_r)) && ~st_addr_vld_r[i])
+				if (((i < rs_ld_position_i) || (i >= sq_head_r)) && (~st_addr_vld_r[i] || (rs_ld_is_ldl_i && stc_flag_r[i])))
 					ld_iss_en = 1'b0;
 			end
 		end
@@ -299,15 +301,15 @@ module lsq (
 		if (ld_vld_i) begin
 			for (j = 0; j < `SQ_ENT_NUM; j = j + 1) begin
 				if ((ex_ld_position_i >= sq_head_r) && (~lsq_sq_full_o || (ex_ld_position_i != sq_tail_r))) begin
-					if ((j >= sq_head_r) && (j < ex_ld_position_i) && (addr_i == st_addr_r[j])) begin
+					if ((j >= sq_head_r) && (j < ex_ld_position_i) && (addr_i == st_addr_r[j]) && ~stc_flag_r[j]) begin
 						st2ld_forward_data1 = st_data_r[j];
 						st2ld_forward_vld1 = 1'b1;
 					end
 				end else begin
-					if ((j < ex_ld_position_i) && (addr_i == st_addr_r[j])) begin
+					if ((j < ex_ld_position_i) && (addr_i == st_addr_r[j]) && ~stc_flag_r[j]) begin
 						st2ld_forward_data1 = st_data_r[j];
 						st2ld_forward_vld1 = 1'b1;
-					end else if ((j >= sq_head_r) && (addr_i == st_addr_r[j])) begin
+					end else if ((j >= sq_head_r) && (addr_i == st_addr_r[j]) && ~stc_flag_r[j]) begin
 						st2ld_forward_data2 = st_data_r[j];
 						st2ld_forward_vld2 = 1'b1;
 					end
@@ -417,7 +419,7 @@ module lsq (
 		end
 		if (Dcache_mshr_vld_i) begin
 			for (int k = 0; k < `LQ_ENT_NUM; k = k + 1) begin
-				if (lq_addr_r[k] == Dcache_mshr_addr_i) begin
+				if (lq_addr_r[k] == Dcache_mshr_addr_i && ~lq_rdy_r[k]) begin // FIXME: merge this!
 					lq_rdy_r_nxt[k] 	= 1'b1;
 					lq_data_r_nxt[k]	= Dcache_data_i;
 				end

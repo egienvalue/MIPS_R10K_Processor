@@ -24,6 +24,7 @@ module fu_ldst(
 		input			[`ROB_IDX_W:0]		rob_head_i,
 		input								dp_en_i,
 		input			[`SQ_IDX_W-1:0]		rs_ld_position_i,
+		input								rs_ld_is_ldl_i,
 		input			[`SQ_IDX_W-1:0]		ex_ld_position_i,
 
 		input								Dcache_hit_i,
@@ -91,7 +92,7 @@ module fu_ldst(
 					lq_done_o		<= `SD 1'b0;
 					stc_done_o		<= `SD 1'b0;
 					br_mask_o		<= `SD 0;
-				end else if (rob_br_recovery_i && ((br_mask_o & rob_br_tag_fix_i) != 0)) begin
+				end else if (rob_br_recovery_i && ((br_mask_o & rob_br_tag_fix_i) != 0) && ~stc_done_o) begin
 					result_o		<= `SD 0;
 					dest_tag_o		<= `SD 0;
 					rob_idx_o		<= `SD 0;
@@ -110,7 +111,7 @@ module fu_ldst(
 					stc_done_o		<= `SD lsq_stc_com_rdy_o;
 					br_mask_o		<= `SD rob_br_pred_correct_i ? (br_mask & ~rob_br_tag_fix_i) : br_mask;
 				end
-		end		
+		end
 
 		lsq lsq(
 				.clk					(clk),
@@ -129,6 +130,7 @@ module fu_ldst(
 				.dest_tag_i				(dest_tag_i),
 				.ld_vld_i				(ld_vld_i),
 				.rs_ld_position_i		(rs_ld_position_i),
+				.rs_ld_is_ldl_i			(rs_ld_is_ldl_i),
 				.ex_ld_position_i		(ex_ld_position_i),
 
 				.Dcache_hit_i			(Dcache_hit_i),

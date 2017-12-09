@@ -23,6 +23,7 @@ module fu_main(
 		input		[`ROB_IDX_W:0]			rob_head_i,
 		input								st_dp_en_i,
 		input		[`SQ_IDX_W-1:0]			rs_ld_position_i,
+		input								rs_ld_is_ldl_i,
 		input		[`SQ_IDX_W-1:0]			rs_iss_ld_position_i,
 
 		input		[`BR_MASK_W-1:0]		rs2fu_br_mask_i,
@@ -291,6 +292,7 @@ module fu_main(
 		.rob_head_i				(rob_head_i),
 		.dp_en_i				(st_dp_en_i),
 		.rs_ld_position_i		(rs_ld_position_i),
+		.rs_ld_is_ldl_i			(rs_ld_is_ldl_i),
 		.ex_ld_position_i		(rs_iss_ld_position_i),
 
 		.Dcache_hit_i			(Dcache_hit_i),

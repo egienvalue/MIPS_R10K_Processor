@@ -196,6 +196,7 @@ module core (
 	logic	[`BR_MASK_W-1:0]	br_stack_tag_fix_i;
 
 	logic	[`SQ_IDX_W-1:0]		rs_sq_position_o;
+	logic						rs_ld_is_ldl_o;
 	logic						rs_iss_vld_o;
 	logic	[`PRF_IDX_W-1:0]	rs_iss_opa_tag_o;
 	logic	[`PRF_IDX_W-1:0]	rs_iss_opb_tag_o;
@@ -315,6 +316,7 @@ module core (
 	logic	[`ROB_IDX_W:0]		rob_head_i;
 	logic						st_dp_en_i;
 	logic	[`SQ_IDX_W-1:0]		rs_ld_position_i;
+	logic						rs_ld_is_ldl_i;
 	logic	[`SQ_IDX_W-1:0]		rs_iss_ld_position_i;
 
 	logic	[`BR_MASK_W-1:0]	rs2fu_br_mask_i;
@@ -665,6 +667,7 @@ module core (
 			.id_inst_vld_i			(id_inst_vld_i),
 			.id_fu_sel_i			(id_fu_sel_i),
 			.id_IR_i				(id_IR_i),
+			.id_ldl_i				(id_ldl_mem_o),
 			.rob_idx_i				(rob_idx_i),
 			.cdb_tag_i				(cdb_tag_i),
 			.cdb_vld_i				(cdb_vld_i),
@@ -678,6 +681,7 @@ module core (
 			.rob_br_tag_fix_i		(rob_br_tag_fix_i),
 
 			.rs_sq_position_o		(rs_sq_position_o),
+			.rs_ld_is_ldl_o			(rs_ld_is_ldl_o),
 			.rs_iss_vld_o			(rs_iss_vld_o),
 			.rs_iss_opa_tag_o		(rs_iss_opa_tag_o),
 			.rs_iss_opb_tag_o		(rs_iss_opb_tag_o),
@@ -849,6 +853,7 @@ module core (
 	assign rob_head_i				= rob_head_o;
 	assign st_dp_en_i				= dispatch_st_en; // !!
 	assign rs_ld_position_i			= rs_sq_position_o;
+	assign rs_ld_is_ldl_i			= rs_ld_is_ldl_o;
 	assign rs_iss_ld_position_i		= rs_iss_sq_position_o;
 
 	assign rs2fu_br_mask_i			= rs_iss_br_mask_o;
@@ -892,6 +897,7 @@ module core (
 		.rob_head_i				(rob_head_i),
 		.st_dp_en_i				(st_dp_en_i),
 		.rs_ld_position_i		(rs_ld_position_i),
+		.rs_ld_is_ldl_i			(rs_ld_is_ldl_i),
 		.rs_iss_ld_position_i	(rs_iss_ld_position_i),
 
 		.rs2fu_br_mask_i		(rs2fu_br_mask_i),
