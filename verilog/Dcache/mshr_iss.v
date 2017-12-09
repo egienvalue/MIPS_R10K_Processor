@@ -73,7 +73,7 @@ module mshr_iss (
 	logic	[`MSHR_NUM-1:0]								hit_vec;
 	logic	[`MSHR_NUM-1:0]								hit_req_vec;
 	logic	[`MSHR_NUM-1:0]								hit_gnt_vec;
-	logic	[`MSHR_NUM-1:0]								head_r_minus1;
+	logic	[`MSHR_IDX_W-1:0]							head_r_minus1;
 
 	rps4 rps4_fwd	(
 		.en_i (1'b1),
