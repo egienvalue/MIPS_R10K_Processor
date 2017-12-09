@@ -1,19 +1,12 @@
-# Given no targets, 'make' will default to building 'simv', the simulated version
-# of the pipeline
 
-# make          <- compile simv if needed
-
-# As shortcuts, any of the following will build if necessary and then run the
-# specified target
-
-# make sim      <- runs simv (after compiling simv if needed)
-# make vis      <- runs the "visual" debugger (visual/)
-# make dve      <- runs int_simv interactively (after compiling it if needed)
-# make syn      <- runs syn_simv (after synthesizing if needed then 
-#                                 compiling synsimv if needed)
-# make syn_dve  <- runs DVE on synthesized code
-
-
+# This is Makefile template for sim before synth and sim after synth
+#
+# make          <- runs simv (after compiling simv if needed)
+# make all      <- runs simv (after compiling simv if needed)
+# make simv     <- compile simv if needed (but do not run)
+# make syn_simv <- compile syn_simv and output the syn_program.out
+# make syn      <- runs syn only
+# make rsyn		<- re-syn the module
 # make clean    <- remove files created during compilations (but not synthesis)
 # make nuke     <- remove all files created during compilation and synthesis
 #
@@ -21,127 +14,155 @@
 # Every .vg file will need its own rule and one or more synthesis scripts
 # The information contained here (in the rules for those vg files) will be 
 # similar to the information in those scripts but that seems hard to avoid.
-# 
+#
+#t
 
-################################################################################
-## CONFIGURATION
-################################################################################
-
+#VCS = SW_VCS=2015.09 vcs -sverilog +vc -Mupdate -line -full64 
 VCS = SW_VCS=2015.09 vcs -sverilog +vc -Mupdate -line -full64 +define+CLOCK_PERIOD=$(CLOCK_PERIOD)
 LIB = /afs/umich.edu/class/eecs470/lib/verilog/lec25dscc25.v
 
-SYNTH_DIR = ./synth
 
-PROGRAM = test_progs/evens.s
-ASSEMBLED = program.mem
-ASSEMBLER = vs-asm
+############################
+# Modify this part, MODULE
+# and submodule1/2... names
+############################
+MODULE=core_top
+SOURCE_DIR= verilog/$(MODULE)
+SIMFILES =	$(SOURCE_DIR)/$(MODULE).v	\
+			$(SOURCE_DIR)/core.v	\
+			$(SOURCE_DIR)/../Icache/Icache.v	\
+			$(SOURCE_DIR)/../Icache/Icache_ctrl.v	\
+			$(SOURCE_DIR)/../Icache/rps4.v	\
+			$(SOURCE_DIR)/../Icache/prefetch.v	\
+			$(SOURCE_DIR)/../Icache/cachemem.v	\
+			$(SOURCE_DIR)/../if_stage/ifb.v	\
+			$(SOURCE_DIR)/../if_stage/if_stage.v	\
+			$(SOURCE_DIR)/../id_stage.v	\
+			$(SOURCE_DIR)/../rs/pe.v	\
+			$(SOURCE_DIR)/../rs/ps.v	\
+			$(SOURCE_DIR)/../rs/oldest_finder.v	\
+			$(SOURCE_DIR)/../rs/rs1.v	\
+			$(SOURCE_DIR)/../rs/rs.v	\
+			$(SOURCE_DIR)/../rob/rob.v	\
+			$(SOURCE_DIR)/../tables/map_table.v	\
+			$(SOURCE_DIR)/../tables/free_list.v	\
+			$(SOURCE_DIR)/../fu/fu_alu.v	\
+			$(SOURCE_DIR)/../fu/fu_br.v	\
+			$(SOURCE_DIR)/../fu/fu_mult.v	\
+			$(SOURCE_DIR)/../fu/preg_file.v	\
+			$(SOURCE_DIR)/../fu/fu_ldst.v	\
+			$(SOURCE_DIR)/../fu/fu_main.v	\
+			$(SOURCE_DIR)/../branch_stack/br_stack_ent.v	\
+			$(SOURCE_DIR)/../branch_stack/br_mask_ctrl.v	\
+			$(SOURCE_DIR)/../branch_stack/branch_stack.v	\
+			$(SOURCE_DIR)/../lsq/lsq.v	\
+			$(SOURCE_DIR)/../branch_pred/BTB.v	\
+			$(SOURCE_DIR)/../branch_pred/PAg_DIRP.v	\
+			$(SOURCE_DIR)/../branch_pred/branch_pred.v \
+			$(SOURCE_DIR)/../perceptron/perceptron_bp.v \
+			$(SOURCE_DIR)/../perceptron/perceptron.v \
+			$(SOURCE_DIR)/../perceptron/predict.v \
+			$(SOURCE_DIR)/../perceptron/pt_table.v \
+			$(SOURCE_DIR)/../perceptron/train.v	\
+			$(SOURCE_DIR)/../Dcache/Dcache.v	\
+			$(SOURCE_DIR)/../Dcache/Dcache_ctrl.v	\
+			$(SOURCE_DIR)/../Dcache/Dcachemem.v	\
+			$(SOURCE_DIR)/../Dcache/mshr_iss.v	\
+			$(SOURCE_DIR)/../Dcache/mshr_rsp.v	\
+			$(SOURCE_DIR)/../bus/bus.v	\
+			$(SOURCE_DIR)/../Dmem_ctrl/Dmem_ctrl.v
 
-# SIMULATION CONFIG
+SOURCE_FILES= $(SOURCE_DIR)/$(MODULE).v	\
+			  $(SOURCE_DIR)/core.v	\
+			  $(SOURCE_DIR)/../Icache/Icache.v	\
+			$(SOURCE_DIR)/../Icache/Icache_ctrl.v	\
+			$(SOURCE_DIR)/../Icache/rps4.v	\
+			$(SOURCE_DIR)/../Icache/prefetch.v	\
+			$(SOURCE_DIR)/../Icache/cachemem.v	\
+			$(SOURCE_DIR)/../if_stage/ifb.v	\
+			$(SOURCE_DIR)/../if_stage/if_stage.v	\
+			$(SOURCE_DIR)/../id_stage.v	\
+			$(SOURCE_DIR)/../rs/pe.v	\
+			$(SOURCE_DIR)/../rs/ps.v	\
+			$(SOURCE_DIR)/../rs/oldest_finder.v \
+			$(SOURCE_DIR)/../rs/rs1.v	\
+			$(SOURCE_DIR)/../rs/rs.v	\
+			$(SOURCE_DIR)/../rob/rob.v	\
+			$(SOURCE_DIR)/../tables/map_table.v	\
+			$(SOURCE_DIR)/../tables/free_list.v	\
+			$(SOURCE_DIR)/../fu/fu_alu.v	\
+			$(SOURCE_DIR)/../fu/fu_br.v	\
+			$(SOURCE_DIR)/../fu/fu_mult.v	\
+			$(SOURCE_DIR)/../fu/preg_file.v	\
+			$(SOURCE_DIR)/../fu/fu_ldst.v	\
+			$(SOURCE_DIR)/../fu/fu_main.v	\
+			$(SOURCE_DIR)/../branch_stack/br_stack_ent.v	\
+			$(SOURCE_DIR)/../branch_stack/br_mask_ctrl.v	\
+			$(SOURCE_DIR)/../branch_stack/branch_stack.v	\
+			$(SOURCE_DIR)/../lsq/lsq.v	\
+			$(SOURCE_DIR)/../branch_pred/BTB.v	\
+			$(SOURCE_DIR)/../branch_pred/PAg_DIRP.v	\
+			$(SOURCE_DIR)/../branch_pred/branch_pred.v \
+			$(SOURCE_DIR)/../perceptron/perceptron_bp.v \
+			$(SOURCE_DIR)/../perceptron/perceptron.v \
+			$(SOURCE_DIR)/../perceptron/predict.v \
+			$(SOURCE_DIR)/../perceptron/pt_table.v \
+			$(SOURCE_DIR)/../perceptron/train.v	\
+			$(SOURCE_DIR)/../Dcache/Dcache.v	\
+			$(SOURCE_DIR)/../Dcache/Dcache_ctrl.v	\
+			$(SOURCE_DIR)/../Dcache/Dcachemem.v	\
+			$(SOURCE_DIR)/../Dcache/mshr_iss.v	\
+			$(SOURCE_DIR)/../Dcache/mshr_rsp.v	\
+			$(SOURCE_DIR)/../bus/bus.v	\
+			$(SOURCE_DIR)/../Dmem_ctrl/Dmem_ctrl.v
 
-HEADERS     = $(wildcard *.vh)
-TESTBENCH   = $(wildcard testbench/*.v)
-TESTBENCH  += $(wildcard testbench/*.c)
-PIPEFILES   = $(wildcard verilog/*.v)
-CACHEFILES  = $(wildcard verilog/cache/*.v)
-
-SIMFILES    = $(PIPEFILES) $(CACHEFILES)
+HEADERS= sys_defs.vh
+TESTBENCH= testbench/$(MODULE)/$(MODULE)_syn_tb.v	\
+			./testbench/mem.v
+SYNFILES= ./synth/$(MODULE)/$(MODULE).vg
+SYN_DIR= ./synth/$(MODULE)
 
 # SYNTHESIS CONFIG
-
 export HEADERS
-export PIPEFILES
-export CACHEFILES
-
-export CACHE_NAME = cache
-export PIPELINE_NAME = pipeline
-
-PIPELINE  = $(SYNTH_DIR)/$(PIPELINE_NAME).vg 
-SYNFILES  = $(PIPELINE) $(SYNTH_DIR)/$(PIPELINE_NAME)_svsim.sv
-CACHE     = $(SYNTH_DIR)/$(CACHE_NAME).vg
-
+export SOURCE_FILES 
 # Passed through to .tcl scripts:
-export CLOCK_NET_NAME = clock
-export RESET_NET_NAME = reset
-export CLOCK_PERIOD = 30	# TODO: You will want to make this more aggresive
+export CLOCK_NET_NAME	= clk
+export RESET_NET_NAME	= rst
+export CLOCK_PERIOD	= 30	# TODO: You will want to make this more aggresive
+export CORE_NAME	= $(MODULE)
 
-################################################################################
-## RULES
-################################################################################
-
-# Default target:
-all:    simv
+all:	simv
 	./simv | tee program.out
 
-.PHONY: all
-
-# Simulation:
-
-sim:	simv $(ASSEMBLED)
-	./simv | tee sim_program.out
-
 simv:	$(HEADERS) $(SIMFILES) $(TESTBENCH)
-	$(VCS) $^ -o simv
+	$(VCS) $(HEADERS) $(TESTBENCH) $(SIMFILES)	-o simv
 
-.PHONY: sim
-
-# Programs
-
-$(ASSEMBLED):	$(PROGRAM)
-	./$(ASSEMBLER) < $< > $@
-
-# Synthesis
-
-$(CACHE): $(CACHEFILES) $(SYNTH_DIR)/$(CACHE_NAME).tcl
-	cd $(SYNTH_DIR) && dc_shell-t -f ./$(CACHE_NAME).tcl | tee $(CACHE_NAME)_synth.out
-
-$(PIPELINE): $(SIMFILES) $(CACHE) $(SYNTH_DIR)/$(PIPELINE_NAME).tcl
-	cd $(SYNTH_DIR) && dc_shell-t -f ./$(PIPELINE_NAME).tcl | tee $(PIPELINE_NAME)_synth.out
-	echo -e -n 'H\n1\ni\n`timescale 1ns/100ps\n.\nw\nq\n' | ed $(PIPELINE)
-
-syn:	syn_simv $(ASSEMBLED)
-	./syn_simv | tee syn_program.out
+dve:	$(HEADERS) $(SIMFILES) $(TESTBENCH)
+	$(VCS) +memcbk $(HEADERS) $(TESTBENCH) $(SIMFILES) -o dve -R -gui
+.PHONY:	dve
 
 syn_simv:	$(HEADERS) $(SYNFILES) $(TESTBENCH)
-	$(VCS) $^ $(LIB) +define+SYNTH_TEST -o syn_simv 
+	$(VCS) $(HEADERS) $(TESTBENCH) $(SYNFILES) $(LIB) -o syn_simv 
+	./syn_simv | tee syn_program.out
 
-.PHONY: syn
+syn:	$(HEADERS) $(SOURCE_FILES) $(SYN_DIR)/$(MODULE)_syn.tcl
+	cd $(SYN_DIR)/ && dc_shell-t -f ./$(MODULE)_syn.tcl | tee $(MODULE)_synth.out
 
-# Debugging
+rsyn:	nuke $(HEADERS) $(SOURCE_FILES) $(SYN_DIR)/$(MODULE)_syn.tcl
+	cd $(SYN_DIR)/ && dc_shell-t -f ./$(MODULE)_syn.tcl | tee $(MODULE)_synth.out
 
-dve_simv:	$(HEADERS) $(SIMFILES) $(TESTBENCH)
-	$(VCS) +memcbk $^ -o $@ -gui
-
-dve:	dve_simv $(ASSEMBLED)
-	./$<
-
-dve_syn_simv:	$(HEADERS) $(PIPELINE) $(TESTBENCH)
-	$(VCS) +memcbk $^ $(LIB) -o $@ -gui
-
-dve_syn:	dve_syn_simv $(ASSEMBLED)
-	./$<
-
-# For visual debugger
-VISFLAGS = -lncurses
-VISTESTBENCH = $(TESTBENCH:testbench.v=visual/visual_testbench.v) \
-		testbench/visual/visual_c_hooks.c
-vis_simv:	$(HEADERS) $(SIMFILES) $(VISTESTBENCH)
-	$(VCS) $(VISFLAGS) $^ -o vis_simv
-vis:	vis_simv $(ASSEMBLED)
-	./vis_simv
-
-.PHONY: dve syn_dve vis
+syn_dve:	$(HEADERS) $(SYNFILES) $(TESTBENCH)
+	$(VCS) +memcbk $(HEADERS) $(TESTBENCH) $(SYNFILES) $(LIB) -o dve -R -gui
+.PHONY:	syn_dve
 
 clean:
-	rm -rf simv simv.daidir csrc vcs.key ucli.key
+	rm -rf simv simv.daidir csrc vcs.key program.out
 	rm -rf vis_simv vis_simv.daidir
-	rm -rf syn_simv syn_simv.daidir
-	rm -f *.out
+	rm -rf syn_simv syn_simv.daidir syn_program.out
 	rm -rf synsimv synsimv.daidir csrc vcdplus.vpd vcs.key synprog.out pipeline.out writeback.out vc_hdrs.h
-	rm -rf dve_simv dve_syn_simv dve_simv.daidir DVEfiles dve_syn_simv.daidir
+	rm -rf ucli.key
+	rm -rf ./*.out
 
-nuke:	clean
-	rm -f $(SYNTH_DIR)/*.vg $(SYNTH_DIR)/*.rep $(SYNTH_DIR)/*.db $(SYNTH_DIR)/*.chk $(SYNTH_DIR)/command.log
-	rm -f $(SYNTH_DIR)/*.out $(SYNTH_DIR)/*.ddc $(SYNTH_DIR)/*.log
-	rm -f $(ASSEMBLED)
-
-.PHONY: clean nuke dve
+nuke:
+	rm -f $(SYN_DIR)/*.vg $(SYN_DIR)/*.rep $(SYN_DIR)/*.ddc $(SYN_DIR)/*.chk $(SYN_DIR)/command.log
+	rm -f $(SYN_DIR)/*.out command.log $(SYN_DIR)/*.db $(SYN_DIR)/*.svf
