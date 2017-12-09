@@ -26,9 +26,11 @@ module coreS	(
 		// may need more ports for testbench!!!
 		output	logic	[3:0]					core0_retired_instrs,
 		output	logic	[3:0]					core0_error_status,
+		output	logic							core0_halt_o,
 
 		output	logic	[3:0]					core1_retired_instrs,
 		output	logic	[3:0]					core1_error_status,
+		output	logic							core1_halt_o,
 
 		output	logic	[63:0]					core0_retire_PC_tb_o,
 		output	logic	[`LRF_IDX_W-1:0]		core0_retire_areg_tb_o,
@@ -289,6 +291,7 @@ module coreS	(
 		// may need more ports for testbench!!!
 		.core_retired_instrs		(core0_retired_instrs),
 		.core_error_status			(core0_error_status),
+		.core_halt_o				(core0_halt_o),
 
 		//
 		.retire_PC_tb_o				(core0_retire_PC_tb_o),
@@ -360,6 +363,7 @@ module coreS	(
 		// may need more ports for testbench!!!
 		.core_retired_instrs		(core1_retired_instrs),
 		.core_error_status			(core1_error_status),
+		.core_halt_o				(core1_halt_o),
 
 		.retire_PC_tb_o				(core1_retire_PC_tb_o),
 		.retire_areg_tb_o			(core1_retire_areg_tb_o),

@@ -26,6 +26,7 @@ module core (
 		// may need more ports for testbench!!!
 		output	logic	[3:0]							core_retired_instrs,
 		output	logic	[3:0]							core_error_status,
+		output	logic									core_halt_o,
 
 		// <12/6>
 		output	logic	[63:0]							retire_PC_tb_o,
@@ -493,6 +494,7 @@ module core (
 	assign core_retired_instrs	= {3'b0,(rob_head_retire_rdy_o | rob_halt_o)};
 	assign core_error_status	= (rob_illegal_o) ? `HALTED_ON_ILLEGAL : 
 								  (rob_halt_o) ? `HALTED_ON_HALT : `NO_ERROR;
+	assign core_halt_o			= rob_halt_o;
 
 	//===============================================================
 	// Icache instantiation

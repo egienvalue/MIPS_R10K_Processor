@@ -26,9 +26,11 @@ module coreS_tb;
 	
 	logic	[3:0]	core0_retired_instrs;
 	logic	[3:0]	core0_error_status;
+	logic			core0_halt_o;
 
 	logic	[3:0]	core1_retired_instrs;
 	logic	[3:0]	core1_error_status;
+	logic			core1_halt_o;
 
 
 	// ports for writeback all dty data from Dcache to mem
@@ -57,6 +59,9 @@ module coreS_tb;
 	//---------------------------------------------------------
 	logic			core0_retire_wr_en;
 	logic			core1_retire_wr_en;
+
+	logic			core0_single_cycle_halt;
+	logic			core1_single_cycle_halt;
 
 	logic	[31:0]	clock_count;
 	logic	[31:0]	instr_count;
@@ -92,9 +97,11 @@ module coreS_tb;
 
 		.core0_retired_instrs		(core0_retired_instrs),
 		.core0_error_status			(core0_error_status),
+		.core0_halt_o				(core0_halt_o),
 		
 		.core1_retired_instrs		(core1_retired_instrs),
 		.core1_error_status			(core1_error_status),
+		.core1_halt_o				(core1_halt_o),
 	
 		.core0_retire_PC_tb_o		(core0_retire_PC_tb_o),
 		.core0_retire_areg_tb_o		(core0_retire_areg_tb_o),
@@ -436,6 +443,20 @@ module coreS_tb;
 	endtask // task print_rob
 
 
+	//
+	always_ff @(posedge clk) begin
+		if (rst) begin
+			core0_single_cycle_halt	<= `SD 1'b1;
+			core1_single_cycle_halt	<= `SD 1'b1;
+		end else begin
+			if (core0_halt_o)
+				core0_single_cycle_halt	<= `SD 1'b0;
+			if (core1_halt_o)
+				core1_single_cycle_halt	<= `SD 1'b0;
+		end
+	end
+
+
 
 	// Count the number of posedges and number of instructions completed
 	// till simulation ends
@@ -449,7 +470,8 @@ module coreS_tb;
 		else
 		if (~freeze_clk_count) begin
 			clock_count <= `SD (clock_count + 1);
-			instr_count <= `SD (instr_count + core0_retired_instrs + core1_retired_instrs);
+			instr_count <= `SD (instr_count + ((core0_retired_instrs == 1) & core0_single_cycle_halt) + 
+											  ((core1_retired_instrs == 1) & core1_single_cycle_halt));
 		end
 	end 
 
@@ -472,7 +494,7 @@ module coreS_tb;
 
 			//----------------------------------------------------
 			// print the writeback information to c0_writeback.out 
-			if(core0_retired_instrs>0) begin
+			if(core0_retired_instrs>0 && core0_single_cycle_halt) begin
 				if(core0_retire_wr_en)
 					$fdisplay(	wb0_fileno, "PC=%x, REG[%d]=%x",
 								core0_retire_PC_tb_o, core0_retire_areg_tb_o, core0_retire_areg_val_tb_o);
@@ -481,7 +503,7 @@ module coreS_tb;
 			end
 
 			// print the writeback information to c0_writeback.out 
-			if(core1_retired_instrs>0) begin
+			if(core1_retired_instrs>0 && core1_single_cycle_halt) begin
 				if(core1_retire_wr_en)
 					$fdisplay(	wb1_fileno, "PC=%x, REG[%d]=%x",
 								core1_retire_PC_tb_o, core1_retire_areg_tb_o, core1_retire_areg_val_tb_o);

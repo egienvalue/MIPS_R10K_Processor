@@ -25,6 +25,7 @@ module core_top_tb;
 
 	logic	[3:0]	core_retired_instrs;
 	logic	[3:0]	core_error_status;
+	logic			core_halt_o;
 
 	//12/07 Debug port for synthesize	
 	logic	[63:0]					retire_PC_tb_o;
@@ -67,11 +68,12 @@ module core_top_tb;
 
 		.core_retired_instrs(core_retired_instrs),
 		.core_error_status	(core_error_status),
+		.core_halt_o		(core_halt_o),
 
-		.retire_PC_tb_o(retire_PC_tb_o),
-		.retire_areg_tb_o(retire_areg_tb_o),
+		.retire_PC_tb_o		(retire_PC_tb_o),
+		.retire_areg_tb_o	(retire_areg_tb_o),
 		.retire_areg_val_tb_o(retire_areg_val_tb_o),
-		.retire_rdy_tb_o(retire_rdy_tb_o),
+		.retire_rdy_tb_o	(retire_rdy_tb_o),
 		
 		// ports for mem write back
 		.Dcache_way_idx_tb_i(Dcache_way_idx_tb_i),

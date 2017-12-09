@@ -25,6 +25,7 @@ module core_top_tb;
 
 	logic	[3:0]	core_retired_instrs;
 	logic	[3:0]	core_error_status;
+	logic			core_halt_o;
 
 	// ports for writeback all dty data from Dcache to mem
 	logic		[`DCACHE_WAY_NUM-1:0]	Dcache_way_idx_tb_i;
@@ -61,6 +62,7 @@ module core_top_tb;
 
 		.core_retired_instrs(core_retired_instrs),
 		.core_error_status	(core_error_status),
+		.core_halt_o		(core_halt_o),
 		
 		// ports for mem write back
 		.Dcache_way_idx_tb_i(Dcache_way_idx_tb_i),

@@ -22,6 +22,7 @@ module core_top	(
 		// may need more ports for testbench!!!
 		output	logic	[3:0]					core_retired_instrs,
 		output	logic	[3:0]					core_error_status,
+		output	logic							core_halt_o,
 
 		output	logic	[63:0]					retire_PC_tb_o,
 		output	logic	[`LRF_IDX_W-1:0]		retire_areg_tb_o,
@@ -203,6 +204,7 @@ module core_top	(
 		// may need more ports for testbench!!!
 		.core_retired_instrs		(core_retired_instrs),
 		.core_error_status			(core_error_status),
+		.core_halt_o				(core_halt_o),
 
 		.retire_PC_tb_o				(retire_PC_tb_o),
 		.retire_areg_tb_o			(retire_areg_tb_o),
