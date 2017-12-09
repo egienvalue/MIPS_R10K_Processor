@@ -155,6 +155,7 @@ module rs (
 	assign	rs_full			= ~(|avail_vec);
 	assign	rs_full_o		= rs_full & ~rs_iss_vld;
 	assign	rs_sq_position_o	= sq_position_vec[iss_idx_ld];
+	assign	rs_ld_is_ldl_o		= ldl_vec[iss_idx_ld];
 
 	// register output
 	// synopsys sync_set_reset "rst"
