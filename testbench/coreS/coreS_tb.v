@@ -556,7 +556,7 @@ module coreS_tb;
 
 	
 	initial begin // for step by step debug
-		for (int i = 0; i < 10000; i++) begin
+		for (int i = 0; i < 100000; i++) begin
 			@(negedge clk);
 		end
 		$display("@@@\n@@");
