@@ -31,6 +31,10 @@ module fu_br (
 
 		input						clk,
 		input						rst,
+
+		// for fork jump
+		input						cpuid_i,
+
 		input						start_i,
 		input		[63:0]  		npc_i,
 
@@ -78,6 +82,10 @@ module fu_br (
 		logic	[`ROB_IDX_W:0]		rob_idx_nxt;
 
 		logic						br_recovery_mark_r;// 12/07 
+		// <12/6>
+		logic						fbne_br_jump;
+		logic						fbne_br_flag;
+
 
 		assign bp_br_cond_o			= cond_br;
 
@@ -105,11 +113,13 @@ module fu_br (
 
 
 		assign br_disp = { {41{inst_i[20]}}, inst_i[20:0], 2'b00 };
-		assign br_result_nxt = (~cond_br) ? 1 : brcond_result;
+		assign br_result_nxt = (fbne_br_flag) ? fbne_br_jump : 
+							   (~cond_br) ?		1 : brcond_result;
 		assign rob_idx_nxt = rob_idx_i;
 
 	always_comb begin
-        
+		fbne_br_flag = 0;
+       	fbne_br_jump = 0; 
 		br_wr_en_nxt = 0;
         br_target_nxt = npc_i;
         cond_br = 0;
@@ -125,6 +135,12 @@ module fu_br (
 					begin
 						br_target_nxt = npc_i + br_disp;
 						case (inst_i[31:26])
+							`FBNE_INST: // <12/6> for 2 core jump
+								begin
+									fbne_br_jump = cpuid_i;
+									fbne_br_flag = 1;
+									br_wr_en_nxt = 1'b0;
+								end
 							`BR_INST, `BSR_INST: 
 								begin
 									cond_br  = 0;

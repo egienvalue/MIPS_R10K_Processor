@@ -67,6 +67,7 @@ module	rob (
 		output								rob_stall_dp_o,//signal show if the ROB is full
 		output								rob_head_retire_rdy_o,//the head of ROb is ready to retire
 		output								rob_head_st_instr_o,
+		output		[`ROB_IDX_W:0]			rob_head_o,
 		//12.02
 		output	logic						rob2lsq_st_retire_en_o,
 		//----------------------------------------------------------------------
@@ -203,6 +204,7 @@ module	rob (
 	assign rob2arch_map_logic_dest_o	= rob_head_retire_rdy_o ? logic_dest_r[head_r[`HT_W-1:0]] : 0;
 	assign rob_head_retire_rdy_o 		= (done_r[head_r[`HT_W-1:0]]==1) && (head_r!=tail_r);
 	assign rob_head_st_instr_o			= wr_mem_r[head_r[`HT_W-1:0]];
+	assign rob_head_o					= head_r;
 	assign rob_stall_dp_o				= ((head_r^tail_r)==6'b100000)&&(~rob_head_retire_rdy_o);
     assign rob_halt_o                   = halt_r[head_r[`HT_W-1:0]] && (head_r!=tail_r);
     assign rob_illegal_o                = illegal_r[head_r[`HT_W-1:0]] && (head_r!=tail_r);

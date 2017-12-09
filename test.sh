@@ -2,14 +2,14 @@
 rm -rf new_out
 mkdir new_out
 make clean
-make syn_simv
+make simv
 echo "@@@ Starting test!" | tee test_progs.rep
 for file in test_progs/*.s; do
     filename=$(echo $file | cut -d'.' -f1 | cut -d'/' -f2)
     echo "Assembling $filename"
     ./vs-asm < $file > program.mem
     echo "Running $filename"
-    ./syn_simv | tee program.out
+    ./simv | tee program.out
     echo "Saving $filename output"
     mkdir ./new_out/$filename
     mv *.out ./new_out/$filename
@@ -36,14 +36,14 @@ echo "@@@ Passed!" | tee -a test_progs.rep
 rm -rf new_out
 mkdir new_out
 make clean
-make syn_simv
+make simv
 echo "@@@ Starting test!" | tee decaf_test.rep
 for file in decaf_test/*.s; do
     filename=$(echo $file | cut -d'.' -f1 | cut -d'/' -f2)
     echo "Assembling $filename"
     ./vs-asm < $file > program.mem
     echo "Running $filename"
-    ./syn_simv | tee program.out
+    ./simv | tee program.out
     echo "Saving $filename output"
     mkdir ./new_out/$filename
     mv *.out ./new_out/$filename
@@ -69,14 +69,14 @@ echo "@@@ Passed!" | tee -a decaf_test.rep
 rm -rf new_out
 mkdir new_out
 make clean
-make syn_simv
+make simv
 echo "@@@ Starting test!" | tee hidden_test.rep
 for file in hidden_test/*.s; do
     filename=$(echo $file | cut -d'.' -f1 | cut -d'/' -f2)
     echo "Assembling $filename"
     ./vs-asm < $file > program.mem
     echo "Running $filename"
-    ./syn_simv | tee program.out
+    ./simv | tee program.out
     echo "Saving $filename output"
     mkdir ./new_out/$filename
     mv *.out ./new_out/$filename

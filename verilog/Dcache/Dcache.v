@@ -13,6 +13,11 @@ module Dcache (
 		input											clk,
 		input											rst,
 
+		// <12/6> STQ_C instructions
+		input											sq2Dcache_is_stq_c_i,
+		output	logic									Dcache2sq_stq_c_fail_o,
+		output	logic									Dcache2sq_stq_c_succ_o,
+		
 		// ports for tb
 		input			[`DCACHE_WAY_NUM-1:0]			Dcache_way_idx_tb_i,
 		input			[`DCACHE_IDX_W-1:0]				Dcache_set_idx_tb_i,
@@ -162,6 +167,10 @@ module Dcache (
 		.rst						(rst),
 
 		.Dctrl_cpu_id_i				(cpu_id_i),
+
+		.sq2Dctrl_is_stq_c_i		(sq2Dcache_is_stq_c_i),
+		.Dctrl2sq_stq_c_fail_o		(Dcache2sq_stq_c_fail_o),
+		.Dctrl2sq_stq_c_succ_o		(Dcache2sq_stq_c_succ_o),
 
 		.lq2Dctrl_en_i				(lq2Dcache_en_i),
 		.lq2Dctrl_addr_i			(lq2Dcache_addr_i),

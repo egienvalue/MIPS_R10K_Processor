@@ -42,10 +42,8 @@ module Dmem_ctrl(
 	);
 
 	// vld and dty registers for each block
-	//logic	[`MEM_64BIT_LINES - 1:0]				vld_r;	
 	logic	[`MEM_64BIT_LINES - 1:0]				dty_r;	
 
-	//logic	[`MEM_64BIT_LINES - 1:0]				vld_nxt;	
 	logic	[`MEM_64BIT_LINES - 1:0]				dty_nxt;	
 
 	// mshr issue registers, issue command to Dmem
@@ -116,7 +114,6 @@ module Dmem_ctrl(
 	// bus requesting block state signals assign
 	assign bus_req_addr	= {bus_req_tag_i, bus_req_idx_i, 3'b0};
 	assign bus_req_blk_idx = bus_req_addr[15:3];
-	//assign bus_req_vld	= vld_r[bus_req_addr[63:3]];
 	assign bus_req_dty	= dty_r[bus_req_blk_idx];
 	
 
@@ -229,7 +226,7 @@ module Dmem_ctrl(
 				Dmem_ctrl_rsp_ack_o = 1'b0;
 				mshr_iss_wr_en		= 1'b0;
 			end */
-		// State IorS end else 
+		// State IorS
 		if (/*bus_req_vld &&*/ ~bus_req_dty) begin // IorS
 			if (bus_req_message_i == GET_M) begin 
 				Dmem_ctrl_rsp_ack_o	= 1'b1; // IorS->M
@@ -249,7 +246,6 @@ module Dmem_ctrl(
 				Dmem_ctrl_rsp_ack_o	= ~mshr_iss_stall; // M->IorS_D, wait for data, right rdy
 				mshr_iss_wr_en		= bus_req_ack_i; // allocate a ST entry
 
-				//vld_nxt[bus_req_addr]	= mshr_iss_stall;
 				dty_nxt[bus_req_blk_idx]	= bus_req_ack_i;
 			end else if (bus_req_message_i == GET_S) begin
 				Dmem_ctrl_rsp_ack_o	= ~mshr_iss_stall; // M->IorS_D, wait data
@@ -304,7 +300,6 @@ module Dmem_ctrl(
 	// synopsys sync_set_reset "rst"
 	always_ff @(posedge clk) begin 
 		if (rst) begin
-			//vld_r			<= `SD 0;
 			dty_r			<= `SD 8192'h0;
 			mshr_iss_vld_r	<= `SD `DMEM_MSHR_NUM'b0;
 			mshr_iss_rdy_r	<= `SD `DMEM_MSHR_NUM'b0;
@@ -324,7 +319,6 @@ module Dmem_ctrl(
 			mshr_rsp_tail_r	<= `SD 0;
 			mshr_rsp_tmsb_r	<= `SD 0;
 		end else begin
-			//vld_r			<= `SD vld_nxt;
 			dty_r			<= `SD dty_nxt;
 			mshr_iss_vld_r	<= `SD mshr_iss_vld_nxt;
 			mshr_iss_rdy_r	<= `SD mshr_iss_rdy_nxt;

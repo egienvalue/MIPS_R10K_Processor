@@ -42,6 +42,7 @@ module rs (
 		input					id_inst_vld_i,		
 		input		[`FU_SEL_W-1:0]		id_fu_sel_i,
 		input		[31:0]			id_IR_i,
+		input					id_ldl_i,
 
 		input		[`ROB_IDX_W:0]		rob_idx_i,
 	
@@ -61,6 +62,7 @@ module rs (
 
 		// ----------------- Output -----------------
 		output	logic	[`SQ_IDX_W-1:0]		rs_sq_position_o,
+		output	logic				rs_ld_is_ldl_o,
 
 		output	logic				rs_iss_vld_o,
 		output	logic	[`PRF_IDX_W-1:0]	rs_iss_opa_tag_o,
@@ -103,6 +105,7 @@ module rs (
 	logic	[`RS_ENT_NUM-1:0] [`ROB_IDX_W:0]	rob_idx_vec_reordered;
 	logic	[`RS_ENT_NUM-1:0] [`BR_MASK_W-1:0]	br_mask_vec;
 	logic	[`RS_ENT_NUM-1:0] [`SQ_IDX_W-1:0]	sq_position_vec;
+	logic	[`RS_ENT_NUM-1:0]			ldl_vec;
 	`ifdef DEBUG
 	logic	[`RS_ENT_NUM-1:0]			opa_rdy_vec;
 	logic	[`RS_ENT_NUM-1:0]			opb_rdy_vec;
@@ -221,6 +224,7 @@ module rs (
 				.rs1_rob_idx_i		(rob_idx_i),
 				.rs1_br_mask_i		(bmg_br_mask_i),
 				.rs1_sq_position_i	(lsq_sq_tail_i),
+				.rs1_ldl_i		(id_ldl_i),
 				.rs1_load_i		(load_vec[i]),
 				.rs1_iss_en_i		(iss_vec[i]),
 				.rs1_br_pred_correct_i	(rob_br_pred_correct_i),
@@ -236,6 +240,7 @@ module rs (
 				.rs1_rob_idx_o		(rob_idx_vec[i]),
 				.rs1_br_mask_o		(br_mask_vec[i]),
 				.rs1_sq_position_o	(sq_position_vec[i]),
+				.rs1_ldl_o		(ldl_vec[i]),
 				.rs1_avail_o		(avail_vec[i])
 				`ifdef DEBUG
 				,.rs1_opa_rdy_o		(opa_rdy_vec[i]),

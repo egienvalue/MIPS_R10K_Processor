@@ -38,6 +38,7 @@ module	rs1 (
 		input		[`ROB_IDX_W:0]		rs1_rob_idx_i,
 		input		[`BR_MASK_W-1:0]	rs1_br_mask_i,
 		input		[`SQ_IDX_W-1:0]		rs1_sq_position_i,
+		input					rs1_ldl_i,
 		input					rs1_load_i,
 		input					rs1_iss_en_i,
 		// branch recovery
@@ -54,6 +55,7 @@ module	rs1 (
 		output		[`ROB_IDX_W:0]		rs1_rob_idx_o,
 		output		[`BR_MASK_W-1:0]	rs1_br_mask_o,
 		output		[`SQ_IDX_W-1:0]		rs1_sq_position_o,
+		output					rs1_ldl_o,
 		output					rs1_avail_o
 
 		`ifdef DEBUG
@@ -82,6 +84,7 @@ module	rs1 (
 	logic		[`ROB_IDX_W:0]			rob_idx_r;
 	logic		[`BR_MASK_W-1:0]		br_mask_r;
 	logic		[`SQ_IDX_W-1:0]			sq_position_r;
+	logic						ldl_r;
 	logic						avail_r;
 
 	logic		[`PRF_IDX_W-1:0]		opa_tag_r_nxt;
@@ -94,6 +97,7 @@ module	rs1 (
 	logic		[`ROB_IDX_W:0]			rob_idx_r_nxt;
 	logic		[`BR_MASK_W-1:0]		br_mask_r_nxt;
 	logic		[`SQ_IDX_W-1:0]			sq_position_r_nxt;
+	logic						ldl_r_nxt;
 	logic						avail_r_nxt;
 
 	logic						br_prmiss_fix;
@@ -139,6 +143,7 @@ module	rs1 (
 	assign rs1_IR_o			= IR_r;
 	assign rs1_rob_idx_o		= rob_idx_r;
 	assign rs1_sq_position_o	= sq_position_r;
+	assign rs1_ldl_o		= ldl_r;
 	assign rs1_avail_o 		= avail_r;
 	`ifdef DEBUG
 	assign rs1_opa_rdy_o		= opa_rdy_r;
@@ -160,6 +165,7 @@ module	rs1 (
 			IR_r_nxt		= 32'b0;
 			rob_idx_r_nxt		= 0;
 			sq_position_r_nxt	= 0;
+			ldl_r_nxt		= 1'b0;
 			avail_r_nxt		= 1'b1;
 		end else if (rs1_load_i) begin
 			// 12/07 optimize critical path
@@ -175,6 +181,7 @@ module	rs1 (
 			IR_r_nxt		= rs1_IR_i;
 			rob_idx_r_nxt		= rs1_rob_idx_i;
 			sq_position_r_nxt	= rs1_sq_position_i;
+			ldl_r_nxt		= rs1_ldl_i;
 			avail_r_nxt		= 1'b0;
 		end else if (rs1_iss_en_i) begin
 			// 12/07 optimize critical path
@@ -190,6 +197,7 @@ module	rs1 (
 			IR_r_nxt		= 32'b0;
 			rob_idx_r_nxt		= 0;
 			sq_position_r_nxt	= 0;
+			ldl_r_nxt		= 1'b0;
 			avail_r_nxt		= 1'b1;
 		end else begin
 			// 12/07 optimize critical path
@@ -205,6 +213,7 @@ module	rs1 (
 			IR_r_nxt		= IR_r;
 			rob_idx_r_nxt		= rob_idx_r;
 			sq_position_r_nxt	= sq_position_r;
+			ldl_r_nxt		= ldl_r;
 			avail_r_nxt		= avail_r;
 		end
 	end
@@ -229,6 +238,7 @@ module	rs1 (
 			rob_idx_r  	<= `SD 0;
 			br_mask_r  	<= `SD 0;
 			sq_position_r	<= `SD 0;
+			ldl_r		<= `SD 1'b0;
 		end else begin
 			// 12/07 optimize critical path
 			NPC_r			<= `SD NPC_r_nxt;
@@ -247,6 +257,7 @@ module	rs1 (
 			rob_idx_r  	<= `SD rob_idx_r_nxt;
 			br_mask_r  	<= `SD br_mask_r_nxt;
 			sq_position_r	<= `SD sq_position_r_nxt;
+			ldl_r		<= `SD ldl_r_nxt;
 		end
 	end
 

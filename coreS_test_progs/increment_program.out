@@ -1,0 +1,64 @@
+
+Note-[RT_BS] Larger stack needed
+  Note: Bumping stack limit from 8192 to 8193 Kbytes.
+
+Chronologic VCS simulator copyright 1991-2015
+Contains Synopsys proprietary information.
+Compiler version K-2015.09_Full64; Runtime version K-2015.09_Full64;  Dec 10 04:15 2015
+@@
+@@
+@@                     0  Asserting System reset......
+@@
+@@                     0 : System STILL at reset, can't show anything
+@@
+@@
+@@                   100 : System STILL at reset, can't show anything
+@@
+@@
+@@                   200 : System STILL at reset, can't show anything
+@@
+@@
+@@                   300 : System STILL at reset, can't show anything
+@@
+@@                   360  Deasserting System reset......
+@@
+@@
+@@@ Unified Memory contents hex on left, decimal on right: 
+@@@
+@@@ mem[    0] = 203f1000d4200010 : 2323593528491376656
+@@@ mem[    8] = ac410000211f0000 : 12412202048565477376
+@@@ mem[   16] = e47ffffdbc610000 : 16465160227942105088
+@@@ mem[   24] = 20bf2000f45ffffc : 2359639918237450236
+@@@ mem[   32] = 40c03406a4c50000 : 4665786417094656000
+@@@ mem[   40] = 20ff0000b4c50000 : 2377619131307720704
+@@@ mem[   48] = 41003408b4e10000 : 4683800824464343040
+@@@ mem[   56] = f53ffff3410c7da9 : 17672124883058589097
+@@@ mem[   64] = 203f100000000555 : 2323593524932511061
+@@@ mem[   72] = ac410000211f0000 : 12412202048565477376
+@@@ mem[   80] = e47ffffdbc610000 : 16465160227942105088
+@@@ mem[   88] = 20bf2000f45ffffc : 2359639918237450236
+@@@ mem[   96] = 40c05406a4c50000 : 4665821601466744832
+@@@ mem[  104] = 20ff0000b4c50000 : 2377619131307720704
+@@@ mem[  112] = 41003408b4e10000 : 4683800824464343040
+@@@ mem[  120] = f53ffff3410c7da9 : 17672124883058589097
+@@@ mem[  128] = 0000000000000555 : 1365
+@@@
+@@@ mem[ 8192] = 000000000000012c : 300
+@@@
+@@@
+@@                762600 : System halted
+@@
+@@@ Cores halted on HALT instruction
+@@@
+@@
+@@  7612 cycles / 4578 instrs = 1.662735 CPI
+@@
+@@  228360.00 ns total time to execute
+@@
+
+$finish called from file "testbench/testbench_multi.v", line 433.
+$finish at simulation time               762650
+           V C S   S i m u l a t i o n   R e p o r t 
+Time: 76265000 ps
+CPU Time:      5.180 seconds;       Data structure size:   1.0Mb
+Thu Dec 10 04:15:42 2015

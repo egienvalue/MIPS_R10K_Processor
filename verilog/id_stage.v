@@ -164,7 +164,7 @@ module decoder(// Inputs
 							rd_mem = `TRUE;
 							ldl_mem = `TRUE;
 							dest_reg = `DEST_IS_REGA;
-							fu_sel = `FU_SEL_LOAD; // TODO: currently unimplemented
+							fu_sel = `FU_SEL_LOAD;
 						end // case: `LDQ_L_INST
 						`STQ_INST:
 						begin
@@ -178,7 +178,7 @@ module decoder(// Inputs
 							wr_mem = `TRUE;
 							stc_mem = `TRUE;
 							dest_reg = `DEST_IS_REGA;
-							fu_sel = `FU_SEL_STORE; // TODO: currently unimplemented
+							fu_sel = `FU_SEL_STORE;
 						end // case: `STQ_INST
 						default:       illegal = `TRUE;
 					endcase // case(inst[31:26])
@@ -190,8 +190,13 @@ module decoder(// Inputs
 					opb_select = `ALU_OPB_IS_BR_DISP;
 					alu_func = `ALU_ADDQ;
 					case (inst[31:26])
+						`FBNE_INST: // <12/6> for 2-core program jump
+						begin
+							cond_branch = `TRUE;
+							fu_sel = `FU_SEL_UNCOND_BRANCH;
+						end
 						`FBEQ_INST, `FBLT_INST, `FBLE_INST,
-						`FBNE_INST, `FBGE_INST, `FBGT_INST:
+						`FBGE_INST, `FBGT_INST:
 						begin
 							// FP conditionals not implemented
 							illegal = `TRUE;

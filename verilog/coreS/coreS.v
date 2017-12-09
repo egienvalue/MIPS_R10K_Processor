@@ -24,18 +24,28 @@ module coreS	(
 
 		//-------------------------------------------------
 		// may need more ports for testbench!!!
-		output	logic	[3:0]					core0_retired_instrs
+		output	logic	[3:0]					core0_retired_instrs,
 		output	logic	[3:0]					core0_error_status,
 
-		output	logic	[3:0]					core1_retired_instrs
+		output	logic	[3:0]					core1_retired_instrs,
 		output	logic	[3:0]					core1_error_status,
+
+		output	logic	[63:0]					core0_retire_PC_tb_o,
+		output	logic	[`LRF_IDX_W-1:0]		core0_retire_areg_tb_o,
+		output	logic	[63:0]					core0_retire_areg_val_tb_o,
+		output	logic							core0_retire_rdy_tb_o,
+
+		output	logic	[63:0]					core1_retire_PC_tb_o,
+		output	logic	[`LRF_IDX_W-1:0]		core1_retire_areg_tb_o,
+		output	logic	[63:0]					core1_retire_areg_val_tb_o,
+		output	logic							core1_retire_rdy_tb_o,
 
 		// ports for writeback all dty data from Dcache to mem
 		input			[`DCACHE_WAY_NUM-1:0]	Dcache0_way_idx_tb_i,
 		input			[`DCACHE_IDX_W-1:0]		Dcache0_set_idx_tb_i,
 		output	logic							Dcache0_blk_dty_tb_o,
 		output	logic	[`DCACHE_TAG_W-1:0]		Dcache0_tag_tb_o,
-		output	logic	[63:0]					Dcache0_data_tb_o
+		output	logic	[63:0]					Dcache0_data_tb_o,
 	
 		input			[`DCACHE_WAY_NUM-1:0]	Dcache1_way_idx_tb_i,
 		input			[`DCACHE_IDX_W-1:0]		Dcache1_set_idx_tb_i,
@@ -207,7 +217,7 @@ module coreS	(
 	
 	// Imem arbitration logic, select one of them in 2 cores
 	always_comb begin
-		if (~Imem_abt_bit_r) // core0 first
+		if (~Imem_abt_bit_r) begin // core0 first
 			proc2Imem_command_o = (proc02Imem_command_o != `BUS_NONE) ?
 								   proc02Imem_command_o : proc12Imem_command_o;
 			proc2Imem_addr_o	= (proc02Imem_command_o != `BUS_NONE) ?
@@ -280,6 +290,12 @@ module coreS	(
 		.core_retired_instrs		(core0_retired_instrs),
 		.core_error_status			(core0_error_status),
 
+		//
+		.retire_PC_tb_o				(core0_retire_PC_tb_o),
+		.retire_areg_tb_o			(core0_retire_areg_tb_o),
+		.retire_areg_val_tb_o		(core0_retire_areg_val_tb_o),
+		.retire_rdy_tb_o			(core0_retire_rdy_tb_o),
+
 		// ports for writeback all dty data from Dcache to mem
 		.Dcache_way_idx_tb_i		(Dcache0_way_idx_tb_i),
 		.Dcache_set_idx_tb_i		(Dcache0_set_idx_tb_i),
@@ -344,6 +360,11 @@ module coreS	(
 		// may need more ports for testbench!!!
 		.core_retired_instrs		(core1_retired_instrs),
 		.core_error_status			(core1_error_status),
+
+		.retire_PC_tb_o				(core1_retire_PC_tb_o),
+		.retire_areg_tb_o			(core1_retire_areg_tb_o),
+		.retire_areg_val_tb_o		(core1_retire_areg_val_tb_o),
+		.retire_rdy_tb_o			(core1_retire_rdy_tb_o),		
 
 		// ports for writeback all dty data from Dcache to mem
 		.Dcache_way_idx_tb_i		(Dcache1_way_idx_tb_i),
@@ -476,6 +497,8 @@ module coreS	(
 	assign bus_rsp_data_i		= bus_rsp_data_o;
 
 	assign bus_req_core_ack_i	= bus2Dmem_ctrl_core_req_o;
+	
+	assign bus_req_ack_i		= bus2Dmem_ctrl_req_ack_o;
 
 	assign bus_rsp_addr_i		= bus_rsp_addr_o;
 	assign bus_rsp_ptr_i		= bus2Dmem_ctrl_rsp_ptr_o;
