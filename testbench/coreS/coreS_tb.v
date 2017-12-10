@@ -259,6 +259,7 @@ module coreS_tb;
 		//print_header("Cycle:      IF      |     ID      |     EX      |     MEM     |     WB      Reg Result");
 	end
 
+	`ifndef coreS_syn_sim
 	//-----------------------------------------------------
 	// task for printing rs
 	task print_core0_rs;
@@ -441,7 +442,7 @@ module coreS_tb;
 			$fdisplay(rob1_fileno, "@@@ #br_recovery# recovering to rob entry: %d", coreS.core1.rob.tail_r_nxt[`HT_W-1:0]);
 
 	endtask // task print_rob
-
+	`endif
 
 	//
 	always_ff @(posedge clk) begin
@@ -568,7 +569,7 @@ module coreS_tb;
 		#100 $finish;
 	end
 
-
+	`ifndef coreS_syn_sim
 	always_comb begin
 		for (int i = 0; i < `RS_ENT_NUM; i = i + 1) begin
 			core0_rs_instr_str[i] = get_instr_string(coreS.core0.rs.IR_vec[i],~coreS.core0.rs.avail_vec[i]);
@@ -579,6 +580,7 @@ module coreS_tb;
 			core1_rob_instr_str[i] = get_instr_string(coreS.core1.rob.IR_r[i],coreS.core1.rob.vld_r[i]);
 		end
 	end
+	`endif
 
 	// function to get instr string
 	function [8*8:0] get_instr_string;
