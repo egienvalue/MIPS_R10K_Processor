@@ -7,6 +7,7 @@
 //                                                                     //
 /////////////////////////////////////////////////////////////////////////
 
+`define			coreS_syn_sim
 //*********************************************************************//
 // defines for top												       //
 //*********************************************************************//
@@ -112,8 +113,8 @@ typedef enum logic[1:0] {
 `define			BR_PR_CORRECT		2'b10
 `define			BR_NONE				2'b00
 `define			BR_STATE_W			2
-`define         BHR_W           	10
-`define         PT_W            	32
+`define         BHR_W           	8
+`define         PT_W            	512
 `define         PT_IDX_W        	($clog2(`PT_W))
 `define         THRESHOLD       	256
 `define         WEIGHT_W        	($clog2(`THRESHOLD)+1)

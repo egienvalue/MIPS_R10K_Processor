@@ -484,13 +484,14 @@ module coreS_tb;
 		else
 		begin
 			// print rs and rob at every cycle during negedge
+			`ifndef coreS_syn_sim
 			`SD
 			print_core0_rs;
 			print_core0_rob;
 			print_core1_rs;
 			print_core1_rob;
 		  	`SD;
-		  
+		  	`endif
 		    // print the piepline stuff via c code to the pipeline.out
 
 			//----------------------------------------------------
