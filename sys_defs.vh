@@ -93,7 +93,7 @@ typedef enum logic[1:0] {
 
 `define		MEM_TAG_W				4
 
-`define		ID_MEM_ABT_VEC_W		5
+`define		ID_MEM_ABT_VEC_W		5//
 
 `define		PFETCH_NUM				4
 
@@ -112,7 +112,7 @@ typedef enum logic[1:0] {
 `define			BR_PR_CORRECT		2'b10
 `define			BR_NONE				2'b00
 `define			BR_STATE_W			2
-`define         BHR_W           	8
+`define         BHR_W           	10
 `define         PT_W            	32
 `define         PT_IDX_W        	($clog2(`PT_W))
 `define         THRESHOLD       	256
@@ -198,14 +198,14 @@ typedef enum logic[1:0] {
 `define MEM_64BIT_LINES        (`MEM_SIZE_IN_BYTES/8)
 
 // probably not a good idea to change this second one
-`define VIRTUAL_CLOCK_PERIOD   7.0 // Clock period from dc_shell
+`define VIRTUAL_CLOCK_PERIOD   12.0 // Clock period from dc_shell
 `define VERILOG_CLOCK_PERIOD   10.0 // Clock period from test bench
 
-`ifndef CLOCK_PERIOD
-`define CLOCK_PERIOD		   10.0
-`endif
+//`ifndef CLOCK_PERIOD
+//`define CLOCK_PERIOD		   10.0
+//`endif
 
-`define MEM_LATENCY_IN_CYCLES (100.0/`CLOCK_PERIOD+0.49999)
+`define MEM_LATENCY_IN_CYCLES (100.0/`VIRTUAL_CLOCK_PERIOD+0.49999)
 // the 0.49999 is to force ceiling(100/period).  The default behavior for
 // float to integer conversion is rounding to nearest
 

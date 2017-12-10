@@ -378,16 +378,16 @@ module core_top_tb;
 
 	
 	initial begin // for step by step debug
-		for (int i = 0; i < 60000; i++) begin
+		for (int i = 0; i < 100000; i++) begin
 			@(negedge clk);
 		end
-		$display("@@@\n@@");
-		show_clk_count;
+		//$display("@@@\n@@");
+		//show_clk_count;
 		//print_close(); // close the pipe_print output file
 		//$fclose(wb_fileno);
 		//$fclose(rs_fileno);
 		//$fclose(rob_fileno);
-		#100 $finish;
+		//#100 $finish;
 	end
 
 	`ifdef SIM_DEBUG
