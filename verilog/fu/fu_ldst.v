@@ -74,12 +74,16 @@ module fu_ldst(
 		logic	[63:0]						result;
 		logic	[`PRF_IDX_W-1:0]			dest_tag;
 		logic	[`ROB_IDX_W:0]				rob_idx;
+		logic								ld_vld;
+		logic								st_vld;
 		logic								ld_done;
 		logic								st_done;
 		logic	[`BR_MASK_W-1:0]			br_mask;
 
 		assign mem_disp			= { {48{inst_i[15]}}, inst_i[15:0] };
 		assign addr				= opb_i + mem_disp;
+		assign ld_vld			= ld_vld_i & ~rob_br_recovery_i;
+		assign st_vld			= st_vld_i & ~rob_br_recovery_i;
 
 		// synopsys sync_set_reset "rst"
 		always_ff @(posedge clk) begin
@@ -119,7 +123,7 @@ module fu_ldst(
 
 				.addr_i					(addr),
 				.st_data_i				(opa_i),
-				.st_vld_i				(st_vld_i),
+				.st_vld_i				(st_vld),
 				.sq_idx_i				(sq_idx_i),
 				.rob_st_retire_en_i		(rob_st_retire_en_i),
 				.rob_head_i				(rob_head_i),
@@ -128,7 +132,7 @@ module fu_ldst(
 
 				.rob_idx_i				(rob_idx_i),
 				.dest_tag_i				(dest_tag_i),
-				.ld_vld_i				(ld_vld_i),
+				.ld_vld_i				(ld_vld),
 				.rs_ld_position_i		(rs_ld_position_i),
 				.rs_ld_is_ldl_i			(rs_ld_is_ldl_i),
 				.ex_ld_position_i		(ex_ld_position_i),
