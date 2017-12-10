@@ -7,15 +7,17 @@
 //                                                                     //
 /////////////////////////////////////////////////////////////////////////
 
-// Define for top
+//*********************************************************************//
+// defines for top												       //
+//*********************************************************************//
+`define			ADDR_W				64
+`define			DATA_W				64
 
-
-
-////////////////////////////////////////////////////////////////////////
-//																	  //
-// hengfei															  //
-//																	  //
-////////////////////////////////////////////////////////////////////////
+//*********************************************************************//
+// defines for IF stage												   //
+//*********************************************************************//
+`define IFB_SIZE 8
+`define TAG_SIZE ($clog2(`IFB_SIZE))
 
 //*********************************************************************//
 // defines for Icache												   //
@@ -73,7 +75,6 @@
 
 `endif
 
-
 `define		MSHR_NUM				4
 `define		MSHR_IDX_W				2
 
@@ -83,7 +84,6 @@ typedef enum logic[1:0] {
 	PUT_M	= 2'h2,
 	NONE	= 2'h3
 } message_t;
-
 
 `define		RSP_Q_NUM				4
 `define		RSP_Q_PTR_W				2
@@ -97,55 +97,75 @@ typedef enum logic[1:0] {
 
 `define		PFETCH_NUM				4
 
+//*********************************************************************//
+// defines for ROB											           //
+//*********************************************************************//
+`define			ROB_W				32
+`define			ROB_IDX_W			5
+`define			HT_W 				($clog2(`ROB_W))
 
-// jun
-`define			ROB_W			32
-`define			ROB_IDX_W		5
-`define			HT_W 			($clog2(`ROB_W))
-`define			EX_UNIT_W		5
-`define			BR_PR_WRONG		2'b01
+//*********************************************************************//
+// defines for Branch Stack & Branch Predictor	                       //
+//*********************************************************************//
+`define			BR_MASK_W			5
+`define			BR_PR_WRONG			2'b01
 `define			BR_PR_CORRECT		2'b10
-`define			BR_NONE			2'b00
-`define			BR_STATE_W		2
-`define         BHR_W           8
-`define         PT_W            32
-`define         PT_IDX_W        ($clog2(`PT_W))
-`define         THRESHOLD       256
-`define         WEIGHT_W        ($clog2(`THRESHOLD)+1)
+`define			BR_NONE				2'b00
+`define			BR_STATE_W			2
+`define         BHR_W           	8
+`define         PT_W            	32
+`define         PT_IDX_W        	($clog2(`PT_W))
+`define         THRESHOLD       	256
+`define         WEIGHT_W        	($clog2(`THRESHOLD)+1)
 //`define			PERCEPTRON
+`define			PC_IDX_W			5
+`define			BHT_NUM				2**`PC_IDX_W
+`define			BHT_W				2
+`define			PHT_NUM				2**`BHT_W
+                                	
+`define			BTB_TAG_W			10		//BTB
+`define			BTB_VAL_W			12
+`define			BTB_SEL_W			9
+`define			BTB_NUM				2**`BTB_SEL_W
 
-// Chuan
-`define			PRF_NUM			64
-`define			PRF_IDX_W		($clog2(`PRF_NUM))
-`define			LRF_NUM			32
-`define			LRF_IDX_W		($clog2(`LRF_NUM))
-`define			MT_NUM			`LRF_NUM
-`define			FL_NUM			`PRF_NUM - `MT_NUM
-`define			FL_PTR_W		$clog2(`FL_NUM)
-`define			PC_IDX_W		5
-`define			BHT_NUM			2**`PC_IDX_W
-`define			BHT_W			2
-`define			PHT_NUM			2**`BHT_W
+//*********************************************************************//
+// defines for RAT											           //
+//*********************************************************************//
+`define			PRF_NUM				64
+`define			PRF_IDX_W			($clog2(`PRF_NUM))
+`define			LRF_NUM				32
+`define			LRF_IDX_W			($clog2(`LRF_NUM))
+`define			MT_NUM				`LRF_NUM
+`define			FL_NUM				`PRF_NUM - `MT_NUM
+`define			FL_PTR_W			$clog2(`FL_NUM)
 
-`define			BTB_TAG_W		10		//BTB
-`define			BTB_VAL_W		12
-`define			BTB_SEL_W		9
-`define			BTB_NUM			2**`BTB_SEL_W
+//*********************************************************************//
+// defines for RS											           //
+//*********************************************************************//
+`define			RS_ENT_NUM			8
+`define			RS_IDX_W			($clog2(`RS_ENT_NUM))
 
+//*********************************************************************//
+// defines for LSQ                  								   //
+//*********************************************************************//
+`define			SQ_ENT_NUM			8
+`define			SQ_IDX_W			$clog2(`SQ_ENT_NUM)
+`define			LQ_ENT_NUM			8
+`define			LQ_IDX_W			$clog2(`LQ_ENT_NUM)
 
+//*********************************************************************//
+// defines for Functional Units										   //
+//*********************************************************************//
+`define			EX_UNIT_W			5
 
-// Lu
-`define			RS_ENT_NUM		8
-`define			RS_IDX_W		($clog2(`RS_ENT_NUM))
-
-`define			FU_NUM			6
-`define			FU_SEL_W		3
-`define			FU_SEL_NONE		3'b000
-`define			FU_SEL_ALU		3'b001
-`define			FU_SEL_MULT		3'b010
-`define			FU_SEL_UNCOND_BRANCH	3'b011
+`define			FU_NUM				6
+`define			FU_SEL_W			3
+`define			FU_SEL_NONE			3'b000
+`define			FU_SEL_ALU			3'b001
+`define			FU_SEL_MULT			3'b010
+`define			FU_SEL_UNCOND_BRANCH 3'b011
 `define			FU_SEL_COND_BRANCH	3'b100
-`define			FU_SEL_LOAD		3'b101
+`define			FU_SEL_LOAD			3'b101
 `define			FU_SEL_STORE		3'b110
 
 `define			EX_CYCLES_MAX		4
@@ -154,19 +174,6 @@ typedef enum logic[1:0] {
 `define			EX_CYCLES_LOAD		1
 `define			EX_CYCLES_STORE		1
 `define			EX_CYCLES_MULT		4
-
-`define			BR_MASK_W			5
-
-`define			SQ_ENT_NUM			8
-`define			SQ_IDX_W			$clog2(`SQ_ENT_NUM)
-`define			LQ_ENT_NUM			8
-`define			LQ_IDX_W			$clog2(`LQ_ENT_NUM)
-
-`define			ADDR_W				64
-
-// Shijing
-`define IFB_SIZE 8
-`define TAG_SIZE ($clog2(`IFB_SIZE))
 
 `ifndef __SYS_DEFS_VH__
 `define __SYS_DEFS_VH__
@@ -184,7 +191,6 @@ typedef enum logic[1:0] {
 // Memory/testbench attribute definitions
 //
 //////////////////////////////////////////////
-
 
 `define NUM_MEM_TAGS           15
 
