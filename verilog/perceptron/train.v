@@ -22,7 +22,7 @@ module train (
 	logic	training_stop;
 	assign tr2pt_wr_en_o	= training_en_i;
 	assign y_out_nxt		= (y_vld_i) ? y_out_i : y_out[if_br_PC_i[`PT_IDX_W-1:0]];
-	assign tr2pt_wr_idx_o	= fu_br_PC_i[`PT_W-1:0];
+	assign tr2pt_wr_idx_o	= fu_br_PC_i[`PT_IDX_W-1:0];
 	assign	x	= {1'b1,BHR_i};
 	assign training_stop = ((y_out[fu_br_PC_i[`PT_IDX_W-1:0]]>`THRESHOLD) || (-y_out[fu_br_PC_i[`PT_IDX_W-1:0]]>`THRESHOLD));
 	always_comb begin
