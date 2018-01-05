@@ -1,6 +1,7 @@
 # EECS470_Final
 2-core MIPS R10K OoO Processor with Snooping MSI and Pipeline Bus
-
+Branch coreS: 2-core processor for testing multi-core programs
+Branch master: single core processor 
 ## Key Features:
 1. Multicore with coherent write-back data caches
 2. Early branch recovery 
